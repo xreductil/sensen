@@ -42,7 +42,120 @@ const HOME_SLIDES = [
 
 const BIRTHDAY_CAKE_PATH = "/產品介紹/生日蛋糕-下方有dm供下載-264";
 const CATERING_PATH = "/精緻外燴-355";
+const TEA_PARTY_PATH = "/茶會點心-tea-party";
 const BOSTON_PIE_PATH = "/頂家彌月/波士頓派系列";
+const COUNTRY_CHEESE_PATH = "/頂家彌月/香村乳酪禮盒";
+const COUNTRY_CHEESE_GIFTS = [
+  ["country-cheese-l1.jpg", "L1", "6吋檸檬老奶奶x1、小檸檬x1、KT貓蛋糕x1、手工餅乾x1、草莓大理石x1"],
+  ["country-cheese-l2.jpg", "L2", "6吋比利時巧克力x1、紫羅蘭x1、油飯8兩x1、紅蛋x2"],
+  ["country-cheese-l3.jpg", "L3", "8吋烤布蕾x1、手工餅乾x1、熊大x1、小檸檬x1、油飯8兩x1、紅蛋x2"],
+];
+const COUNTRY_CHEESE_STYLES = [
+  ["cheese.jpg", "波士頓派禮盒"],
+  ["single-piece.jpg", "單條禮盒"],
+  ["little-bear.jpg", "小熊禮盒"],
+  ["big-bear.jpg", "大熊禮盒"],
+];
+
+const ROUND_PIE_PATH = "/頂家彌月/圓圓派-744";
+const ROUND_PIE_PRODUCTS = [
+  ["K1 烤布蕾", "k2.png"],
+  ["K2 開心果雲石", "k2-copy.png"],
+  ["K3 重乳酪(草莓/藍莓)", "k3-2.png"],
+  ["K4 輕乳酪", "light-cheese.png"],
+  ["K5 比利時巧克力", "k3.png"],
+  ["K6 檸檬老奶奶", "k4.png"],
+];
+
+const LONG_CAKE_PATH = "/頂家彌月/彌月長條蛋糕";
+const LONG_CAKE_HOT_PRODUCTS = [
+  ["日式千層", "日是千層.png"],
+  ["桂花烏龍甜心", "桂花烏龍.png"],
+  ["摩卡巧克力", "a5.png"],
+  ["伯爵甜心捲", "a6.png"],
+  ["左岸咖啡捲", "a7.png"],
+];
+const LONG_CAKE_MARBLE_PRODUCTS = [
+  ["草莓大理石", "strawberry-marble.png"],
+  ["藍莓天使", "blueberry-angel.png"],
+  ["經典巧克力", "classic-chocolate.png"],
+  ["檸檬之戀", "lemon-love.png"],
+  ["蜂蜜蛋糕", "a14.jpg"],
+];
+const LONG_CAKE_NAPOLEON_PRODUCTS = [
+  ["香草拿破崙派", "f1-1.png"],
+  ["巧克力拿破崙派", "f2.png"],
+];
+
+function longCakeContent() {
+  const cardList = (items, className = "") => items.map(([title, image]) => `
+    <article class="long-cake-product ${className}">
+      <img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
+      <h3>${escapeHtml(title)}</h3>
+    </article>`).join("");
+  return `<section class="long-cake-page">
+    <section class="long-cake-hero"><div class="long-cake-hero-title"><h1>彌月長條蛋糕</h1></div></section>
+    <div class="long-cake-baby"><img src="/assets/images/icon-baby.png" alt="" aria-hidden="true"></div>
+    <section class="long-cake-feature" aria-labelledby="long-cake-feature-title">
+      <div class="long-cake-feature-image"><img src="/assets/images/a2-2.jpg" alt="A1 紫羅蘭長條蛋糕" loading="lazy"></div>
+      <div class="long-cake-feature-copy">
+        <h2 id="long-cake-feature-title">A1 紫羅蘭</h2>
+        <p class="long-cake-feature-filling">內餡：大甲芋頭+布丁</p>
+        <p>嚴選大甲芋頭，綿密芋泥搭配芋頭塊與手作香草布丁。一口接一口，是頂家銷售NO.1的招牌蛋糕！</p>
+      </div>
+    </section>
+    <section class="long-cake-series" aria-labelledby="long-cake-hot-title">
+      <div class="long-cake-heading"><p>TOP HOUSE CAKE</p><h2 id="long-cake-hot-title">熱銷蛋糕系列</h2></div>
+      <div class="long-cake-grid long-cake-grid-five">${cardList(LONG_CAKE_HOT_PRODUCTS)}</div>
+    </section>
+    <section class="long-cake-series long-cake-series-second" aria-labelledby="long-cake-marble-title">
+      <div class="long-cake-heading"><h2 id="long-cake-marble-title">熱銷蛋糕系列</h2></div>
+      <div class="long-cake-grid long-cake-grid-five">${cardList(LONG_CAKE_MARBLE_PRODUCTS)}</div>
+    </section>
+    <section class="long-cake-napoleon" aria-labelledby="long-cake-napoleon-title">
+      <div class="long-cake-heading long-cake-heading-napoleon"><h2 id="long-cake-napoleon-title">拿破崙派</h2><p>MILLE-FEUILLE</p></div>
+      <div class="long-cake-grid long-cake-grid-two">${cardList(LONG_CAKE_NAPOLEON_PRODUCTS, "long-cake-napoleon-product")}</div>
+    </section>
+    <section class="long-cake-dm" id="long-cake-dm">
+      <a class="long-cake-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
+      <a class="long-cake-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="long-cake-dm-book" aria-hidden="true"></span></a>
+      <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
+    </section>
+  </section>`;
+}
+
+function roundPieContent() {
+  const cards = ROUND_PIE_PRODUCTS.map(([title, image]) => `
+    <article class="round-pie-product">
+      <img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
+      <h2>${escapeHtml(title)}</h2>
+      <span class="round-pie-product-rule" aria-hidden="true"></span>
+    </article>`).join("");
+  return `<section class="round-pie-page">
+    <section class="round-pie-hero"><h1>圓圓派</h1></section>
+    <section class="round-pie-products" aria-labelledby="round-pie-title">
+      <h2 id="round-pie-title" class="sr-only">圓圓派商品</h2>
+      <div class="round-pie-grid">${cards}</div>
+    </section>
+    <section class="round-pie-dm" id="round-pie-dm">
+      <a class="round-pie-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
+      <a class="round-pie-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="round-pie-dm-book" aria-hidden="true"></span></a>
+      <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
+    </section>
+  </section>`;
+}
+
+function countryCheeseContent() {
+  const card = ([image, label, description]) => "<article class=\"big-bear-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "鄉村乳酪禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
+  const cards = COUNTRY_CHEESE_GIFTS.map(card).join("");
+  const styleCards = COUNTRY_CHEESE_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
+  return "<section class=\"big-bear-page country-cheese-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>鄉村乳酪禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/assets/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section country-cheese-products\"><div class=\"big-bear-grid big-bear-grid-three\">" + cards + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"big-bear-dm\" id=\"country-cheese-dm\"><a class=\"big-bear-dm-link\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\">彌月禮盒DM下載 <span aria-hidden=\"true\">⟶</span></a><a class=\"big-bear-dm-icon\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" aria-label=\"查看彌月禮盒 DM\"><span aria-hidden=\"true\">▤</span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
+}
+
+
+ const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
+const PRODUCT_INTRO_PATH = "/產品介紹";
+const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 
 const CAKE_SECTIONS = [
   {
@@ -60,6 +173,16 @@ const CAKE_SECTIONS = [
       ["榛果脆心巧思", "10", "cake-13-1.png", "/product-item/%e6%a6%9b%e6%9e%9c%e8%84%86%e5%bf%83%e5%b7%a7%e6%80%9d/"],
       ["黑森林", "17", "cake-2020-4.png", "/product-item/%e9%bb%91%e6%a3%ae%e6%9e%97/"],
       ["雪芙蕾", "20", "cake-11.png", "/product-item/%e9%9b%aa%e8%8a%99%e8%95%be/"],
+    ],
+    loadMoreProducts: [
+      ["馬卡龍森林", "34", "cake-2020-15.png", "/product-item/%e9%a6%ac%e5%8d%a1%e9%be%8d%e6%a3%ae%e6%9e%97/"],
+      ["草莓修多(季節限定)", "5", "cake-9.png", "/product-item/%e8%8d%89%e8%8e%93%e4%bf%ae%e5%a4%9a%e5%ad%a3%e7%af%80%e9%99%90%e5%ae%9a/"],
+      ["玫瑰花束", "3", "cake-2024-6.png", "/product-item/%e7%8e%ab%e7%91%b0%e8%8a%b1%e6%9d%9f-210/"],
+      ["波笛", "3", "cake-2024-7.png", "/product-item/%e6%b3%a2%e7%ac%9b-209/"],
+      ["泡芙王國", "9", "cake-5-2.png", "/product-item/%e6%b3%a1%e8%8a%99%e7%8e%8b%e5%9c%8b/"],
+      ["宇治禾風", "3", "cake-2024-8.png", "/product-item/%e5%ae%87%e6%b2%bb%e7%a6%be%e9%a2%a8-205/"],
+      ["藍莓萊思克", "2", "cake-2024-9.png", "/product-item/%e8%97%8d%e8%8e%93%e8%90%8a%e6%80%9d%e5%85%8b-204/"],
+      ["天使", "6", "cake-2020-8.png", "/product-item/%e5%a4%a9%e4%bd%bf/"],
     ],
     loadMore: true,
   },
@@ -90,7 +213,7 @@ const CAKE_SECTIONS = [
 const NAV_ITEMS = [
   ["關於森森", "/%e9%97%9c%e6%96%bc%e6%a3%ae%e6%a3%ae/"],
   ["最新消息", "/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/"],
-  ["產品介紹", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
+  ["產品介紹", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/"],
   ["酒會/茶會", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
   ["頂家彌月", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/"],
   ["常見問題", "/%e5%b8%b8%e8%a6%8b%e5%95%8f%e9%a1%8c/"],
@@ -889,12 +1012,61 @@ function aboutContent() {
   </section>`;
 }
 
+function productIntroContent() {
+  const birthdayProducts = [
+    ...CAKE_SECTIONS[0].products,
+    ...(CAKE_SECTIONS[0].loadMoreProducts || []),
+  ].map(([title, likes, image, href]) => ({ title: title.replace(/<br>/g, ""), likes, image, href }));
+  const sections = [
+    {
+      eyebrow: "BIRTHDAY CAKE",
+      title: "生日蛋糕",
+      icon: "/assets/images/icon-cake.png",
+      href: "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/",
+      products: birthdayProducts,
+    },
+    {
+      eyebrow: "SOUVENIR",
+      title: "伴手禮",
+      icon: "/assets/images/icon-cupcake.png",
+      href: "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/",
+      products: SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => ({ title, href, image, likes })),
+    },
+    {
+      eyebrow: "DRINK MENU",
+      title: "飲品 MENU",
+      icon: "/assets/images/icon-coffee.png",
+      href: "/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/",
+      kind: "menu",
+      products: [
+        { title: "咖啡與氣泡飲", image: "coffee-menu-1.jpg" },
+        { title: "茶飲與奶茶", image: "coffee-menu-2.jpg" },
+      ],
+    },
+  ];
+  const sectionHtml = sections.map((section) => {
+    const cards = section.products.map((product) => {
+      if (section.kind === "menu") {
+        return "<article class=\"product-intro-menu-card\"><a href=\"" + escapeAttr(section.href) + "\"><img src=\"/assets/images/" + escapeAttr(product.image) + "\" alt=\"" + escapeAttr(product.title) + "\"><strong>" + escapeHtml(product.title) + "</strong></a></article>";
+      }
+      return "<article class=\"product-intro-card\"><a class=\"product-intro-card-link\" href=\"" + escapeAttr(product.href) + "\"><img src=\"/assets/images/" + escapeAttr(product.image) + "\" alt=\"" + escapeAttr(product.title) + "\"><div class=\"product-intro-card-meta\"><strong>" + escapeHtml(product.title) + "</strong><span><b aria-hidden=\"true\">♡</b> " + escapeHtml(product.likes) + "</span></div></a></article>";
+    }).join("");
+    return "<section class=\"product-intro-section\" data-product-intro-section>" +
+      "<div class=\"product-intro-section-heading\"><div><p>" + escapeHtml(section.eyebrow) + "</p><h2><img src=\"" + escapeAttr(section.icon) + "\" alt=\"\" aria-hidden=\"true\">" + escapeHtml(section.title) + "</h2></div><div class=\"product-intro-carousel-controls\"><button type=\"button\" data-product-intro-previous aria-label=\"向左滑動\">‹</button><button type=\"button\" data-product-intro-next aria-label=\"向右滑動\">›</button></div></div>" +
+      "<div class=\"product-intro-carousel\"><div class=\"product-intro-track\" data-product-intro-track tabindex=\"0\">" + cards + "</div></div>" +
+      "<a class=\"product-intro-load-more\" href=\"" + escapeAttr(section.href) + "\">▪▪ Load more</a>" +
+      "</section>";
+  }).join("");
+  return "<section class=\"product-intro-page\">" + sectionHtml + "</section>" +
+    "<script>(function(){document.querySelectorAll(\"[data-product-intro-section]\").forEach(function(section){var track=section.querySelector(\"[data-product-intro-track]\");if(!track)return;var move=function(direction){track.scrollBy({left:direction*Math.max(track.clientWidth*.82,260),behavior:\"smooth\"});};section.querySelector(\"[data-product-intro-previous]\").addEventListener(\"click\",function(){move(-1);});section.querySelector(\"[data-product-intro-next]\").addEventListener(\"click\",function(){move(1);});});})();</script>";
+}
+
 function birthdayCakeContent() {
   const sectionHtml = CAKE_SECTIONS.map((section, index) => {
     const iconHtml = section.icon
       ? `<img class="cake-section-icon" src="${escapeAttr(section.icon)}" alt="" aria-hidden="true">`
       : "";
-    const cards = section.products.map(([name, likes, image, href]) => `<article class="cake-product-card" data-cake-like-id="${escapeAttr(href)}">
+    const cardHtml = ([name, likes, image, href]) => `<article class="cake-product-card" data-cake-like-id="${escapeAttr(href)}">
         <a class="cake-product-card-link" href="${escapeAttr(href)}">
           <span class="cake-product-image">
             <img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(name.replace(/<br>/g, ""))}">
@@ -907,9 +1079,11 @@ function birthdayCakeContent() {
           </button>
           <button class="cake-add-cart" type="button" data-add-cart-title="${escapeAttr(name.replace(/<br>/g, "").replace(/\(季節限定\)/g, "（季節限定）"))}">加入購物車</button>
         </div>
-      </article>`).join("");
+      </article>`;
+    const cards = section.products.map(cardHtml).join("");
+    const loadMoreCards = (section.loadMoreProducts || []).map(cardHtml).join("");
     const loadMore = section.loadMore
-      ? `<div class="cake-load-more"><a href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/page/2/">▪▪ Load more</a></div>`
+      ? `<div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>`
       : "";
     const headingText = index === 0
       ? ""
@@ -920,7 +1094,8 @@ function birthdayCakeContent() {
         ${iconHtml}
         ${headingText}
       </div>
-      <div class="cake-product-grid">${cards}</div>
+      <div class="cake-product-grid">${cards}</div>${loadMoreCards ? `
+      <div class="cake-product-grid cake-product-grid-more" data-cake-load-more-items hidden>${loadMoreCards}</div>` : ""}
       ${loadMore}
     </section>`;
   }).join("");
@@ -934,6 +1109,22 @@ function birthdayCakeContent() {
     </section>
   </section>
   <script>
+  (() => {
+    const toggleCakeProducts = (button) => {
+      const category = button.closest(".cake-category");
+      const items = category ? category.querySelector("[data-cake-load-more-items]") : null;
+      if (!items) return;
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      items.hidden = expanded;
+      button.setAttribute("aria-expanded", String(!expanded));
+      button.textContent = expanded ? "▪▪ Load more" : "▪▪ 收起商品";
+    };
+    window.toggleCakeProducts = toggleCakeProducts;
+    document.addEventListener("click", (event) => {
+      const button = event.target.closest ? event.target.closest("[data-cake-load-more]") : null;
+      if (button) toggleCakeProducts(button);
+    });
+  })();
   (() => {
     const storageKey = "sensen-cake-likes";
     let liked = {};
@@ -1138,6 +1329,26 @@ const BOSTON_GIFTS = [
   ["boston-pa3.png", "PA3", "9吋波士頓派×1、草莓大福×3"],
   ["boston-pa4.png", "PA4", "9吋波士頓派×1、草莓大理石×1"],
 ];
+
+
+const BIG_BEAR_GIFTS = [
+  ["c1.png", "C1", "草莓大理石x1、經典巧克力x1、油飯8兩x1、紅蛋x2"],
+  ["c2.png", "C2", "草莓大理石x1、鈕釦牛軋餅x1、珍珠脆糖小泡芙x1、達克瓦茲x3"],
+  ["c7.png", "C3", "9吋烤布蕾x1、油飯8兩x1、紅蛋x2"],
+  ["b1-copy.png", "B1", "草莓大理石x1、經典巧克力x1"],
+  ["b2.png", "B2", "草莓大理石x1、小檸檬x1、KT貓蛋糕x1、手工餅干x2"],
+  ["b3.png", "B3", "草莓大理石x1、油飯8兩x1、紅蛋x2"],
+  ["b4.png", "B4", "草莓大理石x1、小檸檬x1、KT貓蛋糕x1、手工餅干x1、紅蛋x2"],
+  ["c8.png", "C4", "6吋輕乳酪蛋糕x1、油飯8兩x1、紅蛋x2"],
+];
+const BIG_BEAR_STYLES = [["cheese.jpg", "波士頓派禮盒"], ["single-piece.jpg", "單條禮盒"], ["little-bear.jpg", "小熊禮盒"], ["big-bear.jpg", "大熊禮盒"]];
+function bigBearContent() {
+  const card = ([image, label, description]) => "<article class=\"big-bear-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
+  const cards = BIG_BEAR_GIFTS.map(card);
+  const styleCards = BIG_BEAR_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"><figcaption>" + escapeHtml(label) + "</figcaption></figure>").join("");
+  return "<section class=\"big-bear-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>大熊/小熊禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/assets/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section\"><h2>大熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-three\">" + cards.slice(0, 3).join("") + "</div></section><section class=\"big-bear-section big-bear-little-section\"><h2>小熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-four\">" + cards.slice(3).join("") + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"big-bear-dm\" id=\"big-bear-dm\"><a class=\"big-bear-dm-link\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\">彌月禮盒DM下載 <span aria-hidden=\"true\">⟶</span></a><a class=\"big-bear-dm-icon\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" aria-label=\"查看彌月禮盒 DM\"><span aria-hidden=\"true\">▤</span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
+}
+
 
 function bostonPieContent() {
   const giftCards = BOSTON_GIFTS.map(([image, label, description]) => `
@@ -1362,10 +1573,62 @@ function contactPageContent() {
   </section>`;
 }
 
+
+const TEA_PARTY_SECTIONS = [
+  ["SALTY BREAD", "麵包鹹餐(葷)", ["sandwich.jpg", "party-salty-bread-7.jpg", "party-salty-bread-2.jpg", "party-salty-bread-1.jpg", "party-salty-bread-10.jpg", "party-salty-bread-9.jpg", "party-salty-bread-12.jpg", "cheese-3.jpg", "party-salty-bread-3.jpg", "taro-2.jpg", "lemon-lemon-chicken-burger.jpg", "chicken-burger.jpg", "party-salty-bread-8.jpg", "party-salty-bread-5.jpg", "party-sweet-bread-1.jpg", "pork-floss-pastry.png", "parmesan-sausage.png"]],
+  ["SWEET BREAD", "麵包甜餐(素)", ["fruit-sandwich.jpg", "party-sweet-bread-5.jpg", "taro-sandwich.jpg", "party-sweet-bread-4.jpg", "flat-croissant.jpg", "italian-mini-bun.jpg", "truffle-milk-bun.png", "custard.jpg", "wine-longan.png", "pine-truffle.jpg", "taro-custard.jpg"]],
+  ["DESSERTS AND CAKES", "西點蛋糕(素)", ["party-cake-16.jpg", "party-cake-19.jpg", "party-cake-20.jpg", "party-cake-21.jpg", "party-cake-1.jpg", "party-cake-2.jpg", "party-cake-3.jpg", "party-cake-4.jpg", "party-cake-5.jpg", "party-cake-6.jpg", "party-cake-9.jpg", "party-cake-10.jpg", "party-cake-11.jpg", "party-cake-13.jpg", "party-cake-14.jpg", "taro-daifuku.jpg", "taro-fragrant-puff-puff.jpg", "mixed-mixed-cookies.jpg", "fruit-puff.jpg", "purple-taro-orchid-cake.jpg", "day-layer-cake.jpg", "lemon-grandma.png", "hawaiian.png", "peanut-mochi.png", "belgian-chocolate.jpg", "cheese-custard.jpg", "palmiers-3.jpg", "brown-sugar-jelly.jpg"]],
+  ["FRIED FOOD & OTHER", "炸物小點類(葷)", ["buffet-snacks-3.jpg", "buffet-snacks-1.jpg", "buffet-snacks-2.jpg"]],
+  ["FRESH FRUITS", "水果(素)", ["party-salty-fruit.jpg"]],
+];
+
+function teaPartyContent() {
+  const sectionHtml = TEA_PARTY_SECTIONS.map(([eyebrow, title, images]) => '<section class="tea-party-category"><div class="tea-party-category-heading"><p>' + escapeHtml(eyebrow) + '</p><h2>' + escapeHtml(title) + '</h2></div><div class="tea-party-product-grid">' + images.map((image) => '<div class="tea-party-product"><img src="/assets/images/' + escapeAttr(image) + '" alt="' + escapeAttr(title) + '餐點" loading="lazy"></div>').join("") + '</div></section>').join("");
+  return '<section class="tea-party-page"><section class="tea-party-hero"><div class="tea-party-hero-copy"><img class="tea-party-hero-icon" src="/assets/images/icon-cake2.png" alt="" aria-hidden="true"><h1>酒會與茶會點心</h1><p>不管是公司會議或是學校舉辦活動，實惠價格搭配可口精緻茶點，<br>超高CP值，森森是您最佳的選擇!</p><span class="tea-party-hero-rule" aria-hidden="true"></span><a class="tea-party-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="tea-party-menu-book" aria-hidden="true"></span><span>茶會菜單下載</span></a></div></section>' + sectionHtml + '<section class="tea-party-note"><span class="tea-party-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section><section class="tea-party-stores"><div class="tea-party-stores-panel"><a class="tea-party-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><i class="tea-party-store-pin" aria-hidden="true"></i></a><a class="tea-party-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><i class="tea-party-store-pin" aria-hidden="true"></i></a><a class="tea-party-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><i class="tea-party-store-pin" aria-hidden="true"></i></a><a class="tea-party-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><i class="tea-party-store-pin" aria-hidden="true"></i></a></div></section></section>';
+}
+
+
+function tasteApplyContent() {
+  return "<section class=\"taste-apply-page\">\n  <section class=\"taste-apply-hero\">\n    <div class=\"taste-apply-hero-copy\"><h1>彌月試吃申請</h1><p>填完表單後系統會寄信，收到信才算「申請成功」，我們不會電話通知。<br>(如未收到請確認填寫是否正確)</p></div>\n    <div class=\"taste-apply-card\">\n      <img class=\"taste-apply-baby\" src=\"/assets/images/icon-baby.png\" alt=\"\">\n      <form data-taste-apply>\n        <div class=\"taste-apply-field taste-apply-field-wide\"><label><span>*</span> 媽咪姓名<input name=\"name\" required autocomplete=\"name\"></label></div>\n        <div class=\"taste-apply-field taste-apply-field-wide\"><label><span>*</span> 電子信箱<input name=\"email\" type=\"email\" required autocomplete=\"email\"></label></div>\n        <div class=\"taste-apply-field\"><label><span>*</span> 連絡電話<input name=\"phone\" required autocomplete=\"tel\"></label><small>請確認電話是否有填寫正確唷!</small></div>\n        <div class=\"taste-apply-field\"><label>備用電話<input name=\"alternatePhone\" autocomplete=\"tel\"></label></div>\n        <div class=\"taste-apply-field taste-apply-field-wide\"><label>方便聯絡時間<select name=\"contactTime\"><option value=\"\">請選擇時段</option><option>早｜10:00~13:00</option><option>中｜14:00~18:00</option><option>晚｜18:30~20:00</option></select></label></div>\n        <fieldset class=\"taste-apply-choice\"><legend><span>*</span> 寶寶性別</legend><label><input type=\"radio\" name=\"babyGender\" value=\"男生Boy\" required> 男生Boy</label><label><input type=\"radio\" name=\"babyGender\" value=\"女生Girl\"> 女生Girl</label></fieldset>\n        <fieldset class=\"taste-apply-choice\"><legend><span>*</span> 是否已生產</legend><label><input type=\"radio\" name=\"produced\" value=\"是\" required> 是</label><label><input type=\"radio\" name=\"produced\" value=\"否\"> 否</label></fieldset>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-produced=\"yes\"><label><span>*</span> 請輸入寶寶的滿月日期<input name=\"fullMoonDate\" type=\"date\"></label></div>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-produced=\"yes\"><label><span>*</span> 生產醫院<input name=\"birthHospital\"></label></div>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-produced=\"no\"><label><span>*</span> 請輸入您的預產期<input name=\"expectedDate\" type=\"date\"></label></div>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-produced=\"no\"><label><span>*</span> 產檢醫院<input name=\"prenatalHospital\"></label></div>\n        <fieldset class=\"taste-apply-choice taste-apply-field-wide\"><legend><span>*</span> 彌月試吃領取方式</legend><label><input type=\"radio\" name=\"deliveryMethod\" value=\"自取\" required> 自取(16:00~22:00自取)</label><label><input type=\"radio\" name=\"deliveryMethod\" value=\"宅配\"> 宅配</label></fieldset>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-delivery=\"pickup\"><label><span>*</span> 自取門市<select name=\"pickupStore\"><option value=\"\">請選取門市</option><option>澄和店｜高雄市三民區澄和路78號</option><option>新富店｜高雄市鳳山區新富路276號</option><option>博愛店｜高雄市鳳山區博愛路219號</option><option>文龍店｜高雄市鳳山區文龍東路336號</option></select></label></div>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-delivery=\"pickup\"><label><span>*</span> 請選擇自取日期<input name=\"pickupDate\" type=\"date\"></label><small>星期一、星期六、星期日不開放自取；領取時段為 16:00~22:00。</small></div>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-delivery=\"delivery\"><label><span>*</span> 宅配地址<input name=\"deliveryAddress\" autocomplete=\"street-address\"></label><small>宅配費用 160 元，將於配送時收取。</small></div>\n        <div class=\"taste-apply-dependent taste-apply-field-wide\" data-delivery=\"delivery\"><label><span>*</span> 請選擇到貨日期<input name=\"deliveryDate\" type=\"date\"></label><small>星期一、星期六、星期日暫停配送；出貨前會與您電話確認。</small></div>\n        <p class=\"taste-apply-message\" data-taste-apply-message role=\"status\"></p>\n        <button class=\"taste-apply-submit\" type=\"submit\">送出申請 <span aria-hidden=\"true\">➜</span></button>\n      </form>\n    </div>\n  </section>\n  <section class=\"taste-apply-notes\"><div class=\"taste-apply-notes-inner\"><h2>注意事項:</h2><ol>\n    <li><strong>當天申請無法當天領取，截單日為前一天17:00前。</strong></li>\n    <li>只要滿35週(含)以上或已生產的媽媽均可申請。</li>\n    <li>彌月試吃提供品項：5塊切片蛋糕＋一塊波士頓派，一共六塊及一本彌月目錄＆專員名片。</li>\n    <li>填寫完成系統會<strong><u>自動發送信件至您的mail屆時才算申請成功。</u></strong>(如未收到mail請確認填寫是否正確)</li>\n    <li>門市自取免費；宅配寄送費用160元，貨到付款。</li>\n    <li>如欲<strong>取消申請或改期，請於出貨前2日</strong>私訊我們FB粉專或來信告知。</li>\n    <li>預約試吃活動者，同意森森因產品推廣、活動贈獎等目的，運用所提供之基本資料或與活動參與繫。</li>\n  </ol></div></section>\n  <section class=\"taste-apply-slogan\"><p>麵包/蛋糕/彌月/餐盒/酒會</p><small>帶給你嘴角上揚的幸福</small></section>\n</section>\n<script>\n(() => {\n  const form = document.querySelector('[data-taste-apply]');\n  if (!form) return;\n  const message = form.querySelector('[data-taste-apply-message]');\n  const producedGroups = [...form.querySelectorAll('[data-produced]')];\n  const deliveryGroups = [...form.querySelectorAll('[data-delivery]')];\n  const updateRequired = (groups, active) => groups.forEach((group) => {\n    group.hidden = active === undefined || (group.dataset.produced ? group.dataset.produced !== active : group.dataset.delivery !== active);\n    group.querySelectorAll('input, select').forEach((input) => { input.required = !group.hidden; if (group.hidden) input.value = ''; });\n  });\n  const update = () => {\n    const produced = form.querySelector('[name=\"produced\"]:checked')?.value;\n    const delivery = form.querySelector('[name=\"deliveryMethod\"]:checked')?.value;\n    updateRequired(producedGroups, produced === undefined ? undefined : (produced === '是' ? 'yes' : 'no'));\n    updateRequired(deliveryGroups, delivery === undefined ? undefined : (delivery === '自取' ? 'pickup' : 'delivery'));\n  };\n  form.addEventListener('change', update); update();\n  form.addEventListener('submit', async (event) => {\n    event.preventDefault();\n    if (!form.reportValidity()) return;\n    const data = new FormData(form), value = (name) => String(data.get(name) || '').trim();\n    const button = form.querySelector('button[type=\"submit\"]');\n    button.disabled = true; message.className = 'taste-apply-message is-loading'; message.textContent = '送出中，請稍候…';\n    const details = ['備用電話：' + value('alternatePhone'), '方便聯絡時間：' + value('contactTime'), '寶寶性別：' + value('babyGender'), '是否已生產：' + value('produced'), '滿月日期：' + value('fullMoonDate'), '生產醫院：' + value('birthHospital'), '預產期：' + value('expectedDate'), '產檢醫院：' + value('prenatalHospital'), '領取方式：' + value('deliveryMethod'), '自取門市：' + value('pickupStore'), '自取日期：' + value('pickupDate'), '宅配地址：' + value('deliveryAddress'), '到貨日期：' + value('deliveryDate')].filter((item) => !item.endsWith('：')).join('\\n');\n    try {\n      const response = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: value('name'), email: value('email'), phone: value('phone'), subject: '彌月試吃申請', message: details }) });\n      const result = await response.json().catch(() => ({}));\n      if (!response.ok) throw new Error(result.error || '目前無法送出申請，請稍後再試。');\n      form.reset(); update(); message.className = 'taste-apply-message is-success'; message.textContent = '申請已送出，請至信箱確認申請成功通知。';\n    } catch (error) { message.className = 'taste-apply-message is-error'; message.textContent = error.message; }\n    finally { button.disabled = false; }\n  });\n})();\n</script>";
+}
+
+function faqContent() {
+  return "<section class=\"faq-page\">\n  <div class=\"faq-wheat\" aria-hidden=\"true\"><img src=\"/assets/images/icon-wheat.png\" alt=\"\"></div>\n  <div class=\"faq-groups\">\n    <section class=\"faq-group\">\n      <div class=\"faq-group-heading\"><h2>彌月諮詢&amp;試吃服務</h2><span aria-hidden=\"true\"></span></div>\n      <div class=\"faq-list\">\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-1\"><span class=\"faq-number\">1</span><span class=\"faq-question-title\">門市諮詢、試吃服務</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-1\" class=\"faq-answer\" hidden>產前產後均可申請。滿35周(含)以上的媽媽就可以申請囉！可至門市洽詢，或來電索取試吃：07-7966959，也可利用 <a href=\"/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/\">線上申請</a> 唷！(或 <a href=\"https://www.facebook.com/sensenbakery/\" target=\"_blank\" rel=\"noreferrer\">粉專FB</a>)</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-2\"><span class=\"faq-number\">2</span><span class=\"faq-question-title\">禮盒的搭配組合</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-2\" class=\"faq-answer\" hidden>彌月禮盒內容物皆可客製任選、搭配。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-3\"><span class=\"faq-number\">3</span><span class=\"faq-question-title\">訂購及更改</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-3\" class=\"faq-answer\" hidden>本公司全程新鮮生產，請於交貨日前七日訂購／確認。若欲追加／更改訂單，請於出貨前2日完成變更手續，逾期恕本公司保有不接受改單之權利。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-4\"><span class=\"faq-number\">4</span><span class=\"faq-question-title\">訂購優惠</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-4\" class=\"faq-answer\" hidden>訂購滿30盒以上享有特價優惠，不再與其他折扣或優惠辦法重覆使用。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-5\"><span class=\"faq-number\">5</span><span class=\"faq-question-title\">森森保留的變更權利</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-5\" class=\"faq-answer\" hidden>森森保留價格、產品組合、禮盒設計等變更之權利，型錄圖片僅供參考，產品以實物為準。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-6\"><span class=\"faq-number\">6</span><span class=\"faq-question-title\">價格變動</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-6\" class=\"faq-answer\" hidden>禮盒組合的定價，依您所選擇之內搭商品價格為準。如遇商品內容、價格及產品組合變動，恕不另行通知。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-7\"><span class=\"faq-number\">7</span><span class=\"faq-question-title\">宅配服務</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-7\" class=\"faq-answer\" hidden>本公司有代客宅配服務，全程低溫冷藏宅配。蛋糕均為特價品，運費需另計。</div></article>\n      </div>\n    </section>\n    <section class=\"faq-group faq-group-pattern\">\n      <div class=\"faq-group-heading\"><h2>配送取貨問題</h2><span aria-hidden=\"true\"></span></div>\n      <div class=\"faq-list\">\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-2-1\"><span class=\"faq-number\">1</span><span class=\"faq-question-title\">貨運寄送範圍有含離島嗎?</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-2-1\" class=\"faq-answer\" hidden>森森與統一宅急便(黑貓)配合運送。台灣本島皆可運送，離島地區除東引島以外其他皆可運送。提醒您，如配送外島，易碎及易變形商品須自行承擔破損風險。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-2-2\"><span class=\"faq-number\">2</span><span class=\"faq-question-title\">可指定到貨日期嗎？</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-2-2\" class=\"faq-answer\" hidden>若欲指定到貨日期請提早訂購，並於接洽的專員註明到貨日期。若不確定該指定日期是否可如期到貨，請洽詢專人服務：07-7966959。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-2-3\"><span class=\"faq-number\">3</span><span class=\"faq-question-title\">是否可指定到貨時段</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-2-3\" class=\"faq-answer\" hidden>我們有三個送貨的時段：9:00、12:00、14:00。</div></article>\n      </div>\n    </section>\n    <section class=\"faq-group\">\n      <div class=\"faq-group-heading\"><h2>商品相關問題</h2><span aria-hidden=\"true\"></span></div>\n      <div class=\"faq-list\">\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-3-1\"><span class=\"faq-number\">1</span><span class=\"faq-question-title\">預定蛋糕需要支付全額嗎？</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-3-1\" class=\"faq-answer\" hidden>一般節慶蛋糕不強制全額支付，可接受先支付3成訂金，領取蛋糕當日再結清餘額，發票日期為領取蛋糕當日。<br><br>而活動期間，例如：母親節蛋糕、父親節蛋糕，因檔期折扣因素，提早預購有優惠，需先結清所有款項。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-3-2\"><span class=\"faq-number\">2</span><span class=\"faq-question-title\">蛋糕可以離開冷藏多久？可以保存幾天呢？</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-3-2\" class=\"faq-answer\" hidden>建議您蛋糕離開冷藏不要超過半個小時，由於蛋糕都是當日新鮮現做後送至門市，故我們建議您盡量當日食用完畢，口感會比較好。若您未食用完，務必要放置冰箱冷藏，敬請在三日內食用完畢，風味最佳。</div></article>\n      </div>\n    </section>\n  </div>\n</section>\n<script>\n(() => {\n  document.querySelectorAll('.faq-item > button').forEach((button) => {\n    button.addEventListener('click', () => {\n      const answer = document.getElementById(button.getAttribute('aria-controls'));\n      const open = button.getAttribute('aria-expanded') === 'true';\n      button.setAttribute('aria-expanded', String(!open));\n      button.querySelector('.faq-plus').textContent = open ? '＋' : '－';\n      if (answer) answer.hidden = open;\n    });\n  });\n})();\n</script>";
+}
+
+function storeInfoContent() {
+  const stores = [
+    { name: "澄和店", image: "store-1.jpg", address: "高雄市三民區澄和路78號", hours: "8:00~22:00", phone: "07-3816662", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
+    { name: "新富店", image: "store-2.jpg", address: "高雄市鳳山區新富路276號", hours: "8:00~22:00", phone: "07-7675992", map: "https://goo.gl/maps/EZFqqQPeh6z" },
+    { name: "博愛店", image: "store-3.jpg", address: "高雄市鳳山區博愛路219號", hours: "7:30~22:00", phone: "07-7993070", map: "https://goo.gl/maps/rYLh32wnRdm" },
+    { name: "文龍店", image: "store-4.jpg", address: "高雄市鳳山區文龍東路336號", hours: "10:00~22:00", phone: "07-7335812", map: "https://goo.gl/maps/5hoEqTmHsuF2" }
+  ];
+
+  const cards = stores.map((store) => '<article class="store-info-card">' +
+    '<img class="store-info-card-image" src="/assets/images/' + escapeAttr(store.image) + '" alt="' + escapeAttr(store.name) + '門市" loading="lazy">' +
+    '<div class="store-info-card-body"><span class="store-info-marker" aria-hidden="true"></span>' +
+      '<h2>' + escapeHtml(store.name) + '</h2>' +
+      '<p class="store-info-meta"><span class="store-info-meta-icon store-info-pin" aria-hidden="true"></span>' + escapeHtml(store.address) + '</p>' +
+      '<p class="store-info-meta"><span class="store-info-meta-icon store-info-clock" aria-hidden="true"></span>' + escapeHtml(store.hours) + '</p>' +
+      '<p class="store-info-meta"><span class="store-info-meta-icon store-info-phone" aria-hidden="true"></span>' + escapeHtml(store.phone) + '</p>' +
+      '<a class="store-info-map" href="' + escapeAttr(store.map) + '" target="_blank" rel="noreferrer">Google Map <span aria-hidden="true">→</span></a>' +
+    '</div></article>').join("");
+
+  return '<section class="store-info-page">' +
+    '<div class="store-info-wheat" aria-hidden="true"><img src="/assets/images/icon-wheat.png" alt=""></div>' +
+    '<section class="store-info-stores"><div class="store-info-grid">' + cards + '</div></section>' +
+    '<section class="store-info-coffee"><a class="store-info-coffee-card" href="/森森咖啡/">' +
+      '<img src="/assets/images/icon-coffee.png" alt="" aria-hidden="true"><strong>咖啡/飲品MENU</strong>' +
+    '</a></section>' +
+  '</section>';
+}
 function pageContent(page) {
   const localPath = localPathFromUrl(page.url);
   if (localPath === "/關於森森") {
     return aboutContent();
+  }
+  if (localPath === PRODUCT_INTRO_PATH) {
+    return productIntroContent();
   }
   if (localPath === BIRTHDAY_CAKE_PATH) {
     return birthdayCakeContent();
@@ -1373,8 +1636,26 @@ function pageContent(page) {
   if (localPath === CATERING_PATH) {
     return cateringContent();
   }
+  if (localPath === TEA_PARTY_PATH) {
+    return teaPartyContent();
+  }
+  if (localPath === TASTE_APPLY_PATH) {
+    return tasteApplyContent();
+  }
   if (localPath === BOSTON_PIE_PATH) {
     return bostonPieContent();
+  }
+  if (localPath === BIG_BEAR_PATH) {
+    return bigBearContent();
+  }
+  if (localPath === COUNTRY_CHEESE_PATH) {
+    return countryCheeseContent();
+  }
+  if (localPath === ROUND_PIE_PATH) {
+    return roundPieContent();
+  }
+  if (localPath === LONG_CAKE_PATH) {
+    return longCakeContent();
   }
   if (localPath === "/產品介紹/伴手禮") {
     return souvenirPageContent();
@@ -1384,6 +1665,12 @@ function pageContent(page) {
   }
   if (localPath === "/最新消息") {
     return latestNewsContent(page);
+  }
+  if (localPath === "/門市資訊") {
+    return storeInfoContent();
+  }
+  if (localPath === "/常見問題") {
+    return faqContent();
   }
   if (localPath === "/聯絡我們") {
     return contactPageContent();
@@ -1578,7 +1865,7 @@ function main() {
       isHome: localPath === "/",
       isAbout: isAboutPage,
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
-      showHero: localPath !== CATERING_PATH && localPath !== "/聯絡我們" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
+      showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
       heroSource: localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
     }));
   }
