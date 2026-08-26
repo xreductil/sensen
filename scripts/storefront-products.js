@@ -84,14 +84,18 @@
       const track = button.closest('[data-storefront-section]')?.querySelector('[data-storefront-track]');
       if (track) track.scrollBy({ left: (button.hasAttribute('data-storefront-previous') ? -1 : 1) * Math.max(track.clientWidth * .82, 260), behavior: 'smooth' });
     }));
-    content.querySelectorAll('[data-cake-load-more]').forEach(button => button.addEventListener('click', () => {
+    content.addEventListener('click', event => {
+      const button = event.target.closest('[data-cake-load-more]');
+      if (!button || !content.contains(button)) return;
+      event.preventDefault();
       const items = button.closest('.cake-category')?.querySelector('[data-cake-load-more-items]');
       if (!items) return;
       const expanded = button.getAttribute('aria-expanded') === 'true';
+      items.classList.toggle('is-expanded', !expanded);
       items.hidden = expanded;
       button.setAttribute('aria-expanded', String(!expanded));
       button.textContent = expanded ? '▪▪ Load more' : '▪▪ 收起商品';
-    }));
+    });
     content.querySelectorAll('[data-product-no-detail]').forEach(link => link.addEventListener('click', event => event.preventDefault()));
     content.querySelectorAll('[data-storefront-add-cart]').forEach(button => button.addEventListener('click', async event => {
       event.preventDefault();
