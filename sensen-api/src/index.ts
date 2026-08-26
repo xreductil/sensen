@@ -455,8 +455,19 @@ export default {
           const lookup = String(body.id || "").trim();
           const row = await env.DB.prepare("SELECT id FROM products WHERE slug = ?1 OR CAST(id AS TEXT) = ?1 LIMIT 1").bind(lookup).first<{ id: number }>();
           if (!row) return json(request, { error: "找不到商品。" }, 404);
+
+          const orderReferences = await env.DB.prepare("SELECT COUNT(*) AS count FROM order_items WHERE product_id = ?1").bind(row.id).first<{ count: number }>();
+          const cartReferences = await env.DB.prepare("SELECT COUNT(*) AS count FROM cart_items WHERE product_id = ?1").bind(row.id).first<{ count: number }>();
+          const hasReferences = Number(orderReferences?.count || 0) > 0 || Number(cartReferences?.count || 0) > 0;
+
+          if (!hasReferences) {
+            await env.DB.prepare("DELETE FROM product_images WHERE product_id = ?1").bind(row.id).run();
+            await env.DB.prepare("DELETE FROM products WHERE id = ?1").bind(row.id).run();
+            return json(request, { ok: true, id: lookup, deleted: true });
+          }
+
           await env.DB.prepare("UPDATE products SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?1").bind(row.id).run();
-          return json(request, { ok: true, id: lookup });
+          return json(request, { ok: true, id: lookup, deleted: false, archived: true });
         }
 
         if (url.pathname === "/api/admin/news" && request.method === "GET") {
@@ -910,7 +921,10 @@ export default {
         return json(request, { error: "找不到 API 路徑。" }, 404);
       }
 
-      const assetResponse = await env.ASSETS.fetch(request);
+      const assetRequest = url.pathname.startsWith("/admin/")
+        ? new Request(`${request.url}${request.url.includes("?") ? "&" : "?"}sensen_admin_asset=20260826-2`, request)
+        : request;
+      const assetResponse = await env.ASSETS.fetch(assetRequest);
       if (assetResponse.status === 404) {
         return json(request, { error: "找不到 API 路徑。" }, 404);
       }
