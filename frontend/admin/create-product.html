@@ -211,11 +211,11 @@
                 <div class="mb-3">
                   <label for="productCategory" class="form-label">Category</label>
                   <select class="form-select" id="productCategory" required>
-                    <option value="">Select category</option>
-                    <option value="NOODLES">NOODLES</option>
-                    <option value="DIM SUM">DIM SUM</option>
-                    <option value="RICE">RICE</option>
-                    <option value="SOUP">SOUP</option>
+                    <option value="">選擇商品分類</option>
+                    <option value="生日蛋糕">生日蛋糕</option>
+                    <option value="造型蛋糕">造型蛋糕</option>
+                    <option value="冰淇淋蛋糕">冰淇淋蛋糕</option>
+                    <option value="伴手禮">伴手禮</option>
                   </select>
                 </div>
                 <div class="mb-3">
@@ -259,6 +259,24 @@
 
 
     <script src="./assets/zh-admin.js?v=sensen-20260814"></script>
+    <script>
+      (() => {
+        const select = document.getElementById('productCategory');
+        if (!select) return;
+        const escapeHtml = value => String(value).replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+        const loadCategories = async () => {
+          try {
+            const response = await fetch('/api/admin/categories', { credentials: 'include', headers: { Accept: 'application/json' } });
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok || !Array.isArray(data.categories) || !data.categories.length) return;
+            select.innerHTML = '<option value="">選擇商品分類</option>' + data.categories.map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
+          } catch (error) {
+            console.warn('無法載入森森商品分類，使用預設分類。', error);
+          }
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadCategories); else loadCategories();
+      })();
+    </script>
     <script src="./create-product-redirect.js"></script>
 </body>
 

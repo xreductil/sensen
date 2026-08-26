@@ -390,6 +390,17 @@ export default {
           return json(request, { error: "需要管理員權限。" }, 403);
         }
 
+        if (url.pathname === "/api/admin/categories" && request.method === "GET") {
+          const result = await env.DB.prepare(`
+            SELECT c.id, c.name, c.slug
+            FROM categories c
+            INNER JOIN products p ON p.category_id = c.id AND p.is_active = 1
+            GROUP BY c.id, c.name, c.slug
+            ORDER BY c.id
+          `).all<{ id: number; name: string; slug: string }>();
+          return json(request, { categories: result.results });
+        }
+
         if (url.pathname === "/api/admin/products" && request.method === "GET") {
           const result = await env.DB.prepare(`${productSelect}
             LEFT JOIN categories c ON c.id = p.category_id
