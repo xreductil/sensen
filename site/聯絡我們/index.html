@@ -26,20 +26,33 @@
   </header>
   <main class="page-main">
     
-    <section class="content contact-page">
+    <section class="contact-page">
+    <div class="contact-page-hero">
+      <h1>連絡我們</h1>
+      <p>歡迎您提供寶貴的建議，謝謝您!</p>
+    </div>
     <div class="contact-page-card">
-      <p class="contact-page-kicker">SENSEN BAKERY</p>
-      <h1>聯絡我們</h1>
-      <p>如果您有訂購、外燴或其他服務需求，歡迎留下資料，森森團隊會盡快與您聯繫。</p>
+      <img class="contact-page-wheat" src="/assets/images/icon-wheat.png" alt="" aria-hidden="true">
       <form class="contact-page-form" data-contact-form>
-        <label>姓名 *<input name="name" required autocomplete="name"></label>
-        <label>Email *<input name="email" type="email" required autocomplete="email"></label>
-        <label>電話<input name="phone" autocomplete="tel"></label>
-        <label>主旨<input name="subject" value="聯絡我們"></label>
-        <label class="contact-page-wide">需求內容 *<textarea name="message" rows="6" required></textarea></label>
+        <div class="contact-page-fields">
+          <label><span>您的姓名</span><input name="name" required autocomplete="name"></label>
+          <label><span>電子信箱</span><input name="email" type="email" required autocomplete="email"></label>
+        </div>
+        <label class="contact-page-wide"><span>-請選擇問題類型-</span><select name="subject" required>
+          <option value="">-請選擇問題類型-</option>
+          <option value="商品相關問題">商品相關問題</option>
+          <option value="門市相關問題">門市相關問題</option>
+          <option value="訂購與配送">訂購與配送</option>
+          <option value="其他">其他</option>
+        </select></label>
+        <label class="contact-page-wide"><span>留言內容</span><textarea name="message" rows="8" required></textarea></label>
         <p class="contact-page-message" data-contact-message role="status" aria-live="polite"></p>
-        <button type="submit">送出訊息</button>
+        <button type="submit">送出留言 <span aria-hidden="true">➜</span></button>
       </form>
+    </div>
+    <div class="contact-page-slogan">
+      <p>麵包/蛋糕/彌月/餐盒/酒會</p>
+      <img src="/assets/images/text-slogn.png" alt="帶給你嘴角上揚的幸福">
     </div>
     <script>
     (() => {

@@ -25,16 +25,64 @@
     </nav>
   </header>
   <main class="page-main">
-    <section class="page-hero about-hero">
-      <div class="hero-banner"><div class="image-slot" data-image-source="/assets/images/headtitle-bg2.jpg"><img src="/assets/images/headtitle-bg2.jpg" alt="頁首背景圖片"></div><div class="hero-banner-title"><p>/contact</p><h1>連絡我們</h1></div></div>
-    </section>
-    <section class="content"><div class="image-grid"><div class="image-slot" data-image-source="https://www.sensen.com.tw/wp-content/uploads/2018/11/contact-bg.jpg"><img src="/assets/images/contact-bg.jpg" alt="圖片預留位"></div></div>
-<h3>連絡我們</h3>
-<h4>歡迎您提供寶貴的建議，謝謝您!</h4>
-<div class="image-icon-slot" data-image-source="https://www.sensen.com.tw/wp-content/uploads/2018/11/icon-wheat.png"><img src="/assets/images/icon-wheat.png" alt="圖片預留位"></div>
-<p>-請選擇問題類型-產品相關問題門市相關問題其他</p>
-<p>麵包/蛋糕/彌月/餐盒/酒會</p>
-<div class="image-grid"><div class="image-slot" data-image-source="https://www.sensen.com.tw/wp-content/uploads/2018/11/text-slogn.png"><img src="/assets/images/text-slogn.png" alt="圖片預留位"></div></div></section>
+    
+    <section class="contact-page">
+    <div class="contact-page-hero">
+      <h1>連絡我們</h1>
+      <p>歡迎您提供寶貴的建議，謝謝您!</p>
+    </div>
+    <div class="contact-page-card">
+      <img class="contact-page-wheat" src="/assets/images/icon-wheat.png" alt="" aria-hidden="true">
+      <form class="contact-page-form" data-contact-form>
+        <div class="contact-page-fields">
+          <label><span>您的姓名</span><input name="name" required autocomplete="name"></label>
+          <label><span>電子信箱</span><input name="email" type="email" required autocomplete="email"></label>
+        </div>
+        <label class="contact-page-wide"><span>-請選擇問題類型-</span><select name="subject" required>
+          <option value="">-請選擇問題類型-</option>
+          <option value="商品相關問題">商品相關問題</option>
+          <option value="門市相關問題">門市相關問題</option>
+          <option value="訂購與配送">訂購與配送</option>
+          <option value="其他">其他</option>
+        </select></label>
+        <label class="contact-page-wide"><span>留言內容</span><textarea name="message" rows="8" required></textarea></label>
+        <p class="contact-page-message" data-contact-message role="status" aria-live="polite"></p>
+        <button type="submit">送出留言 <span aria-hidden="true">➜</span></button>
+      </form>
+    </div>
+    <div class="contact-page-slogan">
+      <p>麵包/蛋糕/彌月/餐盒/酒會</p>
+      <img src="/assets/images/text-slogn.png" alt="帶給你嘴角上揚的幸福">
+    </div>
+    <script>
+    (() => {
+      const form = document.querySelector('[data-contact-form]');
+      if (!form) return;
+      const message = form.querySelector('[data-contact-message]');
+      const button = form.querySelector('button[type="submit"]');
+      form.addEventListener('submit', async event => {
+        event.preventDefault();
+        if (!form.reportValidity()) return;
+        button.disabled = true;
+        message.textContent = '送出中…';
+        const value = name => form.elements[name]?.value.trim() || '';
+        try {
+          const response = await fetch('/api/contact', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ name: value('name'), email: value('email'), phone: value('phone'), subject: value('subject'), message: value('message') }) });
+          const data = await response.json().catch(() => ({}));
+          if (!response.ok) throw new Error(data.error || '送出失敗，請稍後再試。');
+          form.reset();
+          message.className = 'contact-page-message is-success';
+          message.textContent = data.message || '訊息已送出。';
+        } catch (error) {
+          message.className = 'contact-page-message is-error';
+          message.textContent = error.message;
+        } finally {
+          button.disabled = false;
+        }
+      });
+    })();
+    </script>
+  </section>
   </main>
   
   <script>

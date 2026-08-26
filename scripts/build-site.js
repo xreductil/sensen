@@ -258,6 +258,7 @@ const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
 const PRODUCT_INTRO_PATH = "/產品介紹";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
+const STORE_INFO_HERO_SOURCE = "/assets/images/headtitle-bg6.jpg";
 
 const SEASONAL_CATALOGS = new Map([
   [FROZEN_BREAD_PATH, {
@@ -1331,92 +1332,71 @@ const CATERING_SECTIONS = [
   ["FRIED FOOD & OTHER", "炸物小點類", ["buffet-snacks-3.jpg", "buffet-snacks-1.jpg", "buffet-snacks-2.jpg"]],
 ];
 
-function cateringContent() {
-  const sections = CATERING_SECTIONS.map(([eyebrow, title, images]) => `
-    <section class="catering-category">
-      <div class="catering-category-heading"><p>${escapeHtml(eyebrow)}</p><h2>${escapeHtml(title)}</h2></div>
-      <div class="catering-product-grid">${images.map((image) => `<div class="catering-product"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}餐點"></div>`).join("")}</div>
-    </section>`).join("");
-  return `<section class="catering-page">
-    <section class="catering-intro">
-      <img class="catering-intro-icon" src="/assets/images/icon-cutlery.png" alt="" aria-hidden="true">
-      <p class="catering-intro-eyebrow">Catering Service</p>
-      <h1>嚴選食材。精心烹調。味覺饗宴</h1>
-      <p class="catering-intro-copy">節慶與親友同事公司聚餐、商務會議與媒體公關活動<br>用心帶給您新鮮與美味的餐點，實惠的價格，美味可口的精緻菜色，森森是你最佳的選擇</p>
-      <a class="catering-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="catering-menu-book" aria-hidden="true"></span>外燴菜單下載</a>
-    </section>
-    ${sections}
-    <section class="catering-note"><span class="catering-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section>
-    <section class="catering-inquiry" aria-labelledby="catering-inquiry-title">
-      <div class="catering-inquiry-heading">
-        <p>Inquiry</p>
-        <h2 id="catering-inquiry-title">外燴詢價專區</h2>
-        <span>請留下活動需求，森森團隊將盡快與您聯繫。</span>
+function inquirySection({ id, title, subject }) {
+  return `<section class="catering-inquiry" id="${escapeAttr(id)}" aria-labelledby="${escapeAttr(id)}-title">
+    <div class="catering-inquiry-heading">
+      <p>Inquiry</p>
+      <h2 id="${escapeAttr(id)}-title">${escapeHtml(title)}</h2>
+      <span>請留下活動需求，森森團隊將盡快與您聯繫。</span>
+    </div>
+    <form class="catering-inquiry-form" data-catering-inquiry data-inquiry-subject="${escapeAttr(subject)}" novalidate>
+      <label class="catering-inquiry-field">
+        <span>姓名 <b>*</b></span>
+        <input name="name" type="text" placeholder="請輸入姓名" autocomplete="name" required>
+      </label>
+      <label class="catering-inquiry-field">
+        <span>電話 <b>*</b></span>
+        <input name="phone" type="tel" placeholder="請輸入聯絡電話" autocomplete="tel" required>
+      </label>
+      <label class="catering-inquiry-field">
+        <span>Email <b>*</b></span>
+        <input name="email" type="email" placeholder="you@email.com" autocomplete="email" required>
+      </label>
+      <label class="catering-inquiry-field">
+        <span>預計人數 <b>*</b></span>
+        <select name="guests" required>
+          <option value="">請選擇人數</option>
+          <option>2–10 人</option>
+          <option>11–30 人</option>
+          <option>31–50 人</option>
+          <option>51–100 人</option>
+          <option>101 人以上</option>
+        </select>
+      </label>
+      <label class="catering-inquiry-field">
+        <span>日期 <b>*</b></span>
+        <input name="date" type="date" required>
+      </label>
+      <label class="catering-inquiry-field">
+        <span>時間 <b>*</b></span>
+        <select name="time" required>
+          <option value="">請選擇時間</option>
+          <option>上午 09:00</option>
+          <option>上午 10:00</option>
+          <option>上午 11:00</option>
+          <option>下午 01:00</option>
+          <option>下午 02:00</option>
+          <option>下午 03:00</option>
+          <option>下午 04:00</option>
+          <option>下午 05:00</option>
+        </select>
+      </label>
+      <label class="catering-inquiry-field catering-inquiry-field-wide">
+        <span>特殊需求</span>
+        <textarea name="specialRequests" placeholder="過敏、飲食需求、活動場合或其他需求……"></textarea>
+      </label>
+      <div class="catering-inquiry-actions">
+        <p class="catering-inquiry-message" data-inquiry-message role="status" aria-live="polite"></p>
+        <button class="catering-inquiry-submit" type="submit">送出詢價</button>
       </div>
-      <form class="catering-inquiry-form" data-catering-inquiry novalidate>
-        <label class="catering-inquiry-field">
-          <span>姓名 <b>*</b></span>
-          <input name="name" type="text" placeholder="請輸入姓名" autocomplete="name" required>
-        </label>
-        <label class="catering-inquiry-field">
-          <span>電話 <b>*</b></span>
-          <input name="phone" type="tel" placeholder="請輸入聯絡電話" autocomplete="tel" required>
-        </label>
-        <label class="catering-inquiry-field">
-          <span>Email <b>*</b></span>
-          <input name="email" type="email" placeholder="you@email.com" autocomplete="email" required>
-        </label>
-        <label class="catering-inquiry-field">
-          <span>預計人數 <b>*</b></span>
-          <select name="guests" required>
-            <option value="">請選擇人數</option>
-            <option>2–10 人</option>
-            <option>11–30 人</option>
-            <option>31–50 人</option>
-            <option>51–100 人</option>
-            <option>101 人以上</option>
-          </select>
-        </label>
-        <label class="catering-inquiry-field">
-          <span>日期 <b>*</b></span>
-          <input name="date" type="date" required>
-        </label>
-        <label class="catering-inquiry-field">
-          <span>時間 <b>*</b></span>
-          <select name="time" required>
-            <option value="">請選擇時間</option>
-            <option>上午 09:00</option>
-            <option>上午 10:00</option>
-            <option>上午 11:00</option>
-            <option>下午 01:00</option>
-            <option>下午 02:00</option>
-            <option>下午 03:00</option>
-            <option>下午 04:00</option>
-            <option>下午 05:00</option>
-          </select>
-        </label>
-        <label class="catering-inquiry-field catering-inquiry-field-wide">
-          <span>特殊需求</span>
-          <textarea name="specialRequests" placeholder="過敏、飲食需求、活動場合或其他需求……"></textarea>
-        </label>
-        <div class="catering-inquiry-actions">
-          <p class="catering-inquiry-message" data-inquiry-message role="status" aria-live="polite"></p>
-          <button class="catering-inquiry-submit" type="submit">送出詢價</button>
-        </div>
-      </form>
-    </section>
-    <section class="catering-stores">
-      <div class="catering-stores-panel">
-        <a class="catering-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><i class="catering-store-pin" aria-hidden="true"></i></a>
-        <a class="catering-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><i class="catering-store-pin" aria-hidden="true"></i></a>
-        <a class="catering-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><i class="catering-store-pin" aria-hidden="true"></i></a>
-        <a class="catering-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><i class="catering-store-pin" aria-hidden="true"></i></a>
-      </div>
-    </section>
-    <script>
-    (() => {
-      const form = document.querySelector("[data-catering-inquiry]");
-      if (!form) return;
+    </form>
+  </section>`;
+}
+
+function inquiryScript() {
+  return `<script>
+  (() => {
+    document.querySelectorAll("[data-catering-inquiry]").forEach((form) => {
       const message = form.querySelector("[data-inquiry-message]");
       const button = form.querySelector("button[type=submit]");
       form.addEventListener("submit", async (event) => {
@@ -1431,7 +1411,7 @@ function cateringContent() {
           name: value("name"),
           phone: value("phone"),
           email: value("email"),
-          subject: "外燴詢價",
+          subject: form.dataset.inquirySubject || "外燴詢價",
           message: [
             "預計人數：" + value("guests"),
             "活動日期：" + value("date"),
@@ -1458,8 +1438,40 @@ function cateringContent() {
           button.textContent = originalLabel;
         }
       });
-    })();
-    </script>
+    });
+  })();
+  </script>`;
+}
+
+function cateringContent() {
+  const sections = CATERING_SECTIONS.map(([eyebrow, title, images]) => `
+    <section class="catering-category">
+      <div class="catering-category-heading"><p>${escapeHtml(eyebrow)}</p><h2>${escapeHtml(title)}</h2></div>
+      <div class="catering-product-grid">${images.map((image) => `<div class="catering-product"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}餐點"></div>`).join("")}</div>
+    </section>`).join("");
+  return `<section class="catering-page">
+    <section class="catering-intro">
+      <img class="catering-intro-icon" src="/assets/images/icon-cutlery.png" alt="" aria-hidden="true">
+      <p class="catering-intro-eyebrow">Catering Service</p>
+      <h1>嚴選食材。精心烹調。味覺饗宴</h1>
+      <p class="catering-intro-copy">節慶與親友同事公司聚餐、商務會議與媒體公關活動<br>用心帶給您新鮮與美味的餐點，實惠的價格，美味可口的精緻菜色，森森是你最佳的選擇</p>
+      <div class="catering-hero-actions">
+        <a class="catering-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="catering-menu-book" aria-hidden="true"></span><span>外燴菜單下載</span></a>
+        <a class="catering-inquiry-link" href="#catering-inquiry">外燴詢價</a>
+      </div>
+    </section>
+    ${sections}
+    <section class="catering-note"><span class="catering-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section>
+    ${inquirySection({ id: "catering-inquiry", title: "外燴詢價專區", subject: "外燴詢價" })}
+    <section class="catering-stores">
+      <div class="catering-stores-panel">
+        <a class="catering-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
+        <a class="catering-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
+        <a class="catering-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
+        <a class="catering-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
+      </div>
+    </section>
+    ${inquiryScript()}
   </section>`;
 }
 
@@ -1669,20 +1681,33 @@ function ordersPageScript() {
 }
 
 function contactPageContent() {
-  return `<section class="content contact-page">
+  return `<section class="contact-page">
+    <div class="contact-page-hero">
+      <h1>連絡我們</h1>
+      <p>歡迎您提供寶貴的建議，謝謝您!</p>
+    </div>
     <div class="contact-page-card">
-      <p class="contact-page-kicker">SENSEN BAKERY</p>
-      <h1>聯絡我們</h1>
-      <p>如果您有訂購、外燴或其他服務需求，歡迎留下資料，森森團隊會盡快與您聯繫。</p>
+      <img class="contact-page-wheat" src="/assets/images/icon-wheat.png" alt="" aria-hidden="true">
       <form class="contact-page-form" data-contact-form>
-        <label>姓名 *<input name="name" required autocomplete="name"></label>
-        <label>Email *<input name="email" type="email" required autocomplete="email"></label>
-        <label>電話<input name="phone" autocomplete="tel"></label>
-        <label>主旨<input name="subject" value="聯絡我們"></label>
-        <label class="contact-page-wide">需求內容 *<textarea name="message" rows="6" required></textarea></label>
+        <div class="contact-page-fields">
+          <label><span>您的姓名</span><input name="name" required autocomplete="name"></label>
+          <label><span>電子信箱</span><input name="email" type="email" required autocomplete="email"></label>
+        </div>
+        <label class="contact-page-wide"><span>-請選擇問題類型-</span><select name="subject" required>
+          <option value="">-請選擇問題類型-</option>
+          <option value="商品相關問題">商品相關問題</option>
+          <option value="門市相關問題">門市相關問題</option>
+          <option value="訂購與配送">訂購與配送</option>
+          <option value="其他">其他</option>
+        </select></label>
+        <label class="contact-page-wide"><span>留言內容</span><textarea name="message" rows="8" required></textarea></label>
         <p class="contact-page-message" data-contact-message role="status" aria-live="polite"></p>
-        <button type="submit">送出訊息</button>
+        <button type="submit">送出留言 <span aria-hidden="true">➜</span></button>
       </form>
+    </div>
+    <div class="contact-page-slogan">
+      <p>麵包/蛋糕/彌月/餐盒/酒會</p>
+      <img src="/assets/images/text-slogn.png" alt="帶給你嘴角上揚的幸福">
     </div>
     <script>
     (() => {
@@ -1726,7 +1751,25 @@ const TEA_PARTY_SECTIONS = [
 
 function teaPartyContent() {
   const sectionHtml = TEA_PARTY_SECTIONS.map(([eyebrow, title, images]) => '<section class="tea-party-category"><div class="tea-party-category-heading"><p>' + escapeHtml(eyebrow) + '</p><h2>' + escapeHtml(title) + '</h2></div><div class="tea-party-product-grid">' + images.map((image) => '<div class="tea-party-product"><img src="/assets/images/' + escapeAttr(image) + '" alt="' + escapeAttr(title) + '餐點" loading="lazy"></div>').join("") + '</div></section>').join("");
-  return '<section class="tea-party-page"><section class="tea-party-hero"><div class="tea-party-hero-copy"><img class="tea-party-hero-icon" src="/assets/images/icon-cake2.png" alt="" aria-hidden="true"><h1>酒會與茶會點心</h1><p>不管是公司會議或是學校舉辦活動，實惠價格搭配可口精緻茶點，<br>超高CP值，森森是您最佳的選擇!</p><span class="tea-party-hero-rule" aria-hidden="true"></span><a class="tea-party-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="tea-party-menu-book" aria-hidden="true"></span><span>茶會菜單下載</span></a></div></section>' + sectionHtml + '<section class="tea-party-note"><span class="tea-party-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section><section class="tea-party-stores"><div class="tea-party-stores-panel"><a class="tea-party-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><i class="tea-party-store-pin" aria-hidden="true"></i></a><a class="tea-party-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><i class="tea-party-store-pin" aria-hidden="true"></i></a><a class="tea-party-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><i class="tea-party-store-pin" aria-hidden="true"></i></a><a class="tea-party-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><i class="tea-party-store-pin" aria-hidden="true"></i></a></div></section></section>';
+  return `<section class="tea-party-page">
+    <section class="tea-party-hero">
+      <div class="tea-party-hero-copy">
+        <img class="tea-party-hero-icon" src="/assets/images/icon-cake2.png" alt="" aria-hidden="true">
+        <h1>酒會與茶會點心</h1>
+        <p>不管是公司會議或是學校舉辦活動，實惠價格搭配可口精緻茶點，<br>超高CP值，森森是您最佳的選擇!</p>
+        <span class="tea-party-hero-rule" aria-hidden="true"></span>
+        <div class="tea-party-hero-actions">
+          <a class="tea-party-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="tea-party-menu-book" aria-hidden="true"></span><span>茶會菜單下載</span></a>
+          <a class="catering-inquiry-link" href="#tea-party-inquiry">茶會詢價</a>
+        </div>
+      </div>
+    </section>
+    ${sectionHtml}
+    <section class="tea-party-note"><span class="tea-party-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section>
+    ${inquirySection({ id: "tea-party-inquiry", title: "茶會詢價專區", subject: "茶會詢價" })}
+    <section class="tea-party-stores"><div class="tea-party-stores-panel"><a class="tea-party-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a></div></section>
+    ${inquiryScript()}
+  </section>`;
 }
 
 
@@ -1759,9 +1802,6 @@ function storeInfoContent() {
   return '<section class="store-info-page">' +
     '<div class="store-info-wheat" aria-hidden="true"><img src="/assets/images/icon-wheat.png" alt=""></div>' +
     '<section class="store-info-stores"><div class="store-info-grid">' + cards + '</div></section>' +
-    '<section class="store-info-coffee"><a class="store-info-coffee-card" href="/森森咖啡/">' +
-      '<img src="/assets/images/icon-coffee.png" alt="" aria-hidden="true"><strong>咖啡/飲品MENU</strong>' +
-    '</a></section>' +
   '</section>';
 }
 function storefrontProductPathMap() {
@@ -1840,7 +1880,7 @@ function pageContent(page) {
   if (localPath === "/常見問題") {
     return faqContent();
   }
-  if (localPath === "/聯絡我們") {
+  if (localPath === "/聯絡我們" || localPath === "/contact") {
     return contactPageContent();
   }
   if (localPath === "/customer/admin") return customerPageContent("login");
@@ -2034,8 +2074,8 @@ function main() {
       isHome: localPath === "/",
       isAbout: isAboutPage,
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
-      showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
-      heroSource: localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
+      showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
+      heroSource: localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
     }));
   }
 

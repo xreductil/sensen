@@ -18,6 +18,22 @@
     '伴手禮': { eyebrow: 'SOUVENIR', icon: '/assets/images/icon-cupcake.png' }
   };
   const categoryOrder = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
+  const birthdayProductOrder = [
+    'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',
+    'passion-pear', 'colorful-world', 'mocha', 'hazelnut-crunch',
+    'black-forest', 'souffle', 'macaron-forest', 'strawberry-shudo',
+    'rose-bouquet', 'bodhi-cake', 'puff-kingdom', 'uji-hayakaze',
+    'blueberry-lysk', 'angel-cake'
+  ];
+  const orderProducts = products => products
+    .map((product, index) => ({ product, index }))
+    .sort((a, b) => {
+      if (a.product.cat !== '生日蛋糕' || b.product.cat !== '生日蛋糕') return a.index - b.index;
+      const aRank = birthdayProductOrder.indexOf(a.product.id);
+      const bRank = birthdayProductOrder.indexOf(b.product.id);
+      return (aRank < 0 ? Number.MAX_SAFE_INTEGER : aRank) - (bRank < 0 ? Number.MAX_SAFE_INTEGER : bRank) || a.index - b.index;
+    })
+    .map(({ product }) => product);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const normalizeTitle = value => String(value || '').replace(/<br\s*\/?\s*>/gi, '').replace(/\s+/g, '').replace(/[（(]季節限定[）)]/g, '（季節限定）');
   const money = value => {
@@ -123,7 +139,7 @@
       const response = await fetch('/api/products', { credentials: 'include', headers: { Accept: 'application/json' } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
-      const products = (data.products || []).filter(product => product.published !== false);
+      const products = orderProducts((data.products || []).filter(product => product.published !== false));
       if (view === 'overview') {
         const groups = categoryOrder.filter(category => products.some(product => product.cat === category)).map(category => renderOverviewSection(category, products.filter(product => product.cat === category)));
         content.innerHTML = groups.join('') + renderMenuSection();

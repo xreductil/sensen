@@ -701,7 +701,7 @@ a { color: inherit; text-decoration: none; }
 .catering-stores {
   min-height: 570px;
   padding: 112px max(28px, calc((100% - 1740px) / 2));
-  background: linear-gradient(rgba(47, 36, 32, .58), rgba(47, 36, 32, .58)), url("/assets/images/home-bg3.jpg") center / cover no-repeat;
+  background: linear-gradient(rgba(47, 36, 32, .10), rgba(47, 36, 32, .10)), url("/assets/images/home-bg3.jpg") center 10% / cover no-repeat;
 }
 .catering-stores-panel {
   display: grid;
@@ -2894,14 +2894,14 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 .catering-note p { line-height: 1.7; }
 
 .catering-stores {
-  min-height: 520px;
-  padding: 108px 28px 112px;
+  min-height: 0;
+  padding: 78px 28px 90px;
 }
 .catering-stores-panel {
   width: min(1220px, 100%);
-  min-height: 300px;
+  min-height: 0;
   gap: 30px;
-  padding: 50px 48px;
+  padding: 48px 48px;
 }
 .catering-store {
   font-size: 20px;
@@ -3643,61 +3643,97 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 }
 
 .contact-page {
-  width: min(100% - 40px, 1120px);
-  margin: 0 auto;
-  padding: 72px 0 96px;
+  position: relative;
+  isolation: isolate;
+  min-height: calc(100vh - 147px);
+  box-sizing: border-box;
+  padding: clamp(140px, 7vw, 204px) 0 150px;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(rgba(73, 49, 42, .62), rgba(73, 49, 42, .62)), url("/assets/images/contact-bg.jpg") center top / cover no-repeat;
+}
+
+.contact-page-hero {
+  position: relative;
+  z-index: 1;
+  margin: 0 auto clamp(150px, 8vw, 228px);
+  text-align: center;
+}
+
+.contact-page-hero h1 {
+  margin: 0 0 26px;
+  color: #fff;
+  font-size: clamp(32px, 2.6vw, 42px);
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.contact-page-hero p {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(20px, 1.6vw, 30px);
+  letter-spacing: .08em;
 }
 
 .contact-page-card {
-  padding: clamp(28px, 5vw, 64px);
-  border: 1px solid #ead7c4;
-  border-radius: 24px;
-  background: #fffaf3;
-}
-
-.contact-page-kicker {
-  margin: 0 0 8px;
-  color: #ae6847;
-  letter-spacing: .14em;
-  font-size: 13px;
-}
-
-.contact-page-card h1 {
-  margin: 0 0 14px;
-  color: #38251f;
-  font-size: clamp(34px, 5vw, 58px);
-}
-
-.contact-page-card > p:not(.contact-page-kicker) {
-  max-width: 680px;
-  color: #6e5b52;
-  line-height: 1.8;
+  position: relative;
+  z-index: 1;
+  width: min(1628px, calc(100% - 80px));
+  box-sizing: border-box;
+  margin: 0 auto;
+  padding: 108px 44px 52px;
+  background: rgba(255, 255, 255, .87);
 }
 
 .contact-page-form {
   display: grid;
+  gap: 46px;
+}
+
+.contact-page-fields {
+  display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 20px 28px;
-  margin-top: 34px;
+  gap: 40px;
 }
 
 .contact-page-form label {
   display: grid;
-  gap: 8px;
-  color: #38251f;
-  font-weight: 700;
+  gap: 15px;
+  color: #493632;
+  font-size: clamp(17px, 1.1vw, 24px);
+  font-weight: 400;
 }
 
 .contact-page-form input,
+.contact-page-form select,
 .contact-page-form textarea {
   width: 100%;
   box-sizing: border-box;
-  padding: 14px 16px;
-  border: 1px solid #e5c298;
-  border-radius: 10px;
-  background: #fff;
-  color: #38251f;
+  padding: 8px 18px 14px;
+  border: 0;
+  border-bottom: 5px solid #493632;
+  border-radius: 0;
+  outline: 0;
+  background: transparent;
+  color: #493632;
   font: inherit;
+}
+
+.contact-page-form input:focus,
+.contact-page-form select:focus,
+.contact-page-form textarea:focus {
+  box-shadow: 0 3px 0 #c9933d;
+}
+
+.contact-page-form select {
+  appearance: auto;
+  padding-top: 0;
+  padding-bottom: 14px;
+}
+
+.contact-page-form textarea {
+  min-height: 420px;
+  resize: vertical;
 }
 
 .contact-page-wide,
@@ -3707,21 +3743,52 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 }
 
 .contact-page-form button {
-  justify-self: start;
-  padding: 13px 34px;
+  width: 100%;
+  padding: 25px 34px;
   border: 0;
-  border-radius: 999px;
-  background: #ee2c1f;
+  border-radius: 0;
+  background: #c9933d;
   color: #fff;
-  font: inherit;
-  font-weight: 700;
+  font-size: clamp(18px, 1.25vw, 26px);
+  font-weight: 400;
   cursor: pointer;
 }
 
 .contact-page-form button:disabled { opacity: .65; cursor: wait; }
-.contact-page-message { min-height: 1.5em; margin: 0; color: #6e5b52; }
+.contact-page-message { min-height: 1.5em; margin: 0; color: #493632; }
 .contact-page-message.is-success { color: #277046; }
 .contact-page-message.is-error { color: #b33a2e; }
+
+.contact-page-wheat {
+  position: absolute;
+  top: -64px;
+  left: 50%;
+  z-index: 2;
+  width: 96px;
+  height: auto;
+  transform: translateX(-50%);
+}
+
+.contact-page-slogan {
+  position: relative;
+  z-index: 1;
+  margin: 116px auto 0;
+  text-align: center;
+}
+
+.contact-page-slogan p {
+  margin: 0 0 22px;
+  color: #fff;
+  font-size: clamp(25px, 2vw, 38px);
+  letter-spacing: .08em;
+}
+
+.contact-page-slogan img {
+  display: block;
+  width: min(292px, 60vw);
+  height: auto;
+  margin: 0 auto;
+}
 
 @media (max-width: 760px) {
   .latest-news-card-readmore {
@@ -3754,11 +3821,20 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
   }
 
   .contact-page {
-    width: min(100% - 28px, 1120px);
-    padding: 46px 0 64px;
+    min-height: calc(100vh - 72px);
+    padding: 76px 0 96px;
   }
 
-  .contact-page-form { grid-template-columns: 1fr; }
+  .contact-page-hero { margin-bottom: 112px; padding: 0 20px; }
+  .contact-page-hero h1 { margin-bottom: 18px; }
+  .contact-page-hero p { font-size: 18px; line-height: 1.6; }
+  .contact-page-card { width: calc(100% - 28px); padding: 76px 20px 28px; }
+  .contact-page-fields { grid-template-columns: 1fr; gap: 38px; }
+  .contact-page-form { gap: 34px; }
+  .contact-page-form textarea { min-height: 260px; }
+  .contact-page-wheat { top: -52px; width: 78px; }
+  .contact-page-slogan { margin-top: 80px; padding: 0 20px; }
+  .contact-page-slogan p { font-size: 20px; }
 }
 
 
@@ -4023,18 +4099,18 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   content: "";
 }
 .tea-party-stores {
-  min-height: 570px;
-  padding: 112px max(28px, calc((100% - 1740px) / 2));
+  min-height: 0;
+  padding: 78px 28px 90px;
   background: linear-gradient(rgba(47, 36, 32, .58), rgba(47, 36, 32, .58)), url("/assets/images/home-bg3.jpg") center / cover no-repeat;
 }
 .tea-party-stores-panel {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 42px;
-  width: min(1740px, 100%);
-  min-height: 420px;
+  gap: 30px;
+  width: min(1220px, 100%);
+  min-height: 0;
   margin: 0 auto;
-  padding: 62px 54px;
+  padding: 48px;
   box-sizing: border-box;
   background: rgba(255, 255, 255, .72);
 }
@@ -4043,12 +4119,12 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   flex-direction: column;
   align-items: flex-start;
   color: #263b2d;
-  font-size: clamp(18px, 1.3vw, 24px);
-  line-height: 1.65;
+  font-size: 20px;
+  line-height: 1.6;
   text-decoration: none;
 }
-.tea-party-store-line { width: 56px; height: 6px; margin-bottom: 22px; background: #b96543; }
-.tea-party-store strong { margin-bottom: 14px; font-size: clamp(32px, 2.5vw, 48px); line-height: 1.1; }
+.tea-party-store-line { width: 40px; height: 5px; margin-bottom: 22px; background: #b96543; }
+.tea-party-store strong { margin-bottom: 14px; font-size: clamp(32px, 2.4vw, 44px); line-height: 1.1; }
 .tea-party-store-pin {
   position: relative;
   display: block;
@@ -4079,6 +4155,123 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   background: #d18349;
   content: "";
 }
+
+/* Menu downloads and inquiry actions. Keep both catering pages focused on the
+   content by replacing the old yellow hero blocks with compact action links. */
+.catering-intro::after,
+.tea-party-hero::after,
+.catering-menu-download::after,
+.tea-party-menu-download::after {
+  display: none;
+}
+
+.catering-intro {
+  padding-bottom: 90px;
+  overflow: hidden;
+}
+
+.tea-party-hero {
+  padding-bottom: 90px;
+}
+
+.catering-hero-actions,
+.tea-party-hero-actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: stretch;
+  justify-content: center;
+  gap: 16px;
+  margin-top: 34px;
+}
+
+.catering-menu-download,
+.tea-party-menu-download {
+  position: relative;
+  inset: auto;
+  display: inline-flex;
+  width: auto;
+  min-width: 190px;
+  min-height: 70px;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  box-sizing: border-box;
+  padding: 14px 22px;
+  border: 1px solid rgba(166, 93, 66, .28);
+  border-radius: 999px;
+  color: #2d211e;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 8px 22px rgba(65, 45, 28, .12);
+  font-size: 17px;
+  line-height: 1.2;
+  transform: none;
+}
+
+.catering-menu-download:hover,
+.catering-menu-download:focus-visible,
+.tea-party-menu-download:hover,
+.tea-party-menu-download:focus-visible {
+  color: #854833;
+  background: #fff;
+  transform: translateY(-2px);
+}
+
+.catering-menu-book,
+.tea-party-menu-book {
+  flex: 0 0 auto;
+}
+
+.catering-inquiry-link {
+  display: inline-flex;
+  min-width: 150px;
+  min-height: 70px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  padding: 14px 24px;
+  border: 1px solid #a65d42;
+  border-radius: 999px;
+  color: #fff;
+  background: #a65d42;
+  box-shadow: 0 8px 22px rgba(65, 45, 28, .12);
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
+  text-decoration: none;
+  transition: background .2s ease, border-color .2s ease, transform .2s ease;
+}
+
+.catering-inquiry-link:hover,
+.catering-inquiry-link:focus-visible {
+  border-color: #854833;
+  color: #fff;
+  background: #854833;
+  transform: translateY(-2px);
+}
+
+#catering-inquiry,
+#tea-party-inquiry {
+  scroll-margin-top: 110px;
+}
+
+@media (max-width: 560px) {
+  .catering-hero-actions,
+  .tea-party-hero-actions {
+    width: min(320px, 100%);
+    flex-direction: column;
+    gap: 12px;
+    margin-top: 28px;
+  }
+
+  .catering-menu-download,
+  .tea-party-menu-download,
+  .catering-inquiry-link {
+    width: 100%;
+    min-width: 0;
+    min-height: 58px;
+  }
+}
 @media (max-width: 880px) {
   .tea-party-product-grid { gap: 18px; }
   .tea-party-product, .tea-party-product img { height: 185px; min-height: 185px; }
@@ -4104,11 +4297,11 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   .tea-party-product, .tea-party-product img { min-height: 0; height: auto; aspect-ratio: 3 / 2; }
   .tea-party-note { width: calc(100% - 28px); gap: 14px; margin: 14px auto 56px; padding: 18px; font-size: 15px; }
   .tea-party-note-icon { flex-basis: 32px; transform: scale(.76); transform-origin: top left; }
-  .tea-party-stores { min-height: 0; padding: 52px 14px; }
-  .tea-party-stores-panel { grid-template-columns: 1fr 1fr; gap: 30px 18px; min-height: 0; padding: 30px 20px; }
-  .tea-party-store { font-size: 14px; line-height: 1.55; }
+  .tea-party-stores { min-height: 0; padding: 48px 14px; }
+  .tea-party-stores-panel { grid-template-columns: 1fr; gap: 34px; min-height: 0; padding: 34px 24px; }
+  .tea-party-store { font-size: 17px; line-height: 1.6; }
   .tea-party-store-line { width: 34px; height: 4px; margin-bottom: 14px; }
-  .tea-party-store strong { margin-bottom: 8px; font-size: 26px; }
+  .tea-party-store strong { margin-bottom: 14px; font-size: 32px; }
   .tea-party-store-pin { width: 38px; height: 38px; margin-top: 14px; transform: scale(.8); transform-origin: left top; }
 }
 
@@ -5286,4 +5479,78 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 @media (max-width: 460px) {
   .seasonal-catalog-grid { grid-template-columns: 1fr; }
   .seasonal-catalog-card-image { aspect-ratio: 1.45 / 1; }
+}
+
+/* Use the Boston series hero title scale across every page. */
+.page-hero h1,
+.page-hero .hero-banner-title h1,
+.about-hero .hero-banner-title h1,
+.about-page .about-hero .hero-banner-title h1,
+.catering-intro h1,
+.tea-party-hero h1,
+.taste-apply-hero-copy h1,
+.checkout-hero-inner h1,
+.big-bear-hero-title h1,
+.long-cake-hero-title h1,
+.round-pie-hero h1,
+.pairing-hero h1,
+.thankyou-hero h1 {
+  font-size: clamp(32px, 2.6vw, 42px);
+}
+
+@media (max-width: 560px) {
+  .page-hero h1,
+  .page-hero .hero-banner-title h1,
+  .about-hero .hero-banner-title h1,
+  .about-page .about-hero .hero-banner-title h1,
+  .catering-intro h1,
+  .tea-party-hero h1,
+  .taste-apply-hero-copy h1,
+  .checkout-hero-inner h1,
+  .big-bear-hero-title h1,
+  .long-cake-hero-title h1,
+  .round-pie-hero h1,
+  .pairing-hero h1,
+  .thankyou-hero h1 {
+    font-size: 32px;
+  }
+}
+
+/* Use the same Google Map action shown on the store information page. */
+.catering-store-map,
+.tea-party-store-map {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 26px;
+  padding: 16px 28px;
+  color: #704820;
+  background: #e9cda0;
+  font-size: 1.05rem;
+  line-height: 1;
+  text-decoration: none;
+  transition: filter .2s ease, transform .2s ease;
+}
+
+.catering-store-map > span,
+.tea-party-store-map > span {
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.catering-store:hover .catering-store-map,
+.catering-store:focus-visible .catering-store-map,
+.tea-party-store:hover .tea-party-store-map,
+.tea-party-store:focus-visible .tea-party-store-map {
+  filter: brightness(.96);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 560px) {
+  .catering-store-map,
+  .tea-party-store-map {
+    margin-top: 18px;
+    padding: 13px 20px;
+    font-size: .95rem;
+  }
 }
