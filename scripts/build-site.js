@@ -254,9 +254,58 @@ function countryCheeseContent() {
 }
 
 
- const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
+const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
 const PRODUCT_INTRO_PATH = "/產品介紹";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
+const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
+const FATHERS_DAY_CAKE_PATH = "/產品介紹/父親節蛋糕";
+const MOTHERS_DAY_CAKE_PATH = "/產品介紹/母親節蛋糕";
+
+const SEASONAL_CATALOGS = new Map([
+  [FROZEN_BREAD_PATH, {
+    title: "冷凍麵包",
+    eyebrow: "FROZEN BREAD",
+    intro: "嚴選麵包品項，方便冷凍保存，隨時享用森森的手作風味。",
+    products: [
+      ["職人手感麵包", "bread.jpg", "手作麵包"],
+      ["奶露芒果麵包", "truffle-mango-bread.jpg", "季節風味"],
+      ["甜麵包系列", "party-sweet-bread-1.jpg", "手作麵包"],
+      ["甜麵包系列", "party-sweet-bread-4.jpg", "手作麵包"],
+      ["鹹麵包系列", "party-salty-bread-1.jpg", "手作麵包"],
+      ["鹹麵包系列", "party-salty-bread-2.jpg", "手作麵包"],
+      ["鹹麵包系列", "party-salty-bread-3.jpg", "手作麵包"],
+      ["鹹麵包系列", "party-salty-bread-5.jpg", "手作麵包"],
+      ["鹹麵包系列", "party-salty-bread-7.jpg", "手作麵包"],
+      ["鹹麵包系列", "party-salty-bread-8.jpg", "手作麵包"],
+    ],
+  }],
+  [FATHERS_DAY_CAKE_PATH, {
+    title: "父親節蛋糕",
+    eyebrow: "FATHER'S DAY CAKE",
+    intro: "為爸爸準備一份特別的心意，父親節限定蛋糕系列。",
+    products: [
+      ["父親節蛋糕", "fathers-day.jpg", "父親節限定"],
+      ["父親節蛋糕", "photo-2019-88-cake.jpg", "父親節限定"],
+      ["父親節蛋糕", "photo-2019-88-cake-2-1.jpg", "父親節限定"],
+      ["芋見幸福", "party-cake-13.jpg", "人氣蛋糕"],
+      ["炭燒乳酪", "day-layer-cake.jpg", "人氣蛋糕"],
+      ["日式千層蛋糕", "party-cake-19.jpg", "人氣蛋糕"],
+    ],
+  }],
+  [MOTHERS_DAY_CAKE_PATH, {
+    title: "母親節蛋糕",
+    eyebrow: "MOTHER'S DAY CAKE",
+    intro: "用一份甜點向媽媽說聲謝謝，精選母親節蛋糕與季節風味。",
+    products: [
+      ["母親節蛋糕", "mothers-day-cake.jpg", "母親節限定"],
+      ["母親節蛋糕", "mothers-day-cake-2.jpg", "母親節限定"],
+      ["甜心教主", "day-layer-cake.jpg", "季節限定"],
+      ["陽光蛋糕", "sun-cake-gift-box-copy.jpg", "人氣蛋糕"],
+      ["母親節蛋糕", "sun-cake-inside-2.jpg", "季節限定"],
+      ["母親節蛋糕", "sun-cake-inside-3.jpg", "季節限定"],
+    ],
+  }],
+]);
 
 const CAKE_SECTIONS = [
   {
@@ -327,6 +376,9 @@ const BRANDED_HERO_PATHS = new Set([
   "/最新消息",
   "/產品介紹",
   "/產品介紹/生日蛋糕-下方有dm供下載-264",
+  FROZEN_BREAD_PATH,
+  FATHERS_DAY_CAKE_PATH,
+  MOTHERS_DAY_CAKE_PATH,
   "/精緻外燴-355",
   "/頂家彌月",
   "/頂家彌月/波士頓派系列",
@@ -341,6 +393,9 @@ const NAV_CHILDREN = new Map([
   ["線上商城", [
     ["生日蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
     ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/"],
+    ["冷凍麵包", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e5%86%b7%e5%87%8d%e9%ba%b5%e5%8c%85/"],
+    ["父親節蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%88%b6%e8%a6%aa%e7%af%80%e8%9b%8b%e7%b3%95/"],
+    ["母親節蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e6%af%8d%e8%a6%aa%e7%af%80%e8%9b%8b%e7%b3%95/"],
     ["飲品 MENU", "/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/"],
   ]],
   ["酒會/茶會", [
@@ -360,6 +415,9 @@ const NAV_CHILDREN = new Map([
 ]);
 
 const STORE_MODULE_PAGES = [
+  { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "冷凍麵包" },
+  { url: `https://www.sensen.com.tw${FATHERS_DAY_CAKE_PATH}/`, title: "父親節蛋糕" },
+  { url: `https://www.sensen.com.tw${MOTHERS_DAY_CAKE_PATH}/`, title: "母親節蛋糕" },
   { url: "https://www.sensen.com.tw/customer/admin/", title: "會員登入" },
   { url: "https://www.sensen.com.tw/customer/admin/backup/", title: "會員後台" },
   { url: "https://www.sensen.com.tw/cart/", title: "購物車" },
@@ -1117,7 +1175,7 @@ function productIntroContent() {
   const birthdayProducts = [
     ...CAKE_SECTIONS[0].products,
     ...(CAKE_SECTIONS[0].loadMoreProducts || []),
-  ].map(([title, likes, image, href]) => ({ title: title.replace(/<br>/g, ""), likes, image, href }));
+  ].map(([title, likes, image, href]) => ({ title: title.replace(/<br>/g, ""), likes, image, href, price: PRODUCT_PRICE_LABEL }));
   const sections = [
     {
       eyebrow: "BIRTHDAY CAKE",
@@ -1131,7 +1189,7 @@ function productIntroContent() {
       title: "伴手禮",
       icon: "/assets/images/icon-cupcake.png",
       href: "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/",
-      products: SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => ({ title, href, image, likes })),
+      products: SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => ({ title, href, image, likes, price: PRODUCT_PRICE_LABEL })),
     },
     {
       eyebrow: "DRINK MENU",
@@ -1150,7 +1208,7 @@ function productIntroContent() {
       if (section.kind === "menu") {
         return "<article class=\"product-intro-menu-card\"><a href=\"" + escapeAttr(section.href) + "\"><img src=\"/assets/images/" + escapeAttr(product.image) + "\" alt=\"" + escapeAttr(product.title) + "\"><strong>" + escapeHtml(product.title) + "</strong></a></article>";
       }
-      return "<article class=\"product-intro-card\"><a class=\"product-intro-card-link\" href=\"" + escapeAttr(product.href) + "\"><img src=\"/assets/images/" + escapeAttr(product.image) + "\" alt=\"" + escapeAttr(product.title) + "\"><div class=\"product-intro-card-meta\"><strong>" + escapeHtml(product.title) + "</strong><span><b aria-hidden=\"true\">♡</b> " + escapeHtml(product.likes) + "</span></div></a></article>";
+      return "<article class=\"product-intro-card\"><a class=\"product-intro-card-link\" href=\"" + escapeAttr(product.href) + "\"><img src=\"/assets/images/" + escapeAttr(product.image) + "\" alt=\"" + escapeAttr(product.title) + "\"><div class=\"product-intro-card-meta\"><div class=\"product-intro-card-title\"><strong>" + escapeHtml(product.title) + "</strong><span class=\"product-intro-card-price\">" + escapeHtml(product.price) + "</span></div><span class=\"product-intro-card-likes\"><b aria-hidden=\"true\">♡</b> " + escapeHtml(product.likes) + "</span></div></a></article>";
     }).join("");
     return "<section class=\"product-intro-section\" data-product-intro-section>" +
       "<div class=\"product-intro-section-heading\"><div><p>" + escapeHtml(section.eyebrow) + "</p><h2><img src=\"" + escapeAttr(section.icon) + "\" alt=\"\" aria-hidden=\"true\">" + escapeHtml(section.title) + "</h2></div><div class=\"product-intro-carousel-controls\"><button type=\"button\" data-product-intro-previous aria-label=\"向左滑動\">‹</button><button type=\"button\" data-product-intro-next aria-label=\"向右滑動\">›</button></div></div>" +
@@ -1160,6 +1218,21 @@ function productIntroContent() {
   }).join("");
   return "<section class=\"product-intro-page\">" + sectionHtml + "</section>" +
     "<script>(function(){document.querySelectorAll(\"[data-product-intro-section]\").forEach(function(section){var track=section.querySelector(\"[data-product-intro-track]\");if(!track)return;var move=function(direction){track.scrollBy({left:direction*Math.max(track.clientWidth*.82,260),behavior:\"smooth\"});};section.querySelector(\"[data-product-intro-previous]\").addEventListener(\"click\",function(){move(-1);});section.querySelector(\"[data-product-intro-next]\").addEventListener(\"click\",function(){move(1);});});})();</script>";
+}
+
+function seasonalCatalogContent(localPath) {
+  const catalog = SEASONAL_CATALOGS.get(localPath);
+  if (!catalog) return "";
+  return `<section class="seasonal-catalog-page">
+    <section class="seasonal-catalog-intro">
+      <p class="seasonal-catalog-eyebrow">${escapeHtml(catalog.eyebrow)}</p>
+      <h2>${escapeHtml(catalog.title)}精選</h2>
+      <p class="seasonal-catalog-description">${escapeHtml(catalog.intro)}</p>
+    </section>
+    <section class="seasonal-catalog-empty" aria-label="${escapeAttr(catalog.title)}商品列表">
+      <p>商品內容即將上架，敬請期待。</p>
+    </section>
+  </section>`;
 }
 
 function birthdayCakeContent() {
@@ -1174,7 +1247,7 @@ function birthdayCakeContent() {
           </span>
         </a>
         <div class="cake-product-meta">
-          <a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${name}</span></a>
+          <a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${name}</span><span class="cake-product-price">${PRODUCT_PRICE_LABEL}</span></a>
           <button class="cake-likes" type="button" data-cake-like data-default-likes="${escapeAttr(likes)}" aria-label="喜歡此蛋糕">
             <span class="cake-heart" aria-hidden="true">♡</span><span data-cake-like-count>${escapeHtml(likes)}</span>
           </button>
@@ -1184,7 +1257,7 @@ function birthdayCakeContent() {
     const cards = section.products.map(cardHtml).join("");
     const loadMoreCards = (section.loadMoreProducts || []).map(cardHtml).join("");
     const loadMore = section.loadMore
-      ? `<div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>`
+      ? `<div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false" onclick="toggleCakeProducts(this)">▪▪ Load more</button></div>`
       : "";
     const headingText = index === 0
       ? ""
@@ -1483,6 +1556,8 @@ function bostonPieContent() {
   </section>`;
 }
 
+const PRODUCT_PRICE_LABEL = "價格洽詢";
+
 const SOUVENIR_PRODUCTS = [
   ["豆塔禮盒", "/product-item/豆塔禮盒", "photo-2.jpg", 9],
   ["森森肉鬆餅", "/product-item/森森肉鬆餅", "pork-floss-pastry-4.jpg", 17],
@@ -1497,7 +1572,7 @@ const SOUVENIR_PRODUCTS = [
 ];
 
 function souvenirPageContent() {
-  const cards = SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => `<article class="souvenir-card"><a class="souvenir-card-link" href="${escapeAttr(href)}"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}"><div class="souvenir-card-meta"><h2>${escapeHtml(title)}</h2><span class="souvenir-likes" aria-label="收藏 ${likes} 次"><span aria-hidden="true">♡</span> ${likes}</span></div></a><button class="souvenir-add-cart" type="button" data-souvenir-add-cart="${escapeAttr(title)}">加入購物車</button></article>`).join("");
+  const cards = SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => `<article class="souvenir-card"><a class="souvenir-card-link" href="${escapeAttr(href)}"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(title)}</h2><span class="souvenir-card-price">${PRODUCT_PRICE_LABEL}</span></div><span class="souvenir-likes" aria-label="收藏 ${likes} 次"><span aria-hidden="true">♡</span> ${likes}</span></div></a><button class="souvenir-add-cart" type="button" data-souvenir-add-cart="${escapeAttr(title)}">加入購物車</button></article>`).join("");
   return `<section class="souvenir-page"><section class="souvenir-products"><img class="souvenir-icon" src="/assets/images/icon-cupcake.png" alt=""><div class="souvenir-grid">${cards}</div></section></section>
   <script>
   (() => {
@@ -1723,16 +1798,36 @@ function storeInfoContent() {
     '</a></section>' +
   '</section>';
 }
+function storefrontProductPathMap() {
+  const map = {};
+  const normalize = value => String(value || "").replace(/<br\s*\/?\s*>/gi, "").replace(/\s+/g, "").replace(/[（(]季節限定[）)]/g, "（季節限定）");
+  CAKE_SECTIONS.forEach(section => [...section.products, ...(section.loadMoreProducts || [])].forEach(([title, likes, image, href]) => { map[normalize(title)] = href; }));
+  SOUVENIR_PRODUCTS.forEach(([title, href]) => { map[normalize(title)] = href; });
+  return map;
+}
+
+function storefrontCatalogContent(view) {
+  const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
+  const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js"></script>`;
+}
+
 function pageContent(page) {
   const localPath = localPathFromUrl(page.url);
   if (localPath === "/關於森森") {
     return aboutContent();
   }
   if (localPath === PRODUCT_INTRO_PATH) {
-    return productIntroContent();
+    return storefrontCatalogContent("overview");
+  }
+  if (SEASONAL_CATALOGS.has(localPath)) {
+    return seasonalCatalogContent(localPath);
   }
   if (localPath === BIRTHDAY_CAKE_PATH) {
-    return birthdayCakeContent();
+    return storefrontCatalogContent("cakes");
+  }
+  if (localPath === "/產品介紹/伴手禮") {
+    return storefrontCatalogContent("souvenir");
   }
   if (localPath === CATERING_PATH) {
     return cateringContent();
@@ -1944,6 +2039,7 @@ function main() {
   fs.mkdirSync(path.join(OUT_DIR, "assets"), { recursive: true });
   fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
+  fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
   fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
