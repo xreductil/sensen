@@ -258,8 +258,6 @@ const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
 const PRODUCT_INTRO_PATH = "/產品介紹";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
-const FATHERS_DAY_CAKE_PATH = "/產品介紹/父親節蛋糕";
-const MOTHERS_DAY_CAKE_PATH = "/產品介紹/母親節蛋糕";
 
 const SEASONAL_CATALOGS = new Map([
   [FROZEN_BREAD_PATH, {
@@ -277,32 +275,6 @@ const SEASONAL_CATALOGS = new Map([
       ["鹹麵包系列", "party-salty-bread-5.jpg", "手作麵包"],
       ["鹹麵包系列", "party-salty-bread-7.jpg", "手作麵包"],
       ["鹹麵包系列", "party-salty-bread-8.jpg", "手作麵包"],
-    ],
-  }],
-  [FATHERS_DAY_CAKE_PATH, {
-    title: "父親節蛋糕",
-    eyebrow: "FATHER'S DAY CAKE",
-    intro: "為爸爸準備一份特別的心意，父親節限定蛋糕系列。",
-    products: [
-      ["父親節蛋糕", "fathers-day.jpg", "父親節限定"],
-      ["父親節蛋糕", "photo-2019-88-cake.jpg", "父親節限定"],
-      ["父親節蛋糕", "photo-2019-88-cake-2-1.jpg", "父親節限定"],
-      ["芋見幸福", "party-cake-13.jpg", "人氣蛋糕"],
-      ["炭燒乳酪", "day-layer-cake.jpg", "人氣蛋糕"],
-      ["日式千層蛋糕", "party-cake-19.jpg", "人氣蛋糕"],
-    ],
-  }],
-  [MOTHERS_DAY_CAKE_PATH, {
-    title: "母親節蛋糕",
-    eyebrow: "MOTHER'S DAY CAKE",
-    intro: "用一份甜點向媽媽說聲謝謝，精選母親節蛋糕與季節風味。",
-    products: [
-      ["母親節蛋糕", "mothers-day-cake.jpg", "母親節限定"],
-      ["母親節蛋糕", "mothers-day-cake-2.jpg", "母親節限定"],
-      ["甜心教主", "day-layer-cake.jpg", "季節限定"],
-      ["陽光蛋糕", "sun-cake-gift-box-copy.jpg", "人氣蛋糕"],
-      ["母親節蛋糕", "sun-cake-inside-2.jpg", "季節限定"],
-      ["母親節蛋糕", "sun-cake-inside-3.jpg", "季節限定"],
     ],
   }],
 ]);
@@ -377,8 +349,6 @@ const BRANDED_HERO_PATHS = new Set([
   "/產品介紹",
   "/產品介紹/生日蛋糕-下方有dm供下載-264",
   FROZEN_BREAD_PATH,
-  FATHERS_DAY_CAKE_PATH,
-  MOTHERS_DAY_CAKE_PATH,
   "/精緻外燴-355",
   "/頂家彌月",
   "/頂家彌月/波士頓派系列",
@@ -394,8 +364,6 @@ const NAV_CHILDREN = new Map([
     ["生日蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
     ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/"],
     ["冷凍麵包", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e5%86%b7%e5%87%8d%e9%ba%b5%e5%8c%85/"],
-    ["父親節蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%88%b6%e8%a6%aa%e7%af%80%e8%9b%8b%e7%b3%95/"],
-    ["母親節蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e6%af%8d%e8%a6%aa%e7%af%80%e8%9b%8b%e7%b3%95/"],
     ["飲品 MENU", "/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/"],
   ]],
   ["酒會/茶會", [
@@ -416,8 +384,6 @@ const NAV_CHILDREN = new Map([
 
 const STORE_MODULE_PAGES = [
   { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "冷凍麵包" },
-  { url: `https://www.sensen.com.tw${FATHERS_DAY_CAKE_PATH}/`, title: "父親節蛋糕" },
-  { url: `https://www.sensen.com.tw${MOTHERS_DAY_CAKE_PATH}/`, title: "母親節蛋糕" },
   { url: "https://www.sensen.com.tw/customer/admin/", title: "會員登入" },
   { url: "https://www.sensen.com.tw/customer/admin/backup/", title: "會員後台" },
   { url: "https://www.sensen.com.tw/cart/", title: "購物車" },
