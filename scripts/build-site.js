@@ -68,6 +68,8 @@ const ROUND_PIE_PRODUCTS = [
 ];
 
 const LONG_CAKE_PATH = "/頂家彌月/彌月長條蛋糕";
+const PAIRING_PATH = "/頂家彌月/搭配單品";
+const THANK_YOU_CARD_PATH = "/頂家彌月/彌月謝卡";
 const LONG_CAKE_HOT_PRODUCTS = [
   ["日式千層", "日是千層.png"],
   ["桂花烏龍甜心", "桂花烏龍.png"],
@@ -120,6 +122,105 @@ function longCakeContent() {
       <a class="long-cake-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
       <a class="long-cake-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="long-cake-dm-book" aria-hidden="true"></span></a>
       <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
+    </section>
+  </section>`;
+}
+
+const PAIRING_FEATURES = [
+  ["蝴蝶酥", "simg-5.jpg"],
+  ["夏威夷豆塔", "simg-4-1.jpg"],
+  ["手工餅乾", "simg-2.jpg"],
+  ["鈕釦牛軋餅", "simg-3.jpg"],
+];
+
+const PAIRING_PRODUCTS = [
+  ["黃金乳酪球", "s12.jpg"],
+  ["草莓大福", "s10.jpg"],
+  ["泡芙", "s14.jpg"],
+  ["KT蛋糕", "s8.jpg"],
+  ["熊大蛋糕", "s41.jpg"],
+  ["小檸檬", "s9.jpg"],
+  ["珍珠脆糖小泡芙", "pearl-crunch-puff.png"],
+  ["鈕釦牛軋餅", "button.jpg"],
+  ["杏仁千層酥", "mille-feuille.jpg"],
+  ["杏加", "photo-1-6.jpg"],
+  ["手工餅乾", "s13.jpg"],
+  ["手工餅乾", "s22.jpg"],
+  ["夏威夷豆塔", "hawaiian.jpg"],
+  ["達克瓦茲", "dacquoise-3.jpg"],
+  ["蝴蝶酥", "palmiers.jpg"],
+  ["手工餅乾", "cookies-2.png"],
+  ["手工餅乾", "cookies-1.png"],
+  ["栗子燒", "chestnut-cake.png"],
+  ["洋菓子", "japanese-pastry-2.png"],
+  ["洋菓子", "japanese-pastry.png"],
+  ["油飯-1斤", "s3.jpg"],
+  ["油飯-半斤", "s4.jpg"],
+  ["1斤油飯禮盒", "s7.jpg", "含紅蛋2入"],
+  ["紅蛋-2入", "s6.jpg"],
+  ["大雞腿", "simg-1.jpg"],
+  ["紅龜", "red-turtle.png"],
+  ["紅圓", "s24.jpg"],
+];
+
+function pairingContent() {
+  const featureCards = PAIRING_FEATURES.map(([title, image]) => `
+    <article class="pairing-feature-card">
+      <img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
+      <h3>${escapeHtml(title)}</h3>
+      <span class="pairing-rule" aria-hidden="true"></span>
+    </article>`).join("");
+  const productCards = PAIRING_PRODUCTS.map(([title, image, note]) => `
+    <article class="pairing-product${note ? " has-note" : ""}">
+      <img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
+      <h3>${escapeHtml(title)}</h3>
+      ${note ? `<p class="pairing-product-note">${escapeHtml(note)}</p>` : ""}
+      <span class="pairing-rule" aria-hidden="true"></span>
+    </article>`).join("");
+  return `<section class="pairing-page">
+    <section class="pairing-hero" aria-labelledby="pairing-title">
+      <h1 id="pairing-title">搭配單品</h1>
+    </section>
+    <div class="pairing-baby"><img src="/assets/images/icon-baby.png" alt="" aria-hidden="true"></div>
+    <section class="pairing-intro">
+      <h2>油飯及手工小西點</h2>
+      <p>O I L&nbsp;&nbsp; R I C E&nbsp;&nbsp; A N D&nbsp;&nbsp; D E S S E R T</p>
+    </section>
+    <section class="pairing-feature-section" aria-labelledby="pairing-feature-title">
+      <h2 id="pairing-feature-title" class="sr-only">油飯及手工小西點精選</h2>
+      <div class="pairing-feature-grid">${featureCards}</div>
+    </section>
+    <section class="pairing-products" aria-labelledby="pairing-products-title">
+      <h2 id="pairing-products-title" class="sr-only">搭配單品商品列表</h2>
+      <div class="pairing-product-grid">${productCards}</div>
+    </section>
+    <aside class="pairing-tip"><span class="pairing-tip-icon" aria-hidden="true"></span><p>另有素食油飯</p></aside>
+    <section class="pairing-dm" id="pairing-dm">
+      <a class="pairing-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
+      <a class="pairing-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="pairing-dm-book" aria-hidden="true"></span></a>
+      <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
+    </section>
+  </section>`;
+}
+
+function thankYouCardContent() {
+  return `<section class="thankyou-page">
+    <section class="thankyou-hero" aria-labelledby="thankyou-title">
+      <h1 id="thankyou-title">彌月謝卡</h1>
+    </section>
+    <div class="thankyou-baby"><img src="/assets/images/icon-baby.png" alt="" aria-hidden="true"></div>
+    <section class="thankyou-content">
+      <section class="thankyou-intro" aria-labelledby="thankyou-style-title">
+        <h2 id="thankyou-style-title">謝卡樣式</h2>
+        <ul>
+          <li>訂購即可免費製作文字謝卡。</li>
+          <li>訂購滿35盒，免費升級精美相片謝卡。</li>
+        </ul>
+      </section>
+      <div class="thankyou-grid">
+        <figure><img src="/assets/images/baby-card-a.jpg" alt="A款相片謝卡" loading="lazy"></figure>
+        <figure><img src="/assets/images/baby-card-b.jpg" alt="B款文字謝卡與交貨提醒" loading="lazy"></figure>
+      </div>
     </section>
   </section>`;
 }
@@ -213,7 +314,7 @@ const CAKE_SECTIONS = [
 const NAV_ITEMS = [
   ["關於森森", "/%e9%97%9c%e6%96%bc%e6%a3%ae%e6%a3%ae/"],
   ["最新消息", "/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/"],
-  ["產品介紹", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/"],
+  ["線上商城", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/"],
   ["酒會/茶會", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
   ["頂家彌月", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/"],
   ["常見問題", "/%e5%b8%b8%e8%a6%8b%e5%95%8f%e9%a1%8c/"],
@@ -237,7 +338,7 @@ const BRANDED_HERO_PATHS = new Set([
 ]);
 
 const NAV_CHILDREN = new Map([
-  ["產品介紹", [
+  ["線上商城", [
     ["生日蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
     ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/"],
     ["飲品 MENU", "/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/"],
@@ -1657,6 +1758,12 @@ function pageContent(page) {
   if (localPath === LONG_CAKE_PATH) {
     return longCakeContent();
   }
+  if (localPath === PAIRING_PATH) {
+    return pairingContent();
+  }
+  if (localPath === THANK_YOU_CARD_PATH) {
+    return thankYouCardContent();
+  }
   if (localPath === "/產品介紹/伴手禮") {
     return souvenirPageContent();
   }
@@ -1859,13 +1966,13 @@ function main() {
     ensureDir(filePath);
     const content = localPath === "/" ? homeContent(pages) : pageContent(page);
     fs.writeFileSync(filePath, layout({
-      title: titleFromPage(page),
+      title: localPath === PRODUCT_INTRO_PATH ? "線上商城 – 森森點心坊" : titleFromPage(page),
       pathLabel: decodeURI(localPath),
       content,
       isHome: localPath === "/",
       isAbout: isAboutPage,
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
-      showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
+      showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
       heroSource: localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
     }));
   }
