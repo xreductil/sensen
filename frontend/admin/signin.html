@@ -12,6 +12,11 @@
 
 
 
+  <script>
+    if (window.location.pathname.endsWith('/admin/signin')) {
+      window.history.replaceState(null, '', `${window.location.pathname}.html${window.location.search}${window.location.hash}`);
+    }
+  </script>
   <script type="module" src="./assets/js/main-CnSylLUz.js"></script>
   <link rel="stylesheet" href="./assets/css/main-CM9hUMvt.css">
 </head>

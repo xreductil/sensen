@@ -50,7 +50,11 @@ function fileForRoute(urlPath) {
   const cleanPath = relativePath || '/';
   const candidates = cleanPath.endsWith('/')
     ? [path.join(baseRoot, cleanPath, 'index.html')]
-    : [path.join(baseRoot, cleanPath), path.join(baseRoot, cleanPath, 'index.html')];
+    : [
+        path.join(baseRoot, cleanPath),
+        path.join(baseRoot, cleanPath, 'index.html'),
+        path.join(baseRoot, `${cleanPath}.html`)
+      ];
 
   return candidates.map(candidate => safeFilePath(baseRoot, path.relative(baseRoot, candidate)))
     .find(candidate => candidate && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) || null;
