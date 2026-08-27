@@ -238,6 +238,18 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   };
 };
 
+const imagePathFromKey = (value: unknown) => {
+  const key = String(value || "").trim().replace(/^\/?(?:assets\/)?images\//i, "");
+  return key ? `/assets/images/${key}` : "";
+};
+
+const adminOrderItemFromRow = (item: Record<string, unknown>) => ({
+  ...item,
+  cat: String(item.category || "Menu"),
+  price: `$${Number(item.priceValue || 0).toFixed(2)}`,
+  img: imagePathFromKey(item.imageKey),
+});
+
 const productSelect = `
   SELECT
     p.id AS db_id,
@@ -562,10 +574,15 @@ export default {
           const orders = [];
           for (const row of result.results) {
             const items = await env.DB.prepare(`
-              SELECT id, product_id AS productId, product_name AS title, price AS priceValue, quantity AS qty
-              FROM order_items WHERE order_id = ?1 ORDER BY id ASC
+              SELECT oi.id, oi.product_id AS productId, oi.product_name AS title,
+                oi.price AS priceValue, oi.quantity AS qty, p.image_key AS imageKey,
+                c.name AS category
+              FROM order_items oi
+              LEFT JOIN products p ON p.id = oi.product_id
+              LEFT JOIN categories c ON c.id = p.category_id
+              WHERE oi.order_id = ?1 ORDER BY oi.id ASC
             `).bind(row.id).all<Record<string, unknown>>();
-            orders.push(orderFromRow(row, items.results));
+            orders.push(orderFromRow(row, items.results.map(adminOrderItemFromRow)));
           }
           return json(request, { orders });
         }
@@ -585,9 +602,17 @@ export default {
             SELECT o.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
             FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?1
           `).bind(existing.id).first<Record<string, unknown>>();
-          const items = await env.DB.prepare("SELECT id, product_id AS productId, product_name AS title, price AS priceValue, quantity AS qty FROM order_items WHERE order_id = ?1 ORDER BY id ASC").bind(existing.id).all<Record<string, unknown>>();
+          const items = await env.DB.prepare(`
+            SELECT oi.id, oi.product_id AS productId, oi.product_name AS title,
+              oi.price AS priceValue, oi.quantity AS qty, p.image_key AS imageKey,
+              c.name AS category
+            FROM order_items oi
+            LEFT JOIN products p ON p.id = oi.product_id
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE oi.order_id = ?1 ORDER BY oi.id ASC
+          `).bind(existing.id).all<Record<string, unknown>>();
           return json(request, {
-            order: row ? { ...orderFromRow(row, items.results), shippingNotification: body.notify ? { status: "pending", recipient: row.customer_email || row.user_email || "" } : { status: "not_requested" } } : null,
+            order: row ? { ...orderFromRow(row, items.results.map(adminOrderItemFromRow)), shippingNotification: body.notify ? { status: "pending", recipient: row.customer_email || row.user_email || "" } : { status: "not_requested" } } : null,
           });
         }
 

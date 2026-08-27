@@ -9,6 +9,35 @@
     ['Support', '客服支援'], ['Prerequisites', '環境需求'], ['Installation', '安裝方式'], ['Run the app', '啟動專案'], ['Next Steps', '下一步'], ['Project Structure', '專案結構'], ['Copyright © 2026 Patria Restaurant All rights reserved.', '© 2018 - 2026 森森點心坊. All Rights Reserved.'], ['Patria Restaurant', '森森點心坊'], ['This account is not an administrator.', '此帳號不是員工管理員。'], ['Payment of $299 has been received', '已收到 $299 付款'], ['Order #12345 has been placed', '訂單 #12345 已建立'], ['User @john_doe has signed up', '會員 @john_doe 已註冊'], ['Orders created from Patria My Account and checkout.', '訂單資料來自森森會員與結帳紀錄。'], ['Addresses saved from Patria customer accounts.', '地址資料來自森森會員帳戶。'], ['Table reservations submitted from the Patria front page.', '來自森森官網的預約資料。'], ['Messages submitted from the Patria contact form.', '來自森森官網的聯絡訊息。'], ['Searches submitted from the Patria front page.', '來自森森官網的搜尋紀錄。'], ['View your inventory analytics and reports', '查看商品庫存與銷售報表'], ['Synced from customer checkout', '同步自森森官網結帳資料'], ['Items from paid orders', '來自已付款訂單的商品數量'], ['Inventory quantity under 10', '庫存低於 10 件'], ['Inventory quantity is 0', '目前無庫存']
   ]);
   const replaceText = (text) => { const raw = text.trim(); if (translations.has(raw)) return text.replace(raw, translations.get(raw)); if (raw.includes('Patria sample')) return text.replace(/已連接 Patria sample 訂單。/g, '資料已連接森森官網'); if (raw.includes('純前端 sample')) return text.replace(/純前端 sample/g, '森森官網'); if (raw.includes('Patria')) return text.replace(/Patria/g, '森森'); return text; };
+  const ADMIN_IMAGE_FALLBACK = '/admin/assets/product-1.webp';
+  const normalizeAdminImage = (image) => {
+    const source = image.getAttribute('src');
+    if (!source || /^(?:data:|https?:|blob:)/i.test(source)) return;
+    if (/^(?:\.\/)?assets\/images\/product-1\.webp$/i.test(source) || /\/admin\/assets\/images\/product-1\.webp(?:[?#]|$)/i.test(source)) {
+      image.setAttribute('src', ADMIN_IMAGE_FALLBACK);
+      return;
+    }
+    try {
+      const url = new URL(source, window.location.href);
+      if (/^\/admin\/assets\/images\/(?!avatar-)/i.test(url.pathname)) {
+        url.pathname = url.pathname.replace(/^\/admin\/assets\/images\//i, '/assets/images/');
+        image.setAttribute('src', url.pathname + url.search + url.hash);
+      }
+    } catch {
+      image.setAttribute('src', ADMIN_IMAGE_FALLBACK);
+    }
+  };
+  const normalizeAdminImages = (root = document) => {
+    (root.querySelectorAll ? root.querySelectorAll('img[src]') : []).forEach((image) => {
+      normalizeAdminImage(image);
+      if (image.getAttribute('data-image-fallback-bound') !== 'true') {
+        image.setAttribute('data-image-fallback-bound', 'true');
+        image.addEventListener('error', () => {
+          if (image.getAttribute('src') !== ADMIN_IMAGE_FALLBACK) image.setAttribute('src', ADMIN_IMAGE_FALLBACK);
+        }, { once: true });
+      }
+    });
+  };
   const translate = (root = document) => {
     document.title = document.title.replace(/Patria|Signin|Signup|Reports|Inventory|Create Product|Documentation|404 Error/g, (value) => ({ Patria: '森森點心坊', Signin: '登入', Signup: '註冊', Reports: '報表分析', Inventory: '商品庫存', 'Create Product': '新增商品', Documentation: '使用說明', '404 Error': '找不到頁面' }[value] || value));
     document.querySelectorAll('.patria-admin-brand:not([data-zh-brand])').forEach((brand) => { brand.innerHTML = '<span class="patria-admin-icon"><i class="ti ti-tools-kitchen-2"></i></span><span class="patria-admin-copy"><strong>森森</strong><em>森森點心坊</em></span>'; brand.setAttribute('data-zh-brand', 'true'); });
@@ -17,6 +46,15 @@
     nodes.forEach((textNode) => { const next = replaceText(textNode.nodeValue); if (next !== textNode.nodeValue) textNode.nodeValue = next; });
     document.querySelectorAll('input[placeholder], textarea[placeholder], [title], [aria-label]').forEach((element) => ['placeholder', 'title', 'aria-label'].forEach((attribute) => { const value = element.getAttribute(attribute); if (value && translations.has(value)) element.setAttribute(attribute, translations.get(value)); }));
   };
-  const start = () => { translate(); new MutationObserver(() => translate()).observe(document.body, { childList: true, subtree: true }); };
+  const start = () => {
+    translate();
+    normalizeAdminImages();
+    new MutationObserver((mutations) => {
+      translate();
+      mutations.forEach((mutation) => mutation.addedNodes.forEach((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) normalizeAdminImages(node);
+      }));
+    }).observe(document.body, { childList: true, subtree: true });
+  };
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start); else start();
 })();
