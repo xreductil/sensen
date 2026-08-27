@@ -256,9 +256,12 @@ function countryCheeseContent() {
 
 const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
 const PRODUCT_INTRO_PATH = "/產品介紹";
+const EMERALD_LYSK_PATH = "/product-item/綠寶石萊思克季節限定-1870";
+const BEAN_TART_PATH = "/product-item/豆塔禮盒";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
 const STORE_INFO_HERO_SOURCE = "/assets/images/headtitle-bg6.jpg";
+const BIRTHDAY_CAKE_PAGE_TITLE = "蛋糕 (下方有DM供下載)";
 
 const SEASONAL_CATALOGS = new Map([
   [FROZEN_BREAD_PATH, {
@@ -283,7 +286,7 @@ const SEASONAL_CATALOGS = new Map([
 const CAKE_SECTIONS = [
   {
     eyebrow: "BIRTHDAY CAKE",
-    title: "生日蛋糕 (下方有DM供下載)",
+    title: BIRTHDAY_CAKE_PAGE_TITLE,
     icon: "/assets/images/icon-cake.png",
     products: [
       ["綠寶石萊思克<br>(季節限定)", "10", "cake-2024-11.png", "/product-item/%e7%b6%a0%e5%af%b6%e7%9f%b3%e8%90%8a%e6%80%9d%e5%85%8b%e5%ad%a3%e7%af%80%e9%99%90%e5%ae%9a-1870/"],
@@ -332,6 +335,38 @@ const CAKE_SECTIONS = [
     ],
   },
 ];
+
+const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
+  ...CAKE_SECTIONS[0].products,
+  ...(CAKE_SECTIONS[0].loadMoreProducts || []),
+].map(([title, likes, image, href]) => ({
+  title: stripTags(title),
+  likes,
+  image,
+  href,
+  path: localPathFromUrl(new URL(href, SOURCE_ORIGIN).href),
+}));
+
+const BIRTHDAY_CAKE_PRODUCT_PATHS = new Set(BIRTHDAY_CAKE_PRODUCT_RECORDS.map((product) => product.path));
+const CAKE_PRODUCT_RECORDS = CAKE_SECTIONS.flatMap((section) => [
+  ...section.products,
+  ...(section.loadMoreProducts || []),
+]).map(([title, likes, image, href]) => ({
+  title: stripTags(title),
+  likes,
+  image,
+  href,
+  path: localPathFromUrl(new URL(href, SOURCE_ORIGIN).href),
+}));
+const CAKE_PRODUCT_PATHS = new Set(CAKE_PRODUCT_RECORDS.map((product) => product.path));
+const CAKE_PRODUCT_DATA = new Map(CAKE_PRODUCT_RECORDS.map((product) => [product.path, product]));
+const CAKE_PRODUCT_CATEGORY_LABELS = new Map();
+const cakeCategoryLabels = ["所有蛋糕, 生日蛋糕", "所有蛋糕, 造形蛋糕", "冰淇淋蛋糕, 所有蛋糕"];
+CAKE_SECTIONS.forEach((section, index) => {
+  [...section.products, ...(section.loadMoreProducts || [])].forEach(([, , , href]) => {
+    CAKE_PRODUCT_CATEGORY_LABELS.set(localPathFromUrl(new URL(href, SOURCE_ORIGIN).href), cakeCategoryLabels[index]);
+  });
+});
 
 const NAV_ITEMS = [
   ["關於森森", "/%e9%97%9c%e6%96%bc%e6%a3%ae%e6%a3%ae/"],
@@ -890,9 +925,9 @@ function createIndex(pages) {
     </section>`).join("");
 }
 
-function layout({ title, pathLabel, content, isHome = false, isAbout = false, hasBrandedHero = false, heroSource = "/assets/images/headtitle-bg2.jpg", showHero = true }) {
+function layout({ title, pathLabel, content, isHome = false, isAbout = false, isEmeraldLysk = false, isCakeProduct = false, isBeanTartProduct = false, isSouvenirProduct = false, heroCategoryLabel = "所有蛋糕, 生日蛋糕", hasBrandedHero = false, heroSource = "/assets/images/headtitle-bg2.jpg", showHero = true }) {
   const checkoutStyle = pathLabel === "/checkout" ? '<link rel="stylesheet" href="/assets/checkout.css">' : "";
-  const isBirthdayCakePage = title.includes("生日蛋糕") && title.includes("DM");
+  const isBirthdayCakePage = pathLabel === BIRTHDAY_CAKE_PATH || (title.includes("生日蛋糕") && title.includes("DM"));
   const nav = NAV_ITEMS.map(([label, href]) => {
     const children = NAV_CHILDREN.get(label) || [];
     const childMenu = children.length
@@ -907,7 +942,11 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, ha
   const heroTitleHtml = isBirthdayCakePage
     ? `<a class="cake-hero-scroll" href="#cake-dm">${escapeHtml(heroTitle)}</a>`
     : escapeHtml(heroTitle);
-  const hero = isHome || !showHero ? "" : `<section class="page-hero${hasBrandedHero ? " about-hero" : ""}">
+  const hero = isHome || !showHero ? "" : (isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct)
+    ? `<section class="page-hero product-detail-hero${isBeanTartProduct ? " bean-tart-hero" : ""}">
+      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1>${escapeHtml(heroTitle)}</h1><p>▱ ${escapeHtml(heroCategoryLabel)}</p></div></div>
+    </section>`
+    : `<section class="page-hero${hasBrandedHero ? " about-hero" : ""}">
       <div class="hero-banner">${heroImage}<div class="hero-banner-title"><p>${escapeHtml(pathLabel)}</p><h1>${heroTitleHtml}</h1></div></div>
     </section>`;
   const homeScript = isHome ? `<script>
@@ -1549,6 +1588,9 @@ const SOUVENIR_PRODUCTS = [
   ["日式大福禮盒", "/product-item/日式大福禮盒", "daifuku-3.jpg", 10],
 ];
 
+const SOUVENIR_PRODUCT_PATHS = new Set(SOUVENIR_PRODUCTS.map(([, href]) => href));
+const SOUVENIR_PRODUCT_DATA = new Map(SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => [href, { title, image, likes }]));
+
 function souvenirPageContent() {
   const cards = SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => `<article class="souvenir-card"><a class="souvenir-card-link" href="${escapeAttr(href)}"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(title)}</h2><span class="souvenir-card-price">${PRODUCT_PRICE_LABEL}</span></div><span class="souvenir-likes" aria-label="收藏 ${likes} 次"><span aria-hidden="true">♡</span> ${likes}</span></div></a><button class="souvenir-add-cart" type="button" data-souvenir-add-cart="${escapeAttr(title)}">加入購物車</button></article>`).join("");
   return `<section class="souvenir-page"><section class="souvenir-products"><img class="souvenir-icon" src="/assets/images/icon-cupcake.png" alt=""><div class="souvenir-grid">${cards}</div></section></section>
@@ -1818,6 +1860,246 @@ function storefrontCatalogContent(view) {
   return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js"></script>`;
 }
 
+function cakeRelatedProducts(currentPath) {
+  const preferred = [
+    ["cake-2024-15.png", "2024-03-21", "OREO", "/product-item/oreo冰淇淋蛋糕-1878"],
+    ["cake-2024-14.png", "2024-03-21", "黃色小鴨", "/product-item/黃色小鴨-1876"],
+    ["cake-2024-11.png", "2024-03-21", "綠寶石萊思克(季節限定)", "/product-item/綠寶石萊思克季節限定-1870"],
+    ["cake-2024-10.png", "2024-03-21", "草莓萊思克(季節限定)", "/product-item/草莓萊思克季節限定-1868"],
+    ["dsc03882.png", "2020-03-09", "蜘蛛人", "/product-item/蜘蛛人-1157"],
+    ["cake-2020-9.png", "2019-01-07", "北極熊", "/product-item/北極熊"],
+  ];
+  const allProducts = CAKE_PRODUCT_RECORDS.map((product) => [product.image, "2024-03-21", product.title, product.path]);
+  const seen = new Set();
+  return [...preferred, ...allProducts].filter(([, , , href]) => {
+    const path = localPathFromUrl(new URL(href, SOURCE_ORIGIN).href);
+    if (path === currentPath || seen.has(path)) return false;
+    seen.add(path);
+    return true;
+  });
+}
+
+function cakeRelatedCarousel(currentPath, headingId) {
+  const relatedCards = cakeRelatedProducts(currentPath).map(([image, date, title, href]) => `<article class="emerald-related-card"><a href="${escapeAttr(href)}"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"><span>${escapeHtml(date)}</span><h3>${escapeHtml(title)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`).join("");
+  return `<section class="emerald-related" aria-labelledby="${escapeAttr(headingId)}"><h2 id="${escapeAttr(headingId)}">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track>${relatedCards}</div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
+    <script>
+    (() => {
+      document.querySelectorAll('[data-related-carousel]').forEach((carousel) => {
+        const track = carousel.querySelector('[data-related-track]');
+        const move = (direction) => track.scrollBy({ left: direction * Math.max(track.clientWidth * .82, 280), behavior: 'smooth' });
+        carousel.querySelector('[data-related-previous]').addEventListener('click', () => move(-1));
+        carousel.querySelector('[data-related-next]').addEventListener('click', () => move(1));
+      });
+    })();
+    </script>`;
+}
+
+const SOUVENIR_PRODUCT_DATES = new Map([
+  ["/product-item/豆塔禮盒", "2024-10-18"],
+  ["/product-item/森森肉鬆餅", "2022-06-20"],
+  ["/product-item/法式蝴蝶酥-1657", "2022-06-20"],
+  ["/product-item/鈕扣牛軋餅", "2022-06-20"],
+  ["/product-item/太陽餅禮盒", "2018-11-19"],
+  ["/product-item/手工蛋捲", "2018-11-19"],
+  ["/product-item/鈕扣餅乾", "2018-11-19"],
+  ["/product-item/鳳梨酥禮盒", "2018-11-19"],
+  ["/product-item/土鳳梨酥禮盒", "2018-11-19"],
+  ["/product-item/日式大福禮盒", "2018-11-19"],
+]);
+
+function souvenirRelatedCarousel(currentPath, headingId) {
+  const relatedCards = SOUVENIR_PRODUCTS
+    .filter(([, href]) => href !== currentPath)
+    .map(([title, href, image]) => `<article class="emerald-related-card"><a href="${escapeAttr(href)}"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"><span>${escapeHtml(SOUVENIR_PRODUCT_DATES.get(href) || "")}</span><h3>${escapeHtml(title)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`)
+    .join("");
+  return `<section class="emerald-related souvenir-related" aria-labelledby="${escapeAttr(headingId)}"><h2 id="${escapeAttr(headingId)}">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track>${relatedCards}</div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
+    <script>
+    (() => {
+      document.querySelectorAll('[data-related-carousel]').forEach((carousel) => {
+        const track = carousel.querySelector('[data-related-track]');
+        const move = (direction) => track.scrollBy({ left: direction * Math.max(track.clientWidth * .82, 280), behavior: 'smooth' });
+        carousel.querySelector('[data-related-previous]').addEventListener('click', () => move(-1));
+        carousel.querySelector('[data-related-next]').addEventListener('click', () => move(1));
+      });
+    })();
+    </script>`;
+}
+
+function souvenirProductContent(page) {
+  const localPath = localPathFromUrl(page.url);
+  const product = SOUVENIR_PRODUCT_DATA.get(localPath) || {};
+  const markdown = String(markdownFromPage(page) || "").replace(/\r/g, "");
+  const lines = markdown.split("\n").map((line) => line.trim());
+  const cleanText = (value) => String(value || "")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const headings = lines
+    .map((line, index) => ({ line, index }))
+    .filter(({ line }) => /^#{2,6}\s+/.test(line))
+    .map(({ line, index }) => ({ title: cleanText(line.replace(/^#{2,6}\s+/, "")), index }))
+    .filter(({ title }) => title);
+  const productTitle = headings[1]?.title || headings[0]?.title || product.title || titleFromPage(page);
+  const productMarkdown = markdown.split(/\nShare\b/i)[0];
+  const imageFiles = [...productMarkdown.matchAll(/!\[([^\]]*)\]\(([^)]+)\)/g)]
+    .map(([, alt, source]) => ({ alt: cleanText(alt), source, file: localImageFile(source) }))
+    .filter(({ alt, source, file }) => file
+      && !/^icon-/.test(file)
+      && !/parallax|background/i.test(alt)
+      && !/headtitle-bg/i.test(`${source} ${file}`));
+  const gallery = imageFiles.length
+    ? imageFiles
+    : [{ alt: productTitle, file: product.image || "photo-2.jpg" }];
+  const separator = (line) => /^\*\s+\*\s+\*$/.test(line);
+  const fieldLabels = ["口味", "規格", "蛋糕吋數", "保存方式", "其他"];
+  const fieldLines = (label) => {
+    const start = lines.findIndex((line) => line === label);
+    if (start < 0) return [];
+    const result = [];
+    for (const line of lines.slice(start + 1)) {
+      if (separator(line) || fieldLabels.includes(line)) break;
+      if (line && !/^!\[[^\]]*\]\([^)]*\)$/.test(line)) result.push(line);
+    }
+    return result;
+  };
+  const descriptionStart = headings[1]?.index ?? headings[0]?.index ?? 0;
+  const descriptionEnd = lines.slice(descriptionStart + 1).findIndex((line) => separator(line));
+  const descriptionLines = lines.slice(descriptionStart + 1, descriptionEnd < 0 ? lines.length : descriptionStart + 1 + descriptionEnd)
+    .filter((line) => line && !/^!\[[^\]]*\]\([^)]*\)$/.test(line) && !fieldLabels.includes(line) && !/^\[[^\]]+\]\([^)]*\)$/.test(line));
+  const description = descriptionLines.map(cleanText).filter(Boolean).map(escapeHtml).join("<br>");
+  const fields = fieldLabels
+    .map((label) => ({ label, value: fieldLines(label).map(cleanText).filter(Boolean).map(escapeHtml).join("<br>") }))
+    .filter(({ value }) => value);
+  const badgeSource = markdown.match(/!\[[^\]]*\]\(([^)]*icon-(?:vlml|milk-vega|vega)[^)]*)\)/i)?.[1] || "";
+  const badgeImage = localImageFile(badgeSource) || "icon-vlml.png";
+  const likes = markdown.match(/\bShare\s*\n+\s*\[([0-9]+)/i)?.[1] || product.likes || "0";
+  const galleryHtml = gallery.map(({ alt, file }) => `<img src="/assets/images/${escapeAttr(file)}" alt="${escapeAttr(alt || productTitle)}" loading="lazy">`).join("");
+  const specsHtml = fields.map(({ label, value }) => `<div><dt>${escapeHtml(label)}</dt><dd>${value}</dd></div>`).join("");
+  return `<section class="emerald-product-page bean-tart-product-page souvenir-product-page">
+    <section class="emerald-product-feature bean-tart-feature" aria-labelledby="souvenir-product-title">
+      <div class="bean-tart-gallery">${galleryHtml}</div>
+      <div class="emerald-product-copy bean-tart-copy">
+        <h2 id="souvenir-product-title">${escapeHtml(productTitle)}</h2>
+        <div class="bean-tart-intro">${description ? `<p>${description}</p>` : ""}</div>
+        ${specsHtml ? `<hr><dl class="bean-tart-specs">${specsHtml}</dl>` : ""}
+        <div class="bean-tart-badge"><img src="/assets/images/${escapeAttr(badgeImage)}" alt="奶蛋素"></div>
+      </div>
+    </section>
+    <div class="emerald-share"><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="${escapeAttr(likes)} 個喜歡">♡ <span>${escapeHtml(likes)}</span></div></div>
+    ${souvenirRelatedCarousel(localPath, "souvenir-related-title")}
+  </section>`;
+}
+
+function emeraldLyskContent() {
+  return `<section class="emerald-product-page">
+    <section class="emerald-product-feature" aria-labelledby="emerald-product-title">
+      <figure class="emerald-product-image"><img src="/assets/images/cake-2024-11.png" alt="綠寶石萊思克(季節限定)"></figure>
+      <div class="emerald-product-copy">
+        <h2 id="emerald-product-title">綠寶石萊思克(季節限定)</h2>
+        <div class="emerald-product-description"><span>產品說明</span><p>香草蛋糕│法國萊思克乳霜、雙層當季新鮮綠葡萄</p></div>
+        <p class="emerald-product-emphasis">※歐盟AOP認證，純粹乳香及果香交織成法式的質感享受</p>
+        <dl class="emerald-product-specs">
+          <div><dt>蛋糕吋數</dt><dd>6吋、8吋</dd></div>
+          <div><dt>保存方式</dt><dd>需冷藏。離開冷藏，請於1小時內食用完畢</dd></div>
+          <div><dt>其他</dt><dd>無添加防腐劑等食品添加物，天然食品效期較短，請於賞味期限內儘早食用完畢。</dd></div>
+        </dl>
+        <p class="emerald-product-note">※蛋糕造型或裝飾水果若有變更，請以門市販售為準</p>
+        <div class="emerald-product-badge"><img src="/assets/images/icon-vlml.png" alt="奶蛋素"></div>
+      </div>
+    </section>
+    <div class="emerald-share"><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="10 個喜歡">♡ <span>10</span></div></div>
+    ${cakeRelatedCarousel(EMERALD_LYSK_PATH, "emerald-related-title")}
+  </section>`;
+}
+
+function birthdayCakeProductContent(page) {
+  const localPath = localPathFromUrl(page.url);
+  const product = CAKE_PRODUCT_DATA.get(localPath) || {};
+  const markdown = String(markdownFromPage(page) || "").replace(/\r/g, "");
+  const lines = markdown.split("\n").map((line) => line.trim());
+  const labels = ["產品說明", "蛋糕吋數", "保存方式", "其他"];
+  const fieldLines = (label) => {
+    const start = lines.findIndex((line) => line === label);
+    if (start < 0) return [];
+    const result = [];
+    for (const line of lines.slice(start + 1)) {
+      if (line === "* * *" || labels.includes(line)) break;
+      if (line && !/^!?\[[^\]]*\]\([^)]*\)$/.test(line)) result.push(line);
+    }
+    return result;
+  };
+  const cleanText = (value) => String(value || "")
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, "")
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, "$1")
+    .replace(/[*_`]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
+  const asHtml = (values) => values.map(cleanText).filter(Boolean).map(escapeHtml).join("<br>");
+  const descriptionLines = fieldLines("產品說明");
+  const emphasis = descriptionLines.find((line) => /AOP/i.test(line));
+  const description = asHtml(descriptionLines.filter((line) => line !== emphasis));
+  const size = asHtml(fieldLines("蛋糕吋數"));
+  const storage = asHtml(fieldLines("保存方式"));
+  const otherLines = fieldLines("其他");
+  const noteIndex = otherLines.findIndex((line) => cleanText(line).startsWith("※蛋糕造型"));
+  const note = noteIndex >= 0 ? cleanText(otherLines[noteIndex]) : "※蛋糕造型或裝飾水果若有變更，請以門市販售為準";
+  const other = asHtml(noteIndex >= 0 ? otherLines.slice(0, noteIndex) : otherLines);
+  const headings = lines
+    .filter((line) => /^#{2,6}\s+/.test(line))
+    .map((line) => cleanText(line.replace(/^#{2,6}\s+/, "")))
+    .filter(Boolean);
+  const productTitle = headings[1] || headings[0] || product.title || titleFromPage(page);
+  const iconSource = markdown.match(/!\[[^\]]*\]\(([^)]*icon-(?:vlml|foraging)[^)]*)\)/i)?.[1] || "";
+  const badgeImage = localImageFile(iconSource) || "icon-vlml.png";
+  const likes = markdown.match(/\bShare\s*\n+\s*\[([0-9]+)/i)?.[1] || product.likes || "0";
+  return `<section class="emerald-product-page cake-product-page">
+    <section class="emerald-product-feature" aria-labelledby="cake-product-title">
+      <figure class="emerald-product-image"><img src="/assets/images/${escapeAttr(product.image || "cake-2024-11.png")}" alt="${escapeAttr(productTitle)}"></figure>
+      <div class="emerald-product-copy">
+        <h2 id="cake-product-title">${escapeHtml(productTitle)}</h2>
+        <div class="emerald-product-description"><span>產品說明</span><p>${description || "生日蛋糕"}</p></div>
+        ${emphasis ? `<p class="emerald-product-emphasis">${escapeHtml(cleanText(emphasis))}</p>` : ""}
+        <dl class="emerald-product-specs">
+          <div><dt>蛋糕吋數</dt><dd>${size || "—"}</dd></div>
+          <div><dt>保存方式</dt><dd>${storage || "需冷藏。離開冷藏，請於1小時內食用完畢"}</dd></div>
+          <div><dt>其他</dt><dd>${other || "無添加防腐劑等食品添加物，天然食品效期較短，請於賞味期限內儘早食用完畢。"}</dd></div>
+        </dl>
+        <p class="emerald-product-note">${escapeHtml(note)}</p>
+        <div class="emerald-product-badge"><img src="/assets/images/${escapeAttr(badgeImage)}" alt="蛋奶素"></div>
+      </div>
+    </section>
+    <div class="emerald-share"><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="${escapeAttr(likes)} 個喜歡">♡ <span>${escapeHtml(likes)}</span></div></div>
+    ${cakeRelatedCarousel(localPath, "cake-related-title")}
+  </section>`;
+}
+
+function beanTartProductContent() {
+  return `<section class="emerald-product-page bean-tart-product-page">
+    <section class="emerald-product-feature bean-tart-feature" aria-labelledby="bean-tart-title">
+      <div class="bean-tart-gallery">
+        <img src="/assets/images/photo-2.jpg" alt="豆塔禮盒豆塔" loading="lazy">
+        <img src="/assets/images/photo-3-4.jpg" alt="豆塔禮盒包裝" loading="lazy">
+        <img src="/assets/images/photo-4-3.jpg" alt="豆塔禮盒內容物" loading="lazy">
+      </div>
+      <div class="emerald-product-copy bean-tart-copy">
+        <h2 id="bean-tart-title">豆塔禮盒</h2>
+        <div class="bean-tart-intro"><p>不同手法的餅皮呈現帶出奶油與食材間的平衡。</p><p>夏威夷豆和果乾拌入蜂蜜綴在酥香豆塔餅皮上，也是我們的經典不敗款。</p></div>
+        <hr>
+        <dl class="bean-tart-specs">
+          <div><dt>規格</dt><dd>6入、9入</dd></div>
+          <div><dt>保存方式</dt><dd>可常溫保存，賞味期限詳見盒上標示，請避免放置潮濕高溫或曝曬之場所。</dd></div>
+          <div><dt>其他</dt><dd>無添加防腐劑等食品添加物，天然食品效期較短，請於賞味期限內儘早食用完畢。</dd></div>
+        </dl>
+        <div class="bean-tart-badge"><img src="/assets/images/icon-vlml.png" alt="奶蛋素"></div>
+      </div>
+    </section>
+    <div class="emerald-share"><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="9 個喜歡">♡ <span>9</span></div></div>
+    ${souvenirRelatedCarousel(BEAN_TART_PATH, "bean-tart-related-title")}
+  </section>`;
+}
+
 function pageContent(page) {
   const localPath = localPathFromUrl(page.url);
   if (localPath === "/關於森森") {
@@ -1825,6 +2107,18 @@ function pageContent(page) {
   }
   if (localPath === PRODUCT_INTRO_PATH) {
     return storefrontCatalogContent("overview");
+  }
+  if (localPath === EMERALD_LYSK_PATH) {
+    return emeraldLyskContent();
+  }
+  if (localPath === BEAN_TART_PATH) {
+    return beanTartProductContent();
+  }
+  if (SOUVENIR_PRODUCT_PATHS.has(localPath)) {
+    return souvenirProductContent(page);
+  }
+  if (CAKE_PRODUCT_PATHS.has(localPath)) {
+    return birthdayCakeProductContent(page);
   }
   if (SEASONAL_CATALOGS.has(localPath)) {
     return seasonalCatalogContent(localPath);
@@ -2068,14 +2362,19 @@ function main() {
     ensureDir(filePath);
     const content = localPath === "/" ? homeContent(pages) : pageContent(page);
     fs.writeFileSync(filePath, layout({
-      title: localPath === PRODUCT_INTRO_PATH ? "線上商城 – 森森點心坊" : titleFromPage(page),
+      title: localPath === PRODUCT_INTRO_PATH ? "線上商城 – 森森點心坊" : localPath === BIRTHDAY_CAKE_PATH ? BIRTHDAY_CAKE_PAGE_TITLE : titleFromPage(page),
       pathLabel: decodeURI(localPath),
       content,
       isHome: localPath === "/",
       isAbout: isAboutPage,
+      isEmeraldLysk: localPath === EMERALD_LYSK_PATH,
+      isCakeProduct: CAKE_PRODUCT_PATHS.has(localPath),
+      isBeanTartProduct: localPath === BEAN_TART_PATH,
+      isSouvenirProduct: SOUVENIR_PRODUCT_PATHS.has(localPath),
+      heroCategoryLabel: SOUVENIR_PRODUCT_PATHS.has(localPath) ? "伴手禮" : CAKE_PRODUCT_CATEGORY_LABELS.get(localPath),
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
       showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
-      heroSource: localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
+      heroSource: localPath === EMERALD_LYSK_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
     }));
   }
 

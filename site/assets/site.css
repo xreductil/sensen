@@ -701,7 +701,7 @@ a { color: inherit; text-decoration: none; }
 .catering-stores {
   min-height: 570px;
   padding: 112px max(28px, calc((100% - 1740px) / 2));
-  background: linear-gradient(rgba(47, 36, 32, .10), rgba(47, 36, 32, .10)), url("/assets/images/home-bg3.jpg") center 10% / cover no-repeat;
+  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/assets/images/home-bg3.jpg") center 10% / cover no-repeat;
 }
 .catering-stores-panel {
   display: grid;
@@ -5553,4 +5553,150 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
     padding: 13px 20px;
     font-size: .95rem;
   }
+}
+
+/* Emerald Lysk product detail: match the reference product page proportions. */
+@media (min-width: 881px) {
+  body:has(.product-detail-hero) .nav-actions { display: none; }
+  body:has(.product-detail-hero) .menu { gap: 16px 38px; }
+}
+
+.page-main:has(.emerald-product-page) { background: #fff; }
+.page-main:has(.product-detail-hero) .page-hero { width: 100%; margin: 0; padding: 0; }
+.product-detail-hero .hero-banner,
+.product-detail-hero .hero-banner > .image-slot,
+.product-detail-hero .hero-banner-title { min-height: 520px; }
+.product-detail-hero .hero-banner > .image-slot {
+  border: 0;
+  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/assets/images/headtitle-bg3.jpg") center 10% / cover no-repeat;
+}
+.product-detail-hero .hero-banner > .image-slot::before,
+.product-detail-hero .hero-banner > .image-slot img,
+.product-detail-hero .hero-banner > .image-slot span { display: none; }
+.product-detail-hero .hero-banner-title h1 {
+  margin: 0 0 20px;
+  color: #fff;
+  font-size: clamp(38px, 4vw, 54px);
+  font-weight: 300;
+  letter-spacing: .04em;
+  line-height: 1.25;
+}
+.product-detail-hero .hero-banner-title p {
+  display: block;
+  margin: 0;
+  color: rgba(255, 255, 255, .68);
+  font-size: 18px;
+  font-weight: 400;
+  letter-spacing: .03em;
+}
+
+.emerald-product-page { width: min(1220px, calc(100% - 80px)); margin: 0 auto; }
+.emerald-product-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 40px;
+  min-height: 600px;
+  padding: 62px 0 54px;
+  box-sizing: border-box;
+}
+.emerald-product-image {
+  display: grid;
+  min-height: 540px;
+  margin: 0;
+  place-items: center;
+}
+.emerald-product-image img { display: block; width: min(100%, 450px); height: auto; object-fit: contain; }
+.emerald-product-copy { padding-top: 78px; color: #6a6663; font-size: 16px; line-height: 1.7; }
+.emerald-product-copy h2 { margin: 0 0 20px; color: #17291e; font-size: 26px; line-height: 1.35; }
+.emerald-product-description { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; align-items: start; }
+.emerald-product-description p { margin: 0; }
+.emerald-product-emphasis { margin: 24px 0 28px; color: #514b48; font-style: italic; font-weight: 700; }
+.emerald-product-specs { margin: 0; }
+.emerald-product-specs > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 8px; margin: 12px 0; }
+.emerald-product-specs dt,
+.emerald-product-specs dd { margin: 0; }
+.emerald-product-specs dd { color: #6a6663; }
+.emerald-product-note { margin: 26px 0 0 118px; padding-bottom: 20px; border-bottom: 1px solid #e9e9e9; text-align: left; }
+.emerald-product-badge { display: grid; width: 66px; height: 66px; margin: 18px 0 0 118px; place-items: center; border: 2px solid #b9dc82; border-radius: 50%; }
+.emerald-product-badge img { display: block; width: 58px; height: 58px; object-fit: contain; }
+.emerald-share { display: flex; min-height: 58px; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); color: #777; font-size: 15px; }
+.emerald-share > div:first-child { display: flex; align-items: center; gap: 16px; }
+.emerald-share b { color: #999; font-size: 15px; font-weight: 700; }
+.emerald-likes { color: #c79043; font-size: 15px; line-height: 1; }
+.emerald-likes span { margin-left: 6px; color: #999; font-size: 15px; vertical-align: 2px; }
+.emerald-related { padding: 30px 0 84px; }
+.emerald-related h2 { margin: 0 0 26px; color: #17291e; font-size: 25px; line-height: 1.25; }
+.emerald-related-carousel { display: grid; grid-template-columns: 30px minmax(0, 1fr) 30px; gap: 10px; align-items: center; }
+.emerald-related-control { display: grid; width: 30px; height: 52px; padding: 0; place-items: center; border: 1px solid #ded6cd; border-radius: 2px; color: #704820; background: #f5e1bf; font-size: 28px; line-height: 1; cursor: pointer; }
+.emerald-related-control:hover { background: #eed2a6; }
+.emerald-related-grid { display: flex; gap: 28px; overflow-x: auto; padding: 0 0 12px; scrollbar-color: #d5b37f #f4f1ed; scrollbar-width: thin; }
+.emerald-related-card { flex: 0 0 calc((100% - 112px) / 5); min-width: 0; }
+.emerald-related-card a { display: block; color: inherit; }
+.emerald-related-card img { display: block; width: 100%; height: 235px; object-fit: contain; }
+.emerald-related-card span { display: block; margin-top: 14px; color: #b5b5b5; font-size: 14px; }
+.emerald-related-card h3 { min-height: 58px; margin: 8px 0 14px; color: #17291e; font-size: 22px; line-height: 1.35; }
+.emerald-related-card b { display: inline-flex; min-width: 100px; min-height: 42px; align-items: center; justify-content: center; color: #704820; background: var(--sand); font-size: 16px; font-weight: 400; }
+.emerald-related-card a:hover b { filter: brightness(.96); }
+
+/* Bean tart gift box product detail: match the reference gallery layout. */
+.page-main:has(.bean-tart-product-page) { background: #fff; }
+.page-main:has(.bean-tart-product-page) .product-detail-hero .hero-banner > .image-slot,
+.bean-tart-hero .hero-banner > .image-slot {
+  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/assets/images/headtitle-bg2.jpg") center 10% / cover no-repeat;
+}
+.bean-tart-product-page { width: min(1220px, calc(100% - 80px)); margin: 0 auto; }
+.bean-tart-feature {
+  display: grid;
+  grid-template-columns: minmax(0, 1.35fr) minmax(440px, .65fr);
+  gap: 40px;
+  padding: 62px 0 54px;
+  box-sizing: border-box;
+  align-items: start;
+}
+.bean-tart-gallery { display: grid; gap: 72px; }
+.bean-tart-gallery img { display: block; width: 100%; height: auto; object-fit: contain; }
+.bean-tart-copy { padding-top: 78px; color: #6a6663; font-size: 16px; line-height: 1.7; }
+.bean-tart-copy h2 { margin: 0 0 20px; color: #17291e; font-size: 26px; line-height: 1.35; }
+.bean-tart-intro p { margin: 0 0 12px; }
+.bean-tart-copy hr { margin: 42px 0 34px; border: 0; border-top: 1px solid #e9e9e9; }
+.bean-tart-specs { margin: 0; }
+.bean-tart-specs > div { display: grid; grid-template-columns: 110px minmax(0, 1fr); gap: 14px; margin: 24px 0; }
+.bean-tart-specs dt,
+.bean-tart-specs dd { margin: 0; }
+.bean-tart-specs dd { color: #6a6663; }
+.bean-tart-badge { display: grid; width: 66px; height: 66px; margin: 28px 0 0; place-items: center; border: 2px solid #b9dc82; border-radius: 50%; }
+.bean-tart-badge img { display: block; width: 58px; height: 58px; object-fit: contain; }
+.souvenir-related .emerald-related-card img { height: 235px; object-fit: cover; }
+
+@media (max-width: 760px) {
+  .product-detail-hero .hero-banner,
+  .product-detail-hero .hero-banner > .image-slot,
+  .product-detail-hero .hero-banner-title { min-height: 360px; }
+  .product-detail-hero .hero-banner-title h1 { max-width: calc(100% - 32px); margin-bottom: 14px; font-size: clamp(30px, 8vw, 42px); }
+  .product-detail-hero .hero-banner-title p { font-size: 15px; }
+  .emerald-product-page { width: calc(100% - 28px); }
+  .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
+  .emerald-product-image { min-height: 320px; }
+  .emerald-product-image img { width: min(100%, 300px); }
+  .emerald-product-copy { padding-top: 0; font-size: 16px; }
+  .emerald-product-copy h2 { font-size: 24px; }
+  .emerald-product-note { margin-left: 0; }
+  .emerald-product-badge { margin-left: 0; }
+  .emerald-share { min-height: 54px; font-size: 15px; }
+  .emerald-share > div:first-child { gap: 11px; }
+  .emerald-related { padding-top: 28px; }
+  .emerald-related-carousel { grid-template-columns: 24px minmax(0, 1fr) 24px; gap: 6px; }
+  .emerald-related-control { width: 24px; height: 44px; font-size: 22px; }
+  .emerald-related-grid { gap: 16px; }
+  .emerald-related-card { flex-basis: calc((100% - 16px) / 2); }
+  .emerald-related-card img { height: auto; aspect-ratio: 1; }
+  .emerald-related-card h3 { min-height: 0; font-size: 17px; }
+  .bean-tart-product-page { width: calc(100% - 28px); }
+  .bean-tart-feature { grid-template-columns: 1fr; gap: 26px; padding: 28px 0 38px; }
+  .bean-tart-gallery { gap: 36px; }
+  .bean-tart-copy { padding-top: 0; font-size: 16px; }
+  .bean-tart-copy h2 { font-size: 24px; }
+  .bean-tart-copy hr { margin: 30px 0 24px; }
+  .bean-tart-specs > div { grid-template-columns: 100px minmax(0, 1fr); gap: 8px; margin: 16px 0; }
+  .souvenir-related .emerald-related-card img { height: auto; aspect-ratio: 1; object-fit: cover; }
 }
