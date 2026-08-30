@@ -1041,15 +1041,14 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     <nav class="nav" aria-label="主選單">
       <a class="brand" href="/" aria-label="森森點心坊首頁"><img class="brand-logo" src="/assets/images/logo.png" alt="森森點心坊 SenSen Bakery"></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="開啟主選單"><span></span><span></span><span></span></button>
-      <div class="menu" id="site-menu">${nav}<div class="mobile-nav-actions" aria-label="森森會員功能">
-        <a class="mobile-nav-action" href="/customer/admin/"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"></path></svg><span>會員中心</span></a>
-        <button class="mobile-nav-action cart-trigger" type="button" aria-controls="sensen-cart-drawer" aria-expanded="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L20 8H6"></path><circle cx="10" cy="20" r="1"></circle><circle cx="17" cy="20" r="1"></circle></svg><span>購物車</span><b class="cart-count" aria-live="polite">0</b></button>
-        <a class="mobile-nav-action" href="/admin/"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h3"></path></svg><span>員工後台</span></a>
+      <div class="menu" id="site-menu">${nav}<div class="mobile-nav-actions" aria-label="森森後台功能">
+        <a class="mobile-nav-action" href="/customer/admin/" aria-label="客戶後台"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"></path></svg><span>客戶後台</span></a>
+        <a class="mobile-nav-action" href="/admin/" aria-label="員工後台"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h3"></path></svg><span>員工後台</span></a>
       </div><a class="mobile-menu-social" href="https://www.facebook.com/sensenbakery/" target="_blank" rel="noreferrer" aria-label="Facebook">f</a></div>
       <div class="nav-actions" aria-label="森森會員功能">
-        <a class="nav-action" href="/customer/admin/" aria-label="客戶後台" title="客戶後台"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"></path></svg></a>
-        <button class="nav-action cart-trigger" type="button" aria-controls="sensen-cart-drawer" aria-expanded="false" aria-label="開啟購物車" title="購物車"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L20 8H6"></path><circle cx="10" cy="20" r="1"></circle><circle cx="17" cy="20" r="1"></circle></svg><span class="cart-count" aria-live="polite">0</span></button>
-        <a class="nav-action" href="/admin/" aria-label="森森員工後台" title="森森員工後台"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h3"></path></svg></a>
+        <a class="nav-action" href="/customer/admin/" aria-label="客戶後台"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"></path></svg></a>
+        <button class="nav-action cart-trigger" type="button" aria-controls="sensen-cart-drawer" aria-expanded="false" aria-label="購物車"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L20 8H6"></path><circle cx="10" cy="20" r="1"></circle><circle cx="17" cy="20" r="1"></circle></svg><span class="cart-count" aria-live="polite">0</span></button>
+        <a class="nav-action" href="/admin/" aria-label="員工後台"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h3"></path></svg></a>
       </div>
     </nav>
   </header>
@@ -1063,24 +1062,20 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     const toggle = document.querySelector(".menu-toggle");
     const menu = document.querySelector("#site-menu");
     if (!toggle || !menu) return;
-    toggle.addEventListener("click", () => {
-      const expanded = toggle.getAttribute("aria-expanded") === "true";
-      toggle.setAttribute("aria-expanded", String(!expanded));
-      toggle.setAttribute("aria-label", expanded ? "開啟主選單" : "關閉主選單");
-      menu.classList.toggle("is-open", !expanded);
-    });
+    const setMenuState = isOpen => {
+      toggle.setAttribute("aria-expanded", String(isOpen));
+      toggle.setAttribute("aria-label", isOpen ? "關閉主選單" : "開啟主選單");
+      menu.classList.toggle("is-open", isOpen);
+    };
+    toggle.addEventListener("click", () => setMenuState(!menu.classList.contains("is-open")));
     menu.addEventListener("click", (event) => {
       if (event.target.closest("a")) {
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "開啟主選單");
-        menu.classList.remove("is-open");
+        setMenuState(false);
       }
     });
     document.addEventListener("keydown", (event) => {
-      if (event.key === "Escape" && toggle.getAttribute("aria-expanded") === "true") {
-        toggle.setAttribute("aria-expanded", "false");
-        toggle.setAttribute("aria-label", "開啟主選單");
-        menu.classList.remove("is-open");
+      if (event.key === "Escape" && menu.classList.contains("is-open")) {
+        setMenuState(false);
         toggle.focus();
       }
     });
@@ -1822,6 +1817,16 @@ function tasteApplyContent() {
 function faqContent() {
   return "<section class=\"faq-page\">\n  <div class=\"faq-wheat\" aria-hidden=\"true\"><img src=\"/assets/images/icon-wheat.png\" alt=\"\"></div>\n  <div class=\"faq-groups\">\n    <section class=\"faq-group\">\n      <div class=\"faq-group-heading\"><h2>彌月諮詢&amp;試吃服務</h2><span aria-hidden=\"true\"></span></div>\n      <div class=\"faq-list\">\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-1\"><span class=\"faq-number\">1</span><span class=\"faq-question-title\">門市諮詢、試吃服務</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-1\" class=\"faq-answer\" hidden>產前產後均可申請。滿35周(含)以上的媽媽就可以申請囉！可至門市洽詢，或來電索取試吃：07-7966959，也可利用 <a href=\"/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/\">線上申請</a> 唷！(或 <a href=\"https://www.facebook.com/sensenbakery/\" target=\"_blank\" rel=\"noreferrer\">粉專FB</a>)</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-2\"><span class=\"faq-number\">2</span><span class=\"faq-question-title\">禮盒的搭配組合</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-2\" class=\"faq-answer\" hidden>彌月禮盒內容物皆可客製任選、搭配。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-3\"><span class=\"faq-number\">3</span><span class=\"faq-question-title\">訂購及更改</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-3\" class=\"faq-answer\" hidden>本公司全程新鮮生產，請於交貨日前七日訂購／確認。若欲追加／更改訂單，請於出貨前2日完成變更手續，逾期恕本公司保有不接受改單之權利。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-4\"><span class=\"faq-number\">4</span><span class=\"faq-question-title\">訂購優惠</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-4\" class=\"faq-answer\" hidden>訂購滿30盒以上享有特價優惠，不再與其他折扣或優惠辦法重覆使用。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-5\"><span class=\"faq-number\">5</span><span class=\"faq-question-title\">森森保留的變更權利</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-5\" class=\"faq-answer\" hidden>森森保留價格、產品組合、禮盒設計等變更之權利，型錄圖片僅供參考，產品以實物為準。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-6\"><span class=\"faq-number\">6</span><span class=\"faq-question-title\">價格變動</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-6\" class=\"faq-answer\" hidden>禮盒組合的定價，依您所選擇之內搭商品價格為準。如遇商品內容、價格及產品組合變動，恕不另行通知。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-1-7\"><span class=\"faq-number\">7</span><span class=\"faq-question-title\">宅配服務</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-1-7\" class=\"faq-answer\" hidden>本公司有代客宅配服務，全程低溫冷藏宅配。蛋糕均為特價品，運費需另計。</div></article>\n      </div>\n    </section>\n    <section class=\"faq-group faq-group-pattern\">\n      <div class=\"faq-group-heading\"><h2>配送取貨問題</h2><span aria-hidden=\"true\"></span></div>\n      <div class=\"faq-list\">\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-2-1\"><span class=\"faq-number\">1</span><span class=\"faq-question-title\">貨運寄送範圍有含離島嗎?</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-2-1\" class=\"faq-answer\" hidden>森森與統一宅急便(黑貓)配合運送。台灣本島皆可運送，離島地區除東引島以外其他皆可運送。提醒您，如配送外島，易碎及易變形商品須自行承擔破損風險。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-2-2\"><span class=\"faq-number\">2</span><span class=\"faq-question-title\">可指定到貨日期嗎？</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-2-2\" class=\"faq-answer\" hidden>若欲指定到貨日期請提早訂購，並於接洽的專員註明到貨日期。若不確定該指定日期是否可如期到貨，請洽詢專人服務：07-7966959。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-2-3\"><span class=\"faq-number\">3</span><span class=\"faq-question-title\">是否可指定到貨時段</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-2-3\" class=\"faq-answer\" hidden>我們有三個送貨的時段：9:00、12:00、14:00。</div></article>\n      </div>\n    </section>\n    <section class=\"faq-group\">\n      <div class=\"faq-group-heading\"><h2>商品相關問題</h2><span aria-hidden=\"true\"></span></div>\n      <div class=\"faq-list\">\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-3-1\"><span class=\"faq-number\">1</span><span class=\"faq-question-title\">預定蛋糕需要支付全額嗎？</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-3-1\" class=\"faq-answer\" hidden>一般節慶蛋糕不強制全額支付，可接受先支付3成訂金，領取蛋糕當日再結清餘額，發票日期為領取蛋糕當日。<br><br>而活動期間，例如：母親節蛋糕、父親節蛋糕，因檔期折扣因素，提早預購有優惠，需先結清所有款項。</div></article>\n        <article class=\"faq-item\"><button type=\"button\" aria-expanded=\"false\" aria-controls=\"faq-3-2\"><span class=\"faq-number\">2</span><span class=\"faq-question-title\">蛋糕可以離開冷藏多久？可以保存幾天呢？</span><span class=\"faq-plus\" aria-hidden=\"true\">＋</span></button><div id=\"faq-3-2\" class=\"faq-answer\" hidden>建議您蛋糕離開冷藏不要超過半個小時，由於蛋糕都是當日新鮮現做後送至門市，故我們建議您盡量當日食用完畢，口感會比較好。若您未食用完，務必要放置冰箱冷藏，敬請在三日內食用完畢，風味最佳。</div></article>\n      </div>\n    </section>\n  </div>\n</section>\n<script>\n(() => {\n  document.querySelectorAll('.faq-item > button').forEach((button) => {\n    button.addEventListener('click', () => {\n      const answer = document.getElementById(button.getAttribute('aria-controls'));\n      const open = button.getAttribute('aria-expanded') === 'true';\n      button.setAttribute('aria-expanded', String(!open));\n      button.querySelector('.faq-plus').textContent = open ? '＋' : '－';\n      if (answer) answer.hidden = open;\n    });\n  });\n})();\n</script>";
 }
+
+const originalFaqContent = faqContent;
+faqContent = () => originalFaqContent()
+  .replace("彌月諮詢&amp;試吃服務", "彌月諮詢&amp;試<br>吃服務")
+  .replace("07-7966959，也可利用", "07-7966959，也<br>可利用")
+  .replace("逾期恕本公司", "逾<br>期恕本公司")
+  .replace("如配送外島", "如配送<br>外島")
+  .replace("請洽詢專人服務", "請洽詢<br>專人服務")
+  .replace("發票日期為領取蛋糕當日。", "發票日期為領取蛋糕當<br>日。")
+  .replace("盡量當日食用完畢", "盡量當日食用<br>完畢");
 
 function storeInfoContent() {
   const stores = [
