@@ -77,7 +77,7 @@ body:has(.account-shell) #message { padding: 18px 22px; border: 1px solid #e8edf
 .store-page-card { padding: clamp(28px, 5vw, 64px); border: 1px solid var(--line); background: var(--cream); box-shadow: var(--shadow); }
 .store-page-card h1 { margin: 0 0 28px; color: var(--brown); font-size: clamp(2rem, 4vw, 3.5rem); }
 .store-page-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }.cart-page-total { margin: 24px 0; color: var(--brown-2); font-size: 1.3rem; font-weight: 700; }
-.cake-add-cart { grid-column: 1 / -1; justify-self: start; padding: 5px 10px; border: 1px solid var(--sand); border-radius: 4px; background: transparent; color: var(--brown-2); cursor: pointer; font-size: .78rem; }
+.cake-add-cart { flex: 1; min-height: 40px; padding: 6px 12px; border: 1px solid var(--sand); border-radius: 7px; background: transparent; color: var(--brown-2); cursor: pointer; font-size: clamp(13px, .9vw, 16px); }
 .cake-add-cart:hover, .cake-add-cart:disabled { background: var(--sand-soft); }
 
 @media (max-width: 760px) {
@@ -1390,6 +1390,79 @@ a { color: inherit; text-decoration: none; }
   max-width: 860px;
 }
 
+.privacy-page {
+  width: min(1060px, calc(100% - 48px));
+  margin: 0 auto;
+  padding: 68px 0 100px;
+  color: #514743;
+  font-size: 1rem;
+  line-height: 1.9;
+}
+.privacy-lead {
+  margin: 0 0 42px;
+  padding: 26px 30px;
+  border-left: 5px solid var(--brown-2);
+  color: #5d4b43;
+  background: #fff8ee;
+}
+.privacy-section {
+  margin: 0 0 42px;
+}
+.privacy-section h2,
+.privacy-contact h2 {
+  margin: 0 0 16px;
+  color: var(--brown-2);
+  font-size: clamp(1.25rem, 2vw, 1.7rem);
+  line-height: 1.4;
+}
+.privacy-section p,
+.privacy-contact p {
+  margin: 0 0 14px;
+}
+.privacy-section ul {
+  margin: 0;
+  padding-left: 1.5em;
+}
+.privacy-section li + li {
+  margin-top: 10px;
+}
+.privacy-contact {
+  margin-top: 12px;
+  padding: 30px;
+  background: #f7eee3;
+}
+.privacy-contact a {
+  color: var(--brown-2);
+  font-weight: 700;
+  text-decoration: underline;
+}
+@media (max-width: 760px) {
+  .privacy-page {
+    width: calc(100% - 32px);
+    padding: 44px 0 68px;
+    font-size: .95rem;
+    line-height: 1.8;
+  }
+  .privacy-lead {
+    margin-bottom: 32px;
+    padding: 20px 18px;
+  }
+  .privacy-section {
+    margin-bottom: 32px;
+  }
+  .privacy-section h2,
+  .privacy-contact h2 {
+    margin-bottom: 12px;
+    font-size: 1.2rem;
+  }
+  .privacy-section li + li {
+    margin-top: 8px;
+  }
+  .privacy-contact {
+    padding: 22px 18px;
+  }
+}
+
 .cake-page {
   padding: 0 0 0;
   background: #fff;
@@ -1496,6 +1569,12 @@ a { color: inherit; text-decoration: none; }
 
 .cake-product-card {
   min-width: 0;
+  padding: 16px 16px 20px;
+  border: 1px solid #ece7e1;
+  border-radius: 20px;
+  background: #fff;
+  box-sizing: border-box;
+  box-shadow: 0 8px 20px rgba(81, 54, 36, .06);
 }
 
 .cake-product-card-link {
@@ -1506,15 +1585,21 @@ a { color: inherit; text-decoration: none; }
 
 .cake-product-image {
   display: grid;
-  min-height: clamp(210px, 17vw, 300px);
-  align-items: end;
+  aspect-ratio: 1 / 1;
+  min-height: 0;
+  padding: clamp(16px, 2vw, 28px);
+  box-sizing: border-box;
+  align-items: center;
+  border-radius: 14px;
+  background: #f7f7f7;
+  overflow: hidden;
 }
 
 .cake-product-image img {
   display: block;
   width: 100%;
   height: auto;
-  max-height: 300px;
+  max-height: 100%;
   object-fit: contain;
   transition: transform .28s ease, filter .28s ease;
   transform-origin: center bottom;
@@ -1529,10 +1614,7 @@ a { color: inherit; text-decoration: none; }
 }
 
 .cake-product-meta {
-  display: grid;
-  grid-template-columns: auto auto;
-  gap: 8px;
-  align-items: center;
+  display: block;
   margin-top: clamp(16px, 1.4vw, 24px);
 }
 
@@ -1546,8 +1628,8 @@ a { color: inherit; text-decoration: none; }
 }
 
 .cake-product-title-link {
+  min-width: 0;
   display: block;
-  transform: translateX(16px);
   color: inherit;
   text-decoration: none;
 }
@@ -1556,49 +1638,60 @@ a { color: inherit; text-decoration: none; }
   display: block;
   margin-top: 5px;
   color: #b66f2d;
-  font-size: clamp(14px, .95vw, 18px);
-  font-weight: 600;
+  font-size: clamp(20px, 1.45vw, 26px);
+  font-weight: 700;
   line-height: 1.35;
 }
 
-.cake-likes {
-  position: relative;
-  z-index: 2;
-  border: 0;
-  outline: 0;
-  padding: 0;
-  cursor: pointer;
-  font: inherit;
-  display: inline-flex;
-  gap: 4px;
+.cake-add-cart {
+  margin-top: 0;
+}
+
+.cake-product-purchase {
+  display: flex;
   align-items: center;
-  color: #999;
-  font-size: clamp(13px, .82vw, 15px);
-  line-height: 1.4;
-  white-space: nowrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.cake-quantity-control {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  border: 1px solid #ddd;
+  border-radius: 7px;
+  background: #fff;
+}
+
+.cake-quantity-control button {
+  display: grid;
+  width: 34px;
+  height: 38px;
+  place-items: center;
+  border: 0;
+  color: #333;
   background: transparent;
-  box-shadow: none;
-  appearance: none;
+  cursor: pointer;
+  font-size: 21px;
+  line-height: 1;
 }
 
-.cake-likes:focus-visible {
-  outline: 2px solid rgba(214, 155, 72, .55);
-  outline-offset: 4px;
+.cake-quantity-control button:hover,
+.cake-quantity-control button:focus-visible {
+  color: var(--brown-2);
+  background: #fff8ed;
 }
 
-.cake-likes:hover .cake-heart,
-.cake-likes.is-liked .cake-heart {
-  color: #c98032;
+.cake-quantity-control button:disabled {
+  cursor: not-allowed;
+  opacity: .45;
 }
 
-.cake-likes.is-liked .cake-heart {
-  font-weight: 700;
-}
-
-.cake-likes span {
-  color: #d69b48;
-  font-size: 1.18em;
-  line-height: .9;
+.cake-quantity-control output {
+  min-width: 24px;
+  color: #666;
+  font-size: 16px;
+  text-align: center;
 }
 
 .cake-load-more {
@@ -2018,7 +2111,9 @@ a { color: inherit; text-decoration: none; }
   padding: 40px 0;
   color: rgba(255, 255, 255, .78);
   background: var(--brown);
-  font-size: 14px;
+  font-family: var(--font-main);
+  font-size: 16px;
+  line-height: 1.0;
   text-align: center;
 }
 .footer a { color: var(--sand); }
@@ -2293,22 +2388,21 @@ body:has(.menu.is-open)::after {
     margin-bottom: 44px;
   }
   .cake-product-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 1fr);
     width: calc(100% - 28px);
-    gap: 42px 20px;
+    gap: 36px;
   }
   .cake-product-image {
-    min-height: 160px;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
   }
   .cake-product-meta {
-    gap: 10px;
     margin-top: 18px;
   }
-  .cake-product-meta h3 {
-    font-size: 18px;
-  }
-  .cake-likes {
-    font-size: 16px;
+  .cake-product-purchase {
+    gap: 8px;
+    margin-top: 16px;
   }
   .cake-dm {
     padding-right: 24px;
@@ -2381,7 +2475,7 @@ body:has(.menu.is-open)::after {
   color: #102318;
   font-size: clamp(28px, 2.4vw, 38px);
   font-weight: 700;
-  line-height: 1.2;
+  line-height: 1;
 }
 
 .boston-product-english {
@@ -2611,7 +2705,7 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   color: #102318;
 }
 
-.souvenir-card img {
+.souvenir-card > .souvenir-card-link > img {
   display: block;
   width: 88%;
   margin: 0 auto;
@@ -2705,7 +2799,8 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 @media (max-width: 700px) {
   .souvenir-products { width: calc(100% - 28px); padding: 76px 0 72px; }
   .souvenir-icon { top: -52px; width: 68px; height: 68px; }
-  .souvenir-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 6px; }
+  .souvenir-grid { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .souvenir-card { width: 100%; max-width: 520px; margin: 0 auto; }
   .souvenir-card-meta { display: block; padding-top: 12px; }
   .souvenir-card-meta h2 { font-size: 16px; white-space: normal; }
   .souvenir-likes { display: block; margin-top: 8px; font-size: 16px; }
@@ -3911,6 +4006,10 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .product-intro-carousel { position: relative; }
 .product-intro-track { display: flex; gap: clamp(16px, 2vw, 32px); overflow-x: auto; padding: 0 4px 18px; scroll-behavior: smooth; scroll-snap-type: x mandatory; scrollbar-color: #d5a45b #f5eee4; scrollbar-width: thin; }
 .product-intro-card, .product-intro-menu-card { flex: 0 0 clamp(220px, 18vw, 300px); min-width: 0; scroll-snap-align: start; }
+.product-intro-featured-section { margin-top: 24px; border-color: transparent; border-radius: 0; background: transparent; box-shadow: none; }
+.product-intro-featured-section + .product-intro-section { border-top: 1px solid #eee; }
+.product-intro-featured-card { position: relative; }
+.product-intro-featured-badge { position: absolute; top: 10px; left: 10px; z-index: 1; min-width: 54px; padding: 6px 9px; border-radius: 999px; color: #fff; background: var(--brown-2); font-size: 12px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-align: center; }
 .product-intro-card-link, .product-intro-menu-card a { display: block; color: inherit; text-decoration: none; }
 .product-intro-card img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: contain; transition: transform .25s ease, filter .25s ease; }
 .product-intro-card-link:hover img, .product-intro-card-link:focus-visible img { transform: translateY(-6px) scale(1.035); filter: drop-shadow(0 12px 12px rgba(81, 54, 36, .16)); }
@@ -3931,6 +4030,7 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .product-intro-load-more:hover, .product-intro-load-more:focus-visible { background: #dfb978; transform: translateY(-2px); }
 @media (max-width: 700px) {
   .product-intro-section { width: calc(100% - 28px); padding: 58px 0 64px; }
+  .product-intro-featured-section { margin-top: 14px; padding-top: 46px; }
   .product-intro-section-heading { align-items: start; margin-bottom: 24px; }
   .product-intro-section-heading h2 { gap: 10px; font-size: 30px; }
   .product-intro-section-heading h2 img { width: 42px; height: 42px; }
@@ -4367,8 +4467,8 @@ body:has(.taste-apply-page) { background: #f9e6e7; color: #5d4a49; }
 body:has(.taste-apply-page) .page-main { overflow: hidden; }
 body:has(.taste-apply-page) .menu-item:nth-child(5) > a { color: #ae624b; }
 body:has(.taste-apply-page) .menu-item:nth-child(5) > a::after { background: #ae624b; }
-.taste-apply-page { --taste-ink: #584746; --taste-gold: #ca953f; background: #f7d9dc url("/assets/images/baby-cake-apply-bg2.jpg") center top / cover fixed no-repeat; }
-.taste-apply-hero { position: relative; min-height: 1460px; padding: 122px 24px 150px; box-sizing: border-box; background: linear-gradient(rgba(207, 89, 112, .56), rgba(207, 89, 112, .56)); }
+.taste-apply-page { --taste-ink: #584746; --taste-gold: #ca953f; background: linear-gradient(rgba(207, 89, 112, .2), rgba(207, 89, 112, .2)), url("/assets/images/baby-cake-apply-bg2.jpg") center top / cover fixed no-repeat; }
+.taste-apply-hero { position: relative; min-height: 1460px; padding: 122px 24px 150px; box-sizing: border-box; background: transparent; }
 .taste-apply-hero-copy { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; color: #fff; text-align: center; }
 .taste-apply-hero-copy h1 { margin: 0; font-size: clamp(2.25rem, 4vw, 3.7rem); font-weight: 700; letter-spacing: .06em; text-shadow: 0 2px 8px rgba(84, 33, 40, .14); }
 .taste-apply-hero-copy p { margin: 10px 0 0; font-size: clamp(.85rem, 1.25vw, 1.15rem); line-height: 1.7; letter-spacing: .03em; }
@@ -4389,20 +4489,21 @@ body:has(.taste-apply-page) .menu-item:nth-child(5) > a::after { background: #ae
 .taste-apply-message.is-error { color: #d7444c; } .taste-apply-message.is-success { color: #5c8a58; } .taste-apply-message.is-loading { color: #91764d; }
 .taste-apply-submit { grid-column: 1 / -1; min-height: 52px; border: 0; border-radius: 0; color: #fff; background: var(--taste-gold); cursor: pointer; font: inherit; font-size: 1rem; letter-spacing: .08em; transition: filter .2s ease, opacity .2s ease; }
 .taste-apply-submit:hover { filter: brightness(.94); } .taste-apply-submit:disabled { cursor: wait; opacity: .65; }
-.taste-apply-notes { padding: 72px 24px 90px; background: rgba(255, 250, 250, .92); }
-.taste-apply-notes-inner { width: min(1160px, 100%); margin: 0 auto; padding: 42px 52px 50px; box-sizing: border-box; background: rgba(255, 255, 255, .7); border-top: 1px solid rgba(141, 86, 61, .35); }
+.taste-apply-notes { padding: 72px 24px 90px; background: transparent; }
+.taste-apply-notes-inner { width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 34px 40px 40px; box-sizing: border-box; background: #fff; border-top: 1px solid rgba(141, 86, 61, .35); }
 .taste-apply-notes h2 { margin: 0 0 22px; color: #273b2d; font-size: clamp(1.45rem, 2.4vw, 2.1rem); }
 .taste-apply-notes ol { margin: 0; padding-left: 1.65em; color: #7a8589; font-size: clamp(.96rem, 1.25vw, 1.18rem); line-height: 2.2; }
 .taste-apply-notes li { padding-left: 4px; } .taste-apply-notes strong { color: #ff5267; font-weight: 500; }
-.taste-apply-slogan { min-height: 360px; padding: 110px 24px 80px; box-sizing: border-box; color: #fff; text-align: center; background: linear-gradient(rgba(197, 75, 101, .62), rgba(197, 75, 101, .62)); }
-.taste-apply-slogan p { margin: 0; font-size: clamp(2rem, 4vw, 3.2rem); letter-spacing: .08em; } .taste-apply-slogan small { display: block; margin-top: 22px; font-size: clamp(1.15rem, 2vw, 1.8rem); letter-spacing: .12em; }
+.taste-apply-slogan { min-height: 360px; padding: 110px 24px 80px; box-sizing: border-box; color: #fff; text-align: center; background: transparent; }
+.taste-apply-slogan p { margin: 0; font-size: clamp(1.4rem, 2.8vw, 2.4rem); letter-spacing: .08em; } .taste-apply-slogan small { display: block; margin-top: 18px; color: #fff; font-family: "STKaiti", "Kaiti TC", "BiauKai", "DFKai-SB", cursive; font-size: clamp(.95rem, 1.3vw, 1.3rem); font-weight: 400; letter-spacing: .16em; }
+.taste-apply-slogan-image { display: block; width: min(292px, 70vw); height: auto; margin: 18px auto 0; }
 @media (max-width: 760px) {
   .taste-apply-hero { min-height: 0; padding: 72px 14px 92px; background-position: 58% top; }
   .taste-apply-hero-copy h1 { font-size: 2.2rem; } .taste-apply-hero-copy p { font-size: .86rem; line-height: 1.55; } .taste-apply-hero-copy p br { display: none; }
   .taste-apply-card { width: 100%; margin-top: 52px; padding: 44px 16px 26px; } .taste-apply-baby { width: 70px; height: 70px; top: -36px; }
   .taste-apply-card form { grid-template-columns: 1fr; gap: 18px; } .taste-apply-field-wide, .taste-apply-choice, .taste-apply-submit, .taste-apply-message { grid-column: auto; }
-  .taste-apply-choice label { margin-right: 8px; font-size: .9rem; } .taste-apply-notes { padding: 34px 14px 48px; } .taste-apply-notes-inner { padding: 30px 20px 34px; }
-  .taste-apply-notes ol { font-size: .93rem; line-height: 1.85; } .taste-apply-slogan { min-height: 240px; padding: 72px 14px 50px; } .taste-apply-slogan p { font-size: 1.65rem; } .taste-apply-slogan small { font-size: 1rem; }
+  .taste-apply-choice label { margin-right: 8px; font-size: .9rem; } .taste-apply-notes { padding: 34px 14px 48px; } .taste-apply-notes-inner { width: calc(100% - 12px); padding: 30px 20px 34px; }
+  .taste-apply-notes ol { font-size: .93rem; line-height: 1.85; } .taste-apply-slogan { min-height: 240px; padding: 72px 14px 50px; } .taste-apply-slogan p { font-size: 1.3rem; } .taste-apply-slogan small { font-size: .85rem; } .taste-apply-slogan-image { width: min(220px, 70vw); margin-top: 14px; }
 }
 
 

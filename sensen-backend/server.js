@@ -422,6 +422,17 @@ function sensenOrders(db, products = productsWithOverrides(db)) {
   });
 }
 
+function productSalesCounts(db, products) {
+  const counts = new Map();
+  sensenOrders(db, products).forEach(order => {
+    (order.items || []).forEach(item => {
+      if (!item.id) return;
+      counts.set(item.id, (counts.get(item.id) || 0) + Math.max(0, Number(item.qty || 0)));
+    });
+  });
+  return counts;
+}
+
 function slug(text) {
   return String(text).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
 }
@@ -628,7 +639,10 @@ async function handleApi(req, res) {
     const body = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) ? await readBody(req) : {};
     if (!checkRateLimit(req, res, url.pathname)) return;
     if (url.pathname.startsWith('/api/admin/') && !requireAdmin(res, auth)) return;
-    if (req.method === 'GET' && url.pathname === '/api/products') return send(res, 200, { products });
+    if (req.method === 'GET' && url.pathname === '/api/products') {
+      const salesCounts = productSalesCounts(db, products);
+      return send(res, 200, { products: products.map(product => ({ ...product, salesCount: salesCounts.get(product.id) || 0 })) });
+    }
 
     if (req.method === 'GET' && url.pathname === '/api/news') {
       const now = Date.now();
@@ -785,6 +799,7 @@ async function handleApi(req, res) {
       const published = body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || '').replace(/[^0-9.]/g, ''));
+      const newArrival = body.newArrival == null ? true : body.newArrival === true;
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
       if (!Number.isFinite(quantity)) return send(res, 400, { error: 'Product quantity is invalid.' });
@@ -800,6 +815,7 @@ async function handleApi(req, res) {
         price: '$' + Number(priceValue).toFixed(2),
         quantity,
         published,
+        newArrival,
         day,
         img,
         desc,
@@ -829,6 +845,7 @@ async function handleApi(req, res) {
       const published = body.published == null ? product.published !== false : body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? product.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || product.price).replace(/[^0-9.]/g, ''));
+      const newArrival = body.newArrival == null ? product.newArrival === true : body.newArrival === true;
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
       if (!Number.isFinite(quantity)) return send(res, 400, { error: 'Product quantity is invalid.' });
@@ -844,6 +861,7 @@ async function handleApi(req, res) {
         quantity,
         day,
         published,
+        newArrival,
         priceValue: Number(priceValue.toFixed(2)),
         price: '$' + Number(priceValue).toFixed(2),
         updatedAt: new Date().toISOString()
