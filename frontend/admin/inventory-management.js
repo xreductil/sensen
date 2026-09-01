@@ -48,6 +48,10 @@
     form.elements.cat.value = product?.cat || '';
     form.elements.spec.value = product?.spec || '';
     form.elements.priceValue.value = product?.priceValue ?? '';
+    const variants = product?.variants || {};
+    form.elements.drinkTemperatures.value = (variants.temperatures || []).join(', ');
+    form.elements.drinkSugars.value = (variants.sugars || []).join(', ');
+    form.elements.drinkSizes.value = Object.entries(variants.sizes || {}).map(([label, value]) => `${label}:${value}`).join(', ');
     form.elements.quantity.value = product?.quantity ?? 0;
     form.elements.day.value = product?.day || 5;
     form.elements.img.value = product?.img || '';
@@ -60,7 +64,7 @@
 
   async function load() { const data = await api('/api/admin/products'); products = data.products || []; renderFilters(); render(); }
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); const temperatures = data.drinkTemperatures.split(',').map(item => item.trim()).filter(Boolean); const sugars = data.drinkSugars.split(',').map(item => item.trim()).filter(Boolean); const sizes = Object.fromEntries(data.drinkSizes.split(',').map(item => item.trim()).filter(Boolean).map(item => { const [label, value] = item.split(/[:=]/).map(part => part.trim()); return [label, Number(value)]; }).filter(([label, value]) => label && Number.isFinite(value) && value >= 0)); const variants = temperatures.length || sugars.length || Object.keys(sizes).length ? { temperatures, sugars, sizes } : undefined; try { await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants, published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();

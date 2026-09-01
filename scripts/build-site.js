@@ -336,6 +336,55 @@ const CAKE_SECTIONS = [
   },
 ];
 
+const COFFEE_MENU_SECTIONS = [
+  { title: "咖啡類", items: [
+    ["黑咖啡", "Black Coffee", "冷／熱", "M NT$65 · L NT$80"], ["原味拿鐵", "Coffee Latte", "冷／熱", "M NT$85 · L NT$100"],
+    ["青梅氣泡冰咖啡", "Green plum sparkling coffee", "冷", "NT$95"], ["西西里青檸冰咖啡", "Lemon ice coffee", "冷", "NT$75"],
+    ["纖橙冰咖啡", "Orange ice coffee", "冷", "NT$75"], ["卡布奇諾", "Cappuccino", "冷／熱", "M NT$85 · L NT$100"],
+    ["摩卡", "Mocha", "冷／熱", "M NT$90 · L NT$110"], ["焦糖瑪奇朵", "Caramel macchiato", "冷／熱", "M NT$95 · L NT$115"],
+    ["麥芽威士忌拿鐵", "Whisky Latte", "冷／熱", "M NT$95 · L NT$115"], ["香草拿鐵", "Flavored Latte (Vanilla)", "冷／熱", "M NT$90 · L NT$110"],
+    ["榛果拿鐵", "Flavored Latte (Hazelnut)", "冷／熱", "M NT$90 · L NT$110"]
+  ]},
+  { title: "氣泡飲類", items: [
+    ["香橙泡泡", "Orange bubble drink", "冷", "NT$75"], ["柚子泡泡", "Pomelo bubble drink", "冷", "NT$75"],
+    ["葡萄泡泡", "Grape bubble drink", "冷", "NT$75"], ["水蜜桃泡泡", "Peach bubble drink", "冷", "NT$75"],
+    ["蔓越莓氣泡果醋", "Cranberry vinegar bubble drink", "冷", "NT$75"]
+  ]},
+  { title: "茶飲類", items: [
+    ["英式紅茶", "Black tea", "冷／熱", "NT$55"], ["森森綠茶", "Green tea", "冷／熱", "NT$55"],
+    ["台茶12號", "Jin Xuan Oolong tea", "冷／熱", "NT$65"], ["玄米綠茶", "Brown rice tea", "冷／熱", "NT$65"],
+    ["韓式柚子飲", "Pomelo tea", "冷／熱", "NT$75"], ["花果蜜茶", "Fruit honey tea", "冷／熱", "NT$75"],
+    ["養生花茶", "Scented tea", "冷／熱", "NT$75"], ["伯爵紅茶", "Earl black tea", "冷／熱", "NT$65"],
+    ["柚香綠茶", "Pomelo tea", "冷／熱", "NT$75"]
+  ]},
+  { title: "奶茶類", items: [
+    ["就是奶茶", "British milk tea", "冷／熱", "M NT$75 · L NT$85"], ["伯爵奶茶", "Earl milk tea", "冷／熱", "M NT$75 · L NT$85"],
+    ["黑糖歐蕾", "Brown sugar au lait", "冷／熱", "M NT$80 · L NT$95"], ["可可歐蕾", "Cocoa au lait", "冷／熱", "M NT$90 · L NT$105"],
+    ["抹茶歐蕾", "Matcha au lait", "冷／熱", "M NT$90 · L NT$105"]
+  ]}
+];
+
+const COFFEE_MENU_IMAGES = {
+  "咖啡類": "coffee.jpg",
+  "氣泡飲類": "yogurt-drink.jpg",
+  "茶飲類": "tea-12-number.jpg",
+  "奶茶類": "coffee-2.jpg",
+};
+
+const COFFEE_MENU_PRODUCT_IDS = {
+  "黑咖啡": "drink-black-coffee", "原味拿鐵": "drink-coffee-latte", "青梅氣泡冰咖啡": "drink-green-plum-sparkling-coffee", "西西里青檸冰咖啡": "drink-lemon-ice-coffee", "纖橙冰咖啡": "drink-orange-ice-coffee", "卡布奇諾": "drink-cappuccino", "摩卡": "drink-mocha", "焦糖瑪奇朵": "drink-caramel-macchiato", "麥芽威士忌拿鐵": "drink-whisky-latte", "香草拿鐵": "drink-vanilla-latte", "榛果拿鐵": "drink-hazelnut-latte",
+  "香橙泡泡": "drink-orange-bubble", "柚子泡泡": "drink-pomelo-bubble", "葡萄泡泡": "drink-grape-bubble", "水蜜桃泡泡": "drink-peach-bubble", "蔓越莓氣泡果醋": "drink-cranberry-vinegar-bubble",
+  "英式紅茶": "drink-black-tea", "森森綠茶": "drink-sensen-green-tea", "台茶12號": "drink-jin-xuan-oolong", "玄米綠茶": "drink-brown-rice-tea", "韓式柚子飲": "drink-korean-pomelo", "花果蜜茶": "drink-fruit-honey-tea", "養生花茶": "drink-scented-tea", "伯爵紅茶": "drink-earl-black-tea", "柚香綠茶": "drink-pomelo-green-tea",
+  "就是奶茶": "drink-british-milk-tea", "伯爵奶茶": "drink-earl-milk-tea", "黑糖歐蕾": "drink-brown-sugar-au-lait", "可可歐蕾": "drink-cocoa-au-lait", "抹茶歐蕾": "drink-matcha-au-lait",
+};
+
+const COFFEE_MENU_ENGLISH = {
+  "黑咖啡": "Black Coffee", "原味拿鐵": "Coffee Latte", "青梅氣泡冰咖啡": "Green plum sparkling coffee", "西西里青檸冰咖啡": "Lemon ice coffee", "纖橙冰咖啡": "Orange ice coffee", "卡布奇諾": "Cappuccino", "摩卡": "Mocha", "焦糖瑪奇朵": "Caramel macchiato", "麥芽威士忌拿鐵": "Whisky Latte", "香草拿鐵": "Flavored Latte (Vanilla)", "榛果拿鐵": "Flavored Latte (Hazelnut)",
+  "香橙泡泡": "Orange bubble drink", "柚子泡泡": "Pomelo bubble drink", "葡萄泡泡": "Grape bubble drink", "水蜜桃泡泡": "Peach bubble drink", "蔓越莓氣泡果醋": "Cranberry vinegar bubble drink",
+  "英式紅茶": "Black tea", "森森綠茶": "Green tea", "台茶12號": "Jin Xuan Oolong tea", "玄米綠茶": "Brown rice tea", "韓式柚子飲": "Pomelo tea", "花果蜜茶": "Fruit honey tea", "養生花茶": "Scented tea", "伯爵紅茶": "Earl black tea", "柚香綠茶": "Pomelo tea",
+  "就是奶茶": "British milk tea", "伯爵奶茶": "Earl milk tea", "黑糖歐蕾": "Brown sugar au lait", "可可歐蕾": "Cocoa au lait", "抹茶歐蕾": "Matcha au lait",
+};
+
 const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
   ...CAKE_SECTIONS[0].products,
   ...(CAKE_SECTIONS[0].loadMoreProducts || []),
@@ -1588,7 +1637,13 @@ function souvenirPageContent() {
 }
 
 function coffeePageContent() {
-  return `<section class="coffee-page"><section class="coffee-menu-section"><img class="coffee-page-icon" src="/assets/images/icon-coffee.png" alt="" aria-hidden="true"><div class="coffee-menu-grid"><img src="/assets/images/coffee-menu-1.jpg" alt="森森咖啡菜單：咖啡與氣泡飲"><img src="/assets/images/coffee-menu-2.jpg" alt="森森咖啡菜單：茶飲與奶茶"></div></section></section>`;
+  const cards = COFFEE_MENU_SECTIONS.flatMap(section => section.items.map(item => {
+    const temperatures = item[2].includes('熱') ? '冷|熱' : item[2];
+    const prices = [...item[3].matchAll(/\b([ML])\s*NT\$\s*([\d,.]+)/g)].map(match => `${match[1]}=${match[2].replace(/,/g, '')}`);
+    if (!prices.length) prices.push(`單杯=${(item[3].match(/[\d,.]+/) || ['0'])[0].replace(/,/g, '')}`);
+    return `<article class="drink-menu-card cake-product-card" data-drink-menu-item data-drink-product-id="${escapeAttr(COFFEE_MENU_PRODUCT_IDS[item[0]] || '')}" data-drink-name="${escapeAttr(item[0])}" data-drink-english="${escapeAttr(COFFEE_MENU_ENGLISH[item[0]] || item[1])}" data-drink-category="${escapeAttr(section.title)}" data-drink-temperatures="${escapeAttr(temperatures)}" data-drink-sugars="正常甜|少糖|半糖|微糖|無糖" data-drink-size-prices="${escapeAttr(prices.join('|'))}" data-drink-description="${escapeAttr(`可依照喜好調整${item[0]}的溫度、糖度與尺寸。`)}" role="button" tabindex="0"><div class="cake-product-image drink-menu-card-image"><img src="/assets/images/${escapeAttr(COFFEE_MENU_IMAGES[section.title] || 'coffee.jpg')}" alt="${escapeAttr(item[0])}飲品示意圖" loading="lazy"><span class="drink-menu-card-category">${escapeHtml(section.title)}</span></div><div class="cake-product-meta"><div class="cake-product-title-link"><span class="cake-product-title">${escapeHtml(item[0])}</span><span class="drink-menu-card-english">${escapeHtml(item[1])}</span></div></div></article>`;
+  })).join('');
+  return `<section class="coffee-page"><section class="coffee-menu-section"><img class="coffee-page-icon" src="/assets/images/icon-coffee.png" alt="" aria-hidden="true"><div class="drink-menu-grid">${cards}</div></section></section><script src="/assets/drink-menu-modal.js"></script>`;
 }
 
 function customerPageContent(route = "login") {
@@ -1837,7 +1892,7 @@ function storefrontProductPathMap() {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js"></script><script src="/assets/drink-menu-modal.js"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -2320,6 +2375,7 @@ function main() {
   fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
   fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
+  fs.copyFileSync(path.join(__dirname, "drink-menu-modal.js"), path.join(OUT_DIR, "assets", "drink-menu-modal.js"));
   fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));

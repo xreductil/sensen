@@ -5,10 +5,13 @@ import process from 'node:process';
 const root = path.resolve(import.meta.dirname, '..', '..');
 const dbPath = path.join(root, 'sensen-backend', 'data', 'db.json');
 const productsPath = path.join(root, 'sensen-backend', 'data', 'sensen-products.json');
+const drinkProductsPath = path.join(root, 'sensen-backend', 'data', 'sensen-drink-products.json');
 const outputPath = path.resolve(process.argv[2] || path.join(root, 'sensen-api', 'tmp-local-import.sql'));
 
 const db = JSON.parse(fs.readFileSync(dbPath, 'utf8'));
-const sourceProducts = JSON.parse(fs.readFileSync(productsPath, 'utf8'));
+const sourceProducts = [productsPath, drinkProductsPath]
+  .filter((filePath) => fs.existsSync(filePath))
+  .flatMap((filePath) => JSON.parse(fs.readFileSync(filePath, 'utf8')));
 
 const sqlString = (value) => {
   if (value === null || value === undefined) return 'NULL';

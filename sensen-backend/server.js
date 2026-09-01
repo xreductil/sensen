@@ -31,6 +31,7 @@ const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-products.json');
+const DRINK_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-drink-products.json');
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 8081);
 const LINE_CHANNEL_ID = process.env.LINE_CHANNEL_ID || '';
@@ -97,7 +98,7 @@ function readDb() {
   ]);
   const validOrders = db.orders.filter(order => {
     const items = Array.isArray(order.items) ? order.items : [];
-    return items.length > 0 && items.every(item => sensenProductIds.has(item.id));
+    return items.length > 0 && items.every(item => sensenProductIds.has(item.productId || item.id));
   });
   if (validOrders.length !== db.orders.length) {
     db.orders = validOrders;
@@ -369,11 +370,12 @@ function publicUser(user) {
 }
 
 function productsFromData() {
-  if (!fs.existsSync(PRODUCTS_PATH)) return [];
-  const products = JSON.parse(fs.readFileSync(PRODUCTS_PATH, 'utf8'));
+  const products = [PRODUCTS_PATH, DRINK_PRODUCTS_PATH]
+    .filter(filePath => fs.existsSync(filePath))
+    .flatMap(filePath => JSON.parse(fs.readFileSync(filePath, 'utf8')));
   return products.map(product => {
     const priceValue = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
-    return {
+    const normalized = {
       ...product,
       img: normalizeProductImage(product.img),
       id: product.id || slug(product.title),
@@ -387,7 +389,27 @@ function productsFromData() {
       quantity: Math.max(0, Number(product.quantity ?? 25)),
       day: String(product.day || '5')
     };
+    if (product.variants) normalized.variants = normalizeProductVariants(product.variants, priceValue);
+    return normalized;
   });
+}
+
+function normalizeProductVariants(value, fallbackPrice = 0) {
+  const variants = value && typeof value === 'object' ? value : {};
+  const sizes = Object.fromEntries(Object.entries(variants.sizes || {})
+    .map(([label, price]) => [String(label).trim(), Number(price)])
+    .filter(([label, price]) => label && Number.isFinite(price) && price >= 0));
+  const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length
+    ? variants.temperatures.map(item => String(item).trim()).filter(Boolean)
+    : ['冷'];
+  const sugars = Array.isArray(variants.sugars) && variants.sugars.length
+    ? variants.sugars.map(item => String(item).trim()).filter(Boolean)
+    : ['正常甜'];
+  return {
+    temperatures: temperatures.length ? [...new Set(temperatures)] : ['冷'],
+    sugars: sugars.length ? [...new Set(sugars)] : ['正常甜'],
+    sizes: Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 }
+  };
 }
 
 function normalizeProductImage(image) {
@@ -406,6 +428,7 @@ function productsWithOverrides(db) {
     merged.img = normalizeProductImage(merged.img);
     merged.priceValue = Number(merged.priceValue || String(merged.price || '').replace(/[^0-9.]/g, '')) || 0;
     merged.price = merged.price || ('$' + merged.priceValue.toFixed(2));
+    if (merged.variants) merged.variants = normalizeProductVariants(merged.variants, merged.priceValue);
     merged.sku = String(merged.sku || merged.id || '').trim();
     merged.spec = String(merged.spec || '').trim();
     merged.published = merged.published !== false;
@@ -418,7 +441,7 @@ function sensenOrders(db, products = productsWithOverrides(db)) {
   const productIds = new Set(products.map(product => product.id));
   return (db.orders || []).filter(order => {
     const items = Array.isArray(order.items) ? order.items : [];
-    return items.length > 0 && items.every(item => productIds.has(item.id));
+    return items.length > 0 && items.every(item => productIds.has(item.productId || item.id));
   });
 }
 
@@ -426,8 +449,9 @@ function productSalesCounts(db, products) {
   const counts = new Map();
   sensenOrders(db, products).forEach(order => {
     (order.items || []).forEach(item => {
-      if (!item.id) return;
-      counts.set(item.id, (counts.get(item.id) || 0) + Math.max(0, Number(item.qty || 0)));
+      const productId = item.productId || item.id;
+      if (!productId) return;
+      counts.set(productId, (counts.get(productId) || 0) + Math.max(0, Number(item.qty || 0)));
     });
   });
   return counts;
@@ -449,6 +473,50 @@ function uniqueProductId(title, db) {
   return id;
 }
 
+function productVariant(product, options = {}) {
+  if (!product.variants) return null;
+  const variants = normalizeProductVariants(product.variants, product.priceValue);
+  const sizeLabels = Object.keys(variants.sizes);
+  const size = sizeLabels.includes(String(options.size || '')) ? String(options.size) : sizeLabels[0];
+  const temperature = variants.temperatures.includes(String(options.temperature || ''))
+    ? String(options.temperature)
+    : variants.temperatures[0];
+  const sugar = variants.sugars.includes(String(options.sugar || ''))
+    ? String(options.sugar)
+    : variants.sugars[0];
+  return { size, temperature, sugar, priceValue: Number(variants.sizes[size] || 0) };
+}
+
+function variantCartId(product, variant) {
+  if (!variant) return product.id;
+  return product.id + '::' + encodeURIComponent([variant.size, variant.temperature, variant.sugar].join('|'));
+}
+
+function variantTitle(title, variant) {
+  if (!variant) return title;
+  const details = [variant.size !== '單杯' ? variant.size : '', variant.temperature, variant.sugar].filter(Boolean).join('・');
+  return details ? `${title}（${details}）` : title;
+}
+
+function cartItemForProduct(product, qty, options = {}) {
+  const variant = productVariant(product, options);
+  if (!variant) return { ...product, qty };
+  return {
+    ...product,
+    id: variantCartId(product, variant),
+    productId: product.id,
+    title: variantTitle(product.title, variant),
+    price: '$' + variant.priceValue.toFixed(2),
+    priceValue: variant.priceValue,
+    selectedOptions: {
+      size: variant.size,
+      temperature: variant.temperature,
+      sugar: variant.sugar
+    },
+    qty
+  };
+}
+
 function getCart(db, auth, guestId) {
   if (auth) {
     db.userCarts[auth.user.id] ||= [];
@@ -462,8 +530,17 @@ function getCart(db, auth, guestId) {
 function currentCartItems(cart, products = []) {
   const catalog = new Map(products.map(product => [product.id, product]));
   return cart.map(item => {
-    const current = catalog.get(item.id);
-    return current ? { ...item, ...current, qty: item.qty } : item;
+    const current = catalog.get(item.productId || item.id);
+    if (!current) return item;
+    const refreshed = { ...item, ...current, id: item.id, productId: current.id, qty: item.qty };
+    if (item.selectedOptions && current.variants) {
+      const variant = productVariant(current, item.selectedOptions);
+      refreshed.title = variantTitle(current.title, variant);
+      refreshed.price = '$' + variant.priceValue.toFixed(2);
+      refreshed.priceValue = variant.priceValue;
+      refreshed.selectedOptions = { size: variant.size, temperature: variant.temperature, sugar: variant.sugar };
+    }
+    return refreshed;
   });
 }
 
@@ -661,6 +738,13 @@ async function handleApi(req, res) {
       return send(res, 200, { products, categories: [...new Set(products.map(product => product.cat).filter(Boolean))].sort() });
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/admin/categories') {
+      const categories = [...new Set(products.map(product => String(product.cat || '').trim()).filter(Boolean))]
+        .sort((a, b) => a.localeCompare(b, 'zh-Hant'))
+        .map(name => ({ id: name, name, slug: slug(name) || name }));
+      return send(res, 200, { categories });
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/admin/news') {
       const news = (db.news || []).map(publicNews).sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
       return send(res, 200, { news });
@@ -799,6 +883,7 @@ async function handleApi(req, res) {
       const published = body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || '').replace(/[^0-9.]/g, ''));
+      const variants = body.variants ? normalizeProductVariants(body.variants, priceValue) : undefined;
       const newArrival = body.newArrival == null ? true : body.newArrival === true;
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
@@ -826,6 +911,7 @@ async function handleApi(req, res) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+      if (variants) product.variants = variants;
       db.productAdditions ||= [];
       db.productAdditions.push(product);
       writeDb(db);
@@ -845,6 +931,7 @@ async function handleApi(req, res) {
       const published = body.published == null ? product.published !== false : body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? product.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || product.price).replace(/[^0-9.]/g, ''));
+      const variants = body.variants == null ? product.variants : normalizeProductVariants(body.variants, priceValue);
       const newArrival = body.newArrival == null ? product.newArrival === true : body.newArrival === true;
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
@@ -864,6 +951,7 @@ async function handleApi(req, res) {
         newArrival,
         priceValue: Number(priceValue.toFixed(2)),
         price: '$' + Number(priceValue).toFixed(2),
+        variants,
         updatedAt: new Date().toISOString()
       };
       writeDb(db);
@@ -983,9 +1071,10 @@ async function handleApi(req, res) {
       if (!product) return send(res, 404, { error: 'Product not found.' });
       if (product.published === false) return send(res, 409, { error: '此商品目前未上架。' });
       const cart = getCart(db, auth, guestId);
-      const existing = cart.find(item => item.id === product.id);
+      const item = cartItemForProduct(product, qty, body.options || {});
+      const existing = cart.find(cartItem => cartItem.id === item.id);
       if (existing) existing.qty += qty;
-      else cart.push({ ...product, qty });
+      else cart.push(item);
       writeDb(db);
       return send(res, 200, cartSummary(cart, products));
     }
@@ -1042,7 +1131,7 @@ async function handleApi(req, res) {
         return send(res, 400, { error: '宅配訂單請先填寫收件人、電話與地址。' });
       }
       for (const item of cart) {
-        const currentProduct = products.find(product => product.id === item.id);
+        const currentProduct = products.find(product => product.id === (item.productId || item.id));
         if (!currentProduct || currentProduct.published === false) return send(res, 409, { error: `商品「${item.title || item.id}」目前無法購買。` });
         if (Number(currentProduct.quantity || 0) < Number(item.qty || 0)) return send(res, 409, { error: `商品「${currentProduct.title}」庫存不足。` });
       }
@@ -1091,11 +1180,17 @@ async function handleApi(req, res) {
       db.orders.push(order);
       db.userCarts[auth.user.id] = [];
       db.productOverrides ||= {};
+      const quantities = new Map();
       for (const item of cart) {
-        const currentProduct = products.find(product => product.id === item.id);
-        db.productOverrides[item.id] = {
-          ...(db.productOverrides[item.id] || {}),
-          quantity: Math.max(0, Number(currentProduct.quantity || 0) - Number(item.qty || 0)),
+        const productId = item.productId || item.id;
+        quantities.set(productId, (quantities.get(productId) || 0) + Number(item.qty || 0));
+      }
+      for (const [productId, quantity] of quantities) {
+        const currentProduct = products.find(product => product.id === productId);
+        if (!currentProduct) continue;
+        db.productOverrides[productId] = {
+          ...(db.productOverrides[productId] || {}),
+          quantity: Math.max(0, Number(currentProduct.quantity || 0) - quantity),
           updatedAt: new Date().toISOString()
         };
       }
