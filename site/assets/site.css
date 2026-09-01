@@ -2814,7 +2814,7 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 
 .coffee-menu-section {
   position: relative;
-  width: min(916px, calc(100% - 48px));
+  width: min(1280px, calc(100% - 64px));
   margin: 0 auto;
   padding: 80px 0 80px;
 }
