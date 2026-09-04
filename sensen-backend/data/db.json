@@ -285,7 +285,25 @@
       }
     ],
     "7ebb10e218d8f382b11b3c386d01d8ad525b4306a58f5bda5acd650f203cea9c": [],
-    "e23df58d7609a55cc9b53b09f7cbac5ac6fd8da6c368f0b86dc79cf35ff8b68c": []
+    "e23df58d7609a55cc9b53b09f7cbac5ac6fd8da6c368f0b86dc79cf35ff8b68c": [],
+    "4324ec4edd357a2df8c968d82581e186c7076ce4167f940824f3687a8115f763": [
+      {
+        "id": "spiderman",
+        "title": "蜘蛛人",
+        "cat": "造型蛋糕",
+        "price": "$980",
+        "priceValue": 980,
+        "quantity": 15,
+        "day": "7",
+        "img": "/assets/images/dsc03882.png",
+        "desc": "造型生日蛋糕。",
+        "source": "static",
+        "sku": "spiderman",
+        "spec": "",
+        "published": true,
+        "qty": 1
+      }
+    ]
   },
   "userCarts": {
     "6e351042aab2f8387e5a72e9ca5e3ed8851c1f74f3dcc2f7d2ffe46c00c9cf4b": [],

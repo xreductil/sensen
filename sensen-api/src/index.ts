@@ -941,14 +941,6 @@ export default {
         }, 201, guestId);
       }
 
-      if (url.pathname === "/auth/line" && request.method === "GET") {
-        return json(request, { error: "LINE 登入尚未設定，請改用 Email 與密碼登入。" }, 501);
-      }
-
-      if (url.pathname === "/api/auth/line/exchange" && request.method === "POST") {
-        return json(request, { error: "LINE 登入尚未設定，請改用 Email 與密碼登入。" }, 501);
-      }
-
       if (url.pathname.startsWith("/images/") && request.method === "GET") {
         return imageResponse(request, env);
       }

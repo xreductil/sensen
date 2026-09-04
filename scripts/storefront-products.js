@@ -92,10 +92,8 @@
     const name = String(product.title || '商品');
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;
-    const inStock = available(product);
-    const addButton = `<button class="cake-add-cart" type="button" data-storefront-add-cart="${escapeHtml(product.id)}"${inStock ? '' : ' disabled'}>${inStock ? '加入購物車' : (Number(product.priceValue || 0) > 0 ? '暫停供應' : '價格待設定')}</button>`;
-    const quantityControl = `<div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock ? '' : ' disabled'} aria-label="增加數量">＋</button></div>`;
-    return `<article class="${articleClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta"><div class="cake-product-title-link"><span class="cake-product-title">${title}</span><span class="cake-product-price">${escapeHtml(money(product.priceValue))}</span></div><div class="cake-product-purchase" data-cake-purchase>${quantityControl}${addButton}</div></div></article>`;
+    const meta = `<span class="cake-product-title">${title}</span><span class="cake-product-price">${escapeHtml(money(product.priceValue))}</span>`;
+    return `<article class="${articleClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
   };
 
   const productIntroCard = (product, badge = '') => storefrontProductCard(product, { articleClass: 'product-intro-card cake-product-card', badge });
@@ -190,34 +188,13 @@
       button.setAttribute('aria-expanded', String(!expanded));
       button.textContent = expanded ? '▪▪ Load more' : '▪▪ 收起商品';
     });
+    content.addEventListener('click', event => {
+      if (event.target.closest('a, button')) return;
+      const card = event.target.closest('.cake-product-card');
+      const link = card?.querySelector('a[href]:not([href="#"])');
+      if (link) link.click();
+    });
     content.querySelectorAll('[data-product-no-detail]').forEach(link => link.addEventListener('click', event => event.preventDefault()));
-    content.querySelectorAll('[data-cake-quantity-change]').forEach(button => button.addEventListener('click', event => {
-      event.preventDefault();
-      const output = button.closest('[data-cake-purchase]')?.querySelector('[data-cake-quantity]');
-      if (!output) return;
-      const next = Math.max(1, Math.min(99, Number(output.textContent || 1) + Number(button.dataset.cakeQuantityChange || 0)));
-      output.textContent = String(next);
-    }));
-    content.querySelectorAll('[data-storefront-add-cart]').forEach(button => button.addEventListener('click', async event => {
-      event.preventDefault();
-      event.stopPropagation();
-      const original = button.textContent;
-      button.disabled = true;
-      button.textContent = '加入中…';
-      try {
-        const quantity = Number(button.closest('[data-cake-purchase]')?.querySelector('[data-cake-quantity]')?.textContent || 1);
-        const response = await fetch('/api/cart/add', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: button.dataset.storefrontAddCart, qty: quantity }) });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || '加入購物車失敗。');
-        button.textContent = '已加入購物車';
-        document.querySelector('.cart-trigger')?.click();
-      } catch (error) {
-        button.textContent = error.message;
-        window.setTimeout(() => { button.textContent = original; button.disabled = false; }, 1800);
-        return;
-      }
-      button.disabled = false;
-    }));
   };
 
   const load = async () => {

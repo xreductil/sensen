@@ -977,6 +977,9 @@ function createIndex(pages) {
 function layout({ title, pathLabel, content, isHome = false, isAbout = false, isEmeraldLysk = false, isCakeProduct = false, isBeanTartProduct = false, isSouvenirProduct = false, heroCategoryLabel = "所有蛋糕, 生日蛋糕", hasBrandedHero = false, heroSource = "/assets/images/headtitle-bg2.jpg", showHero = true }) {
   const checkoutStyle = pathLabel === "/checkout" ? '<link rel="stylesheet" href="/assets/checkout.css">' : "";
   const isBirthdayCakePage = pathLabel === BIRTHDAY_CAKE_PATH || (title.includes("生日蛋糕") && title.includes("DM"));
+  const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
+    ? '<script src="/assets/product-detail-purchase.js?v=20260904-4"></script>'
+    : '';
   const nav = NAV_ITEMS.map(([label, href]) => {
     const children = NAV_CHILDREN.get(label) || [];
     const childMenu = children.length
@@ -1082,7 +1085,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="/assets/site.css">
+  <link rel="stylesheet" href="/assets/site.css?v=20260904-8">
   ${checkoutStyle}
 </head>
 <body>
@@ -1133,19 +1136,13 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <footer class="footer">© 2018 - 2026 森森點心坊. All Rights Reserved. | Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>. | <a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%a2%9d%e6%ac%be/">隱私權政策</a></footer>
   <div class="sensen-cart-overlay" id="sensen-cart-overlay" hidden></div>
   <aside class="sensen-cart-drawer" id="sensen-cart-drawer" aria-label="購物車" aria-hidden="true"><div class="sensen-cart-head"><h2>購物車</h2><button class="sensen-cart-close" type="button" aria-label="關閉購物車">×</button></div><div class="sensen-cart-body"><p data-cart-message>載入中…</p><div data-cart-items></div><div class="sensen-cart-fields" data-cart-options hidden><label>優惠碼<div class="sensen-cart-coupon-row"><input data-cart-coupon type="text" placeholder="輸入優惠碼" autocomplete="off"><button class="sensen-cart-coupon-apply" type="button" data-cart-apply-coupon>套用</button></div></label><label>Pickup date（取貨日期）<input data-cart-pickup type="date"></label><small data-cart-date-hint></small><p class="sensen-cart-quote-message" data-cart-quote-message role="status"></p></div></div><div class="sensen-cart-foot"><div class="sensen-cart-price-lines" data-cart-price-lines hidden><div><span>小計</span><strong data-cart-subtotal>$0.00</strong></div><div data-cart-discount-row hidden><span>折扣</span><strong data-cart-discount>-$0.00</strong></div><div class="is-total"><span>合計</span><strong data-cart-total>$0.00</strong></div></div><a class="button" href="/checkout/">結帳</a><a class="sensen-cart-secondary" href="/customer/admin/">前往會員中心</a></div></aside>
+  ${productPurchaseScript}
   <script src="/assets/cart-drawer.js"></script>
 </body>
 </html>`;
 }
 
-function homeContent(pages) {
-  const news = pages
-    .filter((page) => /\/(latest-news|new-arrival)\//.test(localPathFromUrl(page.url)))
-    .sort((a, b) => String(b.date || "").localeCompare(String(a.date || "")))
-    .slice(0, 3);
-  const newsCards = news.map((page) => `<a class="home-news-card" href="${escapeAttr(localPathFromUrl(page.url))}">
-      ${imageSlotHtml({ source: page.imageSource || firstImageSource(markdownFromPage(page) || page.html) })}<small>${escapeHtml((page.date || "").slice(0, 10))}</small><h3>${escapeHtml(titleFromPage(page))}</h3><span>更多</span>
-    </a>`).join("");
+function homeContent() {
   const giftTiles = [
     ["/assets/images/macadamia-nut-tart.jpg", "夏威夷豆塔"],
     ["/assets/images/pork-floss-pastry.jpg", "肉鬆餅"],
@@ -1163,24 +1160,27 @@ function homeContent(pages) {
   return `<section class="home-copy">
     <div class="hero-split">
       <div class="home-carousel" data-home-carousel aria-label="首頁輪播">
-        <div class="carousel-track">${slides}</div>
-        <button type="button" class="carousel-control previous" data-carousel-previous aria-label="上一張">‹</button>
-        <button type="button" class="carousel-control next" data-carousel-next aria-label="下一張">›</button>
+        <div class="carousel-viewport"><div class="carousel-track">${slides}</div></div>
+        <div class="carousel-controls-row">
+          <button type="button" class="carousel-control previous" data-carousel-previous aria-label="上一張">‹</button>
+          <div class="slider-dots" role="tablist" aria-label="首頁輪播控制項">${dots}</div>
+          <button type="button" class="carousel-control next" data-carousel-next aria-label="下一張">›</button>
+        </div>
       </div>
-    </div><div class="slider-dots" role="tablist" aria-label="首頁輪播控制項">${dots}</div>
+    </div>
   </section>
-  <section class="home-intro"><div><h2>享受</h2><h3>嘴角上揚的幸福</h3><span class="wheat-mark">✦</span><p>Fresh, healthy and delicious.</p><p>Sensen always thinks about you.</p></div>
+  <section class="home-intro"><div class="home-intro-copy"><div class="home-intro-copy-title"><h2>享受</h2><h3>嘴角上揚的幸福</h3></div><div class="home-intro-copy-lower"><span class="wheat-mark">✦</span><div class="home-intro-copy-english"><p>Fresh, healthy and delicious.</p><p>Sensen always thinks about you.</p></div></div></div>
     <div class="quick-links">
       <a aria-label="生日蛋糕" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E9%A6%96%E9%A0%81%E5%9C%96%E7%89%87-1.jpg", label: "Birthday Cake" })}<span>Birthday Cake</span><strong>生日蛋糕</strong><span class="card-arrow" aria-hidden="true">→</span></a>
       <a aria-label="彌月禮盒" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E6%A3%ae%E6%A3%ae%E9%A6%96%e9%A0%81-2.jpg", label: "Baby Gift Box" })}<span>Baby Gift Box</span><strong>彌月禮盒</strong><span class="card-arrow" aria-hidden="true">→</span></a>
       <a aria-label="酒會茶會" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2018/11/home-service-3.jpg", label: "Catering" })}<span>Catering</span><strong>酒會/茶會</strong><span class="card-arrow" aria-hidden="true">→</span></a>
     </div>
   </section>
-  <section class="home-taste"><div class="image-slot"><span>彌月試吃圖片預留位</span></div><div><h2>彌月試吃申請</h2><p class="eyebrow">TOP HOUSE &amp; SENSEN BAKERY</p><p>無論您是懷孕中的媽咪或是寶寶剛誕生，都感謝您給予機會選擇森森彌月蛋糕，讓我們與您一同分享這份幸福的喜悅！(產前產後均可申請。產前建議懷孕35週以上的媽咪唷!)</p><a class="button" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/">線上申請</a></div></section>
-  <section class="home-section"><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/">更多訊息</a></div><div class="home-news-grid">${newsCards}</div></section>
+  <section class="home-taste"><div class="image-slot"><span>彌月試吃圖片預留位</span></div><div><h2>彌月試吃申請</h2><p class="eyebrow">TOP HOUSE &amp; SENSEN BAKERY</p><p>無論您是懷孕中的媽咪或是寶寶剛誕生，都感謝您給予機會選<br class="home-taste-mobile-break">擇森森彌月蛋糕，讓我們與您一同分享這份幸福的喜悅！(產<br class="home-taste-mobile-break">前產後均可申請。產前建議懷孕35週以上的媽咪唷!)</p><a class="button" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/">線上申請</a></div></section>
+  <section class="home-section" data-home-news-section hidden><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/">更多訊息</a></div><div class="home-news-grid" data-home-news-list></div></section><script src="/assets/home-news.js"></script>
   <section class="gift-section"><div class="gift-copy"><img class="gift-icon" src="/assets/images/home-icon-giftbox.png" alt="" aria-hidden="true"><h2>精選伴手禮</h2><p>各式經典組合<br>多樣化的選擇<br>吃進嘴裡都是幸福的味道</p><a class="button" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/">更多伴手禮</a></div><div class="gift-mosaic">${giftTiles}</div></section>
   <section class="home-catering"><div class="catering-copy"><div class="catering-panel"><div class="catering-title-row"><img class="catering-icon" src="/assets/images/home-icon-cutlery.png" alt="" aria-hidden="true"><div><h2>酒會/外燴服務</h2><p>嚴選食材。精心烹調。味覺饗宴</p></div></div><span class="catering-wave" aria-hidden="true"></span><a class="button" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">了解更多 <span aria-hidden="true">›</span></a></div></div><div class="catering-images"><a class="catering-card buffet" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "/assets/images/home-buffet.jpg", label: "Buffet" })}<div class="catering-card-copy"><span>Buffet</span><strong>精緻外燴</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a><a class="catering-card tea-party" href="/%e8%8c%b6%e6%9c%83%e9%bb%9e%e5%bf%83-tea-party/">${imageSlotHtml({ source: "/assets/images/home-catering.jpg", label: "Tea Party" })}<div class="catering-card-copy"><span>Tea Party</span><strong>茶會點心</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a></div></section>
-  <section class="home-stores"><div class="store-grid"><a class="store-card" href="https://goo.gl/maps/WQFSnvZ8iP22" target="_blank" rel="noreferrer"><span class="store-divider" aria-hidden="true"></span><strong>澄和店</strong><span class="store-line">三民區澄和路78號</span><span class="store-line">07-3816662</span><span class="store-pin" aria-hidden="true"></span></a><a class="store-card" href="https://goo.gl/maps/EZFqqQPeh6z" target="_blank" rel="noreferrer"><span class="store-divider" aria-hidden="true"></span><strong>新富店</strong><span class="store-line">鳳山區新富路276號</span><span class="store-line">07-7675992</span><span class="store-pin" aria-hidden="true"></span></a><a class="store-card" href="https://goo.gl/maps/rYLh32wnRdm" target="_blank" rel="noreferrer"><span class="store-divider" aria-hidden="true"></span><strong>博愛店</strong><span class="store-line">鳳山區博愛路219號</span><span class="store-line">07-7993070</span><span class="store-pin" aria-hidden="true"></span></a><a class="store-card" href="https://goo.gl/maps/5hoEqTmHsuF2" target="_blank" rel="noreferrer"><span class="store-divider" aria-hidden="true"></span><strong>文龍店</strong><span class="store-line">鳳山區文龍東路336號</span><span class="store-line">07-7335812</span><span class="store-pin" aria-hidden="true"></span></a></div></section>`;
+  <section class="catering-stores"><div class="catering-stores-panel"><a class="catering-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="catering-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="catering-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>三民區博愛路219號</span><span>07-7993070</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="catering-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a></div></section>`;
 }
 
 function aboutContent() {
@@ -1605,6 +1605,10 @@ const SOUVENIR_PRODUCTS = [
 
 const SOUVENIR_PRODUCT_PATHS = new Set(SOUVENIR_PRODUCTS.map(([, href]) => href));
 const SOUVENIR_PRODUCT_DATA = new Map(SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => [href, { title, image, likes }]));
+// Keep a compatibility route for the misspelled URL that has been shared previously.
+const PRODUCT_ROUTE_ALIASES = new Map([
+  ["/product-item/法式蝶蝨酥-1657", "/product-item/法式蝴蝶酥-1657"],
+]);
 
 function souvenirPageContent() {
   const cards = SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => `<article class="souvenir-card"><a class="souvenir-card-link" href="${escapeAttr(href)}"><img src="/assets/images/${escapeAttr(image)}" alt="${escapeAttr(title)}"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(title)}</h2><span class="souvenir-card-price">${PRODUCT_PRICE_LABEL}</span></div><span class="souvenir-likes" aria-label="收藏 ${likes} 次"><span aria-hidden="true">♡</span> ${likes}</span></div></a><button class="souvenir-add-cart" type="button" data-souvenir-add-cart="${escapeAttr(title)}">加入購物車</button></article>`).join("");
@@ -1674,7 +1678,7 @@ function customerPageContent(route = "login") {
         <div class="account-topbar"><span>會員中心 / <b data-account-title>帳戶總覽</b></span></div>
         <div id="account-message" role="status"></div>
         <div data-account-panel="login" class="account-auth-grid"${loginHidden}>
-          <section class="account-login-card"><h1><span></span>Login</h1><form class="account-form" data-account-login><label>Username or email address <b>*</b><input name="login" type="text" required autocomplete="username"></label><label>Password <b>*</b><input name="password" type="password" required autocomplete="current-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Log in</button><a class="account-line-btn" href="/auth/line"><span>LINE</span> 使用 LINE 登入</a></div></form></section>
+          <section class="account-login-card"><h1><span></span>Login</h1><form class="account-form" data-account-login><label>Username or email address <b>*</b><input name="login" type="text" required autocomplete="username"></label><label>Password <b>*</b><input name="password" type="password" required autocomplete="current-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Log in</button></div></form></section>
           <section class="account-login-card"><h1><span></span>Register</h1><form class="account-form" data-account-register><label>Full Name <b>*</b><input name="name" required autocomplete="name"></label><label>Email address <b>*</b><input name="email" type="email" required autocomplete="email"></label><label>Phone<input name="phone" type="tel" autocomplete="tel"></label><label>Password <b>*</b><input name="password" type="password" minlength="6" required autocomplete="new-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Register</button></div></form></section>
         </div>
         <div data-account-panel="app"${appHidden}><div class="account-heading"><p class="account-kicker">MEMBER DASHBOARD</p><h1>歡迎回來，<span data-user-name></span></h1><p class="account-desc" data-user-email></p></div><section class="content-section account-overview-section" data-account-section="overview"><div class="section-title"><div><p class="account-kicker">ACTIVITY</p><h2>Recent Orders</h2></div><button type="button" data-account-tab-link="orders">查看全部訂單</button></div><div data-account-orders></div></section><div class="account-lower-grid"><section class="content-section account-preview-card"><h2>Saved Address</h2><p data-address-preview>尚未儲存收件地址。</p><button type="button" data-account-tab-link="address">編輯地址</button></section><section class="content-section account-preview-card"><h2>物流 Shipping</h2><p>查看取貨日期與訂單物流狀態。</p><button type="button" data-account-tab-link="orders">查看訂單</button></section></div><section class="content-section" data-account-section="profile" hidden><div class="section-title"><div><p class="account-kicker">ACCOUNT</p><h2>會員資料</h2></div></div><form class="account-form" data-profile-form><label>姓名<input name="name" required></label><label>電子信箱<input name="email" type="email" required></label><label>電話<input name="phone"></label><button class="save-btn" type="submit">儲存資料</button></form></section><section class="content-section" data-account-section="address" hidden><div class="section-title"><div><p class="account-kicker">DELIVERY</p><h2>收件地址</h2></div></div><form class="account-form" data-address-form><label>收件人<input name="fullName"></label><label>電話<input name="phone"></label><label>地址<input name="address"></label><label>城市<input name="city"></label><label>郵遞區號<input name="zip"></label><button class="save-btn" type="submit">儲存地址</button></form></section><section class="content-section" data-account-section="orders" hidden><div class="section-title"><div><p class="account-kicker">HISTORY</p><h2>我的訂單</h2></div></div><div data-account-orders-full></div></section></div>
@@ -1814,7 +1818,7 @@ const TEA_PARTY_SECTIONS = [
 
 function teaPartyContent() {
   const sectionHtml = TEA_PARTY_SECTIONS.map(([eyebrow, title, images]) => '<section class="tea-party-category"><div class="tea-party-category-heading"><p>' + escapeHtml(eyebrow) + '</p><h2>' + escapeHtml(title) + '</h2></div><div class="tea-party-product-grid">' + images.map((image) => '<div class="tea-party-product"><img src="/assets/images/' + escapeAttr(image) + '" alt="' + escapeAttr(title) + '餐點" loading="lazy"></div>').join("") + '</div></section>').join("");
-  return `<section class="tea-party-page">
+  const content = `<section class="tea-party-page">
     <section class="tea-party-hero">
       <div class="tea-party-hero-copy">
         <img class="tea-party-hero-icon" src="/assets/images/icon-cake2.png" alt="" aria-hidden="true">
@@ -1833,6 +1837,11 @@ function teaPartyContent() {
     <section class="tea-party-stores"><div class="tea-party-stores-panel"><a class="tea-party-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a></div></section>
     ${inquiryScript()}
   </section>`;
+  return content
+    .replaceAll('tea-party-stores', 'catering-stores')
+    .replaceAll('tea-party-store', 'catering-store')
+    .replaceAll('tea-party-store-line', 'catering-store-line')
+    .replaceAll('tea-party-store-map', 'catering-store-map');
 }
 
 
@@ -1892,7 +1901,7 @@ function storefrontProductPathMap() {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js"></script><script src="/assets/drink-menu-modal.js"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260904-2"></script><script src="/assets/drink-menu-modal.js"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -2375,11 +2384,13 @@ function main() {
   fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
   fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
+  fs.copyFileSync(path.join(__dirname, "product-detail-purchase.js"), path.join(OUT_DIR, "assets", "product-detail-purchase.js"));
   fs.copyFileSync(path.join(__dirname, "drink-menu-modal.js"), path.join(OUT_DIR, "assets", "drink-menu-modal.js"));
   fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
   fs.copyFileSync(path.join(__dirname, "orders-page.js"), path.join(OUT_DIR, "assets", "orders-page.js"));
+  fs.copyFileSync(path.join(__dirname, "home-news.js"), path.join(OUT_DIR, "assets", "home-news.js"));
   fs.copyFileSync(path.join(__dirname, "latest-news.js"), path.join(OUT_DIR, "assets", "latest-news.js"));
   fs.copyFileSync(path.join(__dirname, "latest-news-article.js"), path.join(OUT_DIR, "assets", "latest-news-article.js"));
   if (fs.existsSync(IMAGE_DATA_DIR)) {
@@ -2412,6 +2423,14 @@ function main() {
       showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
       heroSource: localPath === EMERALD_LYSK_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
     }));
+  }
+
+  for (const [aliasPath, canonicalPath] of PRODUCT_ROUTE_ALIASES) {
+    const canonicalFile = htmlFileForLocalPath(canonicalPath);
+    if (!fs.existsSync(canonicalFile)) continue;
+    const aliasFile = htmlFileForLocalPath(aliasPath);
+    ensureDir(aliasFile);
+    fs.copyFileSync(canonicalFile, aliasFile);
   }
 
   if (!home || localPathFromUrl(home.url) !== "/") {
