@@ -2,7 +2,7 @@
   "users": [
     {
       "id": "sensen-admin-2026",
-      "name": "森森管理員",
+      "name": "管理員",
       "email": "admin@sensen.local",
       "phone": "",
       "salt": "41f6df27492aae5990604d12c4596db3",

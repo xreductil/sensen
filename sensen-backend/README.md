@@ -29,7 +29,7 @@ ORDER_EMAIL_FROM="森森點心坊 <orders@your-domain.com>"
 
 本地員工後台測試帳號：
 
-- Email：`admin@sensen.local`
+- 帳號：`管理員`（也可使用 Email `admin@sensen.local`）
 - Password：請使用本機安全環境變數或秘密管理工具設定；請勿將密碼寫入 README、程式碼或版本庫。
 - 後台：`http://127.0.0.1:3000/admin/signin.html`
 - 門市管理：`http://127.0.0.1:3000/admin/store-management.html`

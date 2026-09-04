@@ -156,6 +156,20 @@ const shippingLabel = (method: string | null | undefined) => ({
   frozen: "冷凍宅配",
 }[String(method || "pickup")] || "門市自取");
 
+const publicNewsImageUrl = (value: unknown) => {
+  const image = String(value || "").trim();
+  if (!image) return "";
+  try {
+    const source = new URL(image);
+    if (source.hostname === "www.sensen.com.tw" && source.pathname.startsWith("/wp-content/uploads/")) {
+      return `/images/legacy-news?url=${encodeURIComponent(source.href)}`;
+    }
+  } catch {
+    // Relative image paths are returned unchanged.
+  }
+  return image;
+};
+
 const newsFromRow = (row: Record<string, unknown>) => ({
   id: row.id,
   title: row.title,
@@ -163,7 +177,8 @@ const newsFromRow = (row: Record<string, unknown>) => ({
   category: row.category || "latest-news",
   excerpt: row.excerpt || "",
   content: row.content || "",
-  image: row.image_key || "",
+  image: publicNewsImageUrl(row.image_key),
+  layout: parseJson<unknown[] | null>(String(row.layout_json || ""), null),
   publishAt: row.publish_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -301,6 +316,33 @@ const imageResponse = async (request: Request, env: Env) => {
     return json(request, { error: "圖片路徑無效。" }, 400);
   }
 
+  if (requestedKey === "legacy-news") {
+    let source: URL;
+    try {
+      source = new URL(url.searchParams.get("url") || "");
+    } catch {
+      return json(request, { error: "舊站圖片網址無效。" }, 400);
+    }
+    if (source.protocol !== "https:"
+      || source.hostname !== "www.sensen.com.tw"
+      || !source.pathname.startsWith("/wp-content/uploads/")) {
+      return json(request, { error: "不允許代理此圖片來源。" }, 403);
+    }
+
+    const upstream = await fetch(source.href, { headers: { Accept: "image/*" } });
+    const contentType = upstream.headers.get("content-type") || "";
+    if (!upstream.ok || !contentType.startsWith("image/")) {
+      return json(request, { error: "無法載入舊站圖片。" }, 404);
+    }
+    const headers = new Headers({
+      "content-type": contentType,
+      "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+    });
+    const contentLength = upstream.headers.get("content-length");
+    if (contentLength) headers.set("content-length", contentLength);
+    return new Response(upstream.body, { headers });
+  }
+
   const object = await env.BUCKET.get("images/" + requestedKey);
   if (!object) return json(request, { error: "找不到圖片。" }, 404);
 
@@ -400,6 +442,30 @@ export default {
         const admin = await getSessionUser(env, request);
         if (!admin || admin.role !== "admin") {
           return json(request, { error: "需要管理員權限。" }, 403);
+        }
+
+        if (url.pathname === "/api/admin/images" && request.method === "POST") {
+          const form = await request.formData();
+          const file = form.get("image");
+          if (!(file instanceof File) || file.size === 0) {
+            return json(request, { error: "請選擇圖片檔案。" }, 400);
+          }
+          const extensions: Record<string, string> = {
+            "image/avif": "avif",
+            "image/gif": "gif",
+            "image/jpeg": "jpg",
+            "image/png": "png",
+            "image/webp": "webp",
+          };
+          const extension = extensions[file.type];
+          if (!extension) return json(request, { error: "僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。" }, 415);
+          if (file.size > 8 * 1024 * 1024) return json(request, { error: "圖片不可超過 8 MB。" }, 413);
+
+          const key = `news/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+          await env.BUCKET.put(`images/${key}`, file.stream(), {
+            httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
+          });
+          return json(request, { image: `/images/${key}` }, 201);
         }
 
         if (url.pathname === "/api/admin/categories" && request.method === "GET") {
@@ -505,6 +571,7 @@ export default {
           const excerpt = String(body.excerpt || "").trim();
           const category = String(body.category || "latest-news").trim();
           const image = String(body.image || "").trim();
+          const layout = Array.isArray(body.layout) ? JSON.stringify(body.layout) : null;
           const published = String(body.status || "draft") === "published";
           const publishAt = String(body.publishAt || new Date().toISOString());
           if (!title) return json(request, { error: "文章標題不可為空白。" }, 400);
@@ -512,9 +579,9 @@ export default {
             const id = `news-${Date.now().toString(36)}`;
             const slug = `${slugify(title)}-${id}`;
             await env.DB.prepare(`
-              INSERT INTO news (id, title, slug, category, excerpt, content, image_key, publish_at, is_published)
-              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
-            `).bind(id, title, slug, category, excerpt, content, image, publishAt, published ? 1 : 0).run();
+              INSERT INTO news (id, title, slug, category, excerpt, content, image_key, publish_at, is_published, layout_json)
+              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+            `).bind(id, title, slug, category, excerpt, content, image, publishAt, published ? 1 : 0, layout).run();
             const row = await env.DB.prepare("SELECT * FROM news WHERE id = ?1").bind(id).first<Record<string, unknown>>();
             return json(request, { news: row ? newsFromRow(row) : null }, 201);
           }
@@ -523,9 +590,9 @@ export default {
           if (!exists) return json(request, { error: "找不到文章。" }, 404);
           await env.DB.prepare(`
             UPDATE news SET title = ?1, category = ?2, excerpt = ?3, content = ?4, image_key = ?5,
-              publish_at = ?6, is_published = ?7, updated_at = CURRENT_TIMESTAMP
-            WHERE id = ?8
-          `).bind(title, category, excerpt, content, image, publishAt, published ? 1 : 0, id).run();
+              publish_at = ?6, is_published = ?7, layout_json = ?8, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?9
+          `).bind(title, category, excerpt, content, image, publishAt, published ? 1 : 0, layout, id).run();
           const row = await env.DB.prepare("SELECT * FROM news WHERE id = ?1").bind(id).first<Record<string, unknown>>();
           return json(request, { news: row ? newsFromRow(row) : null });
         }
@@ -933,6 +1000,31 @@ export default {
             INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
             VALUES (?1, ?2, ?3, ?4, ?5)
           `).bind(order?.id, product?.db_id || null, item.title, item.priceValue, item.qty).run();
+        }
+        if (sessionUser) {
+          await env.DB.prepare(`
+            UPDATE users SET name = ?1, phone = ?2, updated_at = CURRENT_TIMESTAMP WHERE id = ?3
+          `).bind(name, phone, sessionUser.id).run();
+
+          const city = String(shippingAddress.city || "").trim();
+          const zip = String(shippingAddress.zip || "").trim();
+          if (address || city || zip) {
+            const existingAddress = await env.DB.prepare(`
+              SELECT id FROM user_addresses WHERE user_id = ?1 ORDER BY is_default DESC, id ASC LIMIT 1
+            `).bind(sessionUser.id).first<{ id: number }>();
+            if (existingAddress) {
+              await env.DB.prepare(`
+                UPDATE user_addresses
+                SET full_name = ?1, phone = ?2, address = ?3, city = ?4, zip = ?5, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?6
+              `).bind(name, phone, address, city, zip, existingAddress.id).run();
+            } else {
+              await env.DB.prepare(`
+                INSERT INTO user_addresses (user_id, label, full_name, phone, address, city, zip)
+                VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6)
+              `).bind(sessionUser.id, name, phone, address, city, zip).run();
+            }
+          }
         }
         await env.DB.prepare("DELETE FROM cart_items WHERE guest_id = ?1").bind(guestId).run();
         return json(request, {

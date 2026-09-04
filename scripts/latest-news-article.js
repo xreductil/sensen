@@ -22,6 +22,12 @@
   const imageUrl = value => {
     const image = String(value || '').trim();
     if (!image) return '';
+    try {
+      const source = new URL(image, window.location.origin);
+      if (source.hostname === 'www.sensen.com.tw' && source.pathname.startsWith('/wp-content/uploads/')) {
+        return '/images/legacy-news?url=' + encodeURIComponent(source.href);
+      }
+    } catch {}
     if (/^(https?:|data:|\/)/i.test(image)) return image;
     return '/assets/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
   };
@@ -32,7 +38,15 @@
     return parsed.toLocaleDateString('zh-TW', { year: 'numeric', month: '2-digit', day: '2-digit' });
   };
 
+  const imageLinePattern = /^(?:https?:\/\/|\/images\/)\S+\.(?:avif|gif|jpe?g|png|webp)(?:\?\S*)?$/i;
   const plainTextToHtml = value => escapeHtml(value).replace(/\r?\n/g, '<br>');
+  const articleParts = value => {
+    const lines = String(value || '').split(/\r?\n/);
+    return {
+      images: lines.map(line => line.trim()).filter(line => imageLinePattern.test(line)),
+      copy: lines.filter(line => !imageLinePattern.test(line.trim())).map(escapeHtml).join('<br>')
+    };
+  };
   const articleId = new URLSearchParams(window.location.search).get('id');
 
   const showError = message => {
@@ -62,14 +76,41 @@
       title.textContent = article.title || '最新消息';
       date.innerHTML = '<span aria-hidden="true">◷</span>' + escapeHtml(formatDate(article.publishAt || article.createdAt));
       category.textContent = categoryLabels[article.category] || article.category || '最新消息';
-      content.innerHTML = plainTextToHtml(article.content || article.excerpt || '目前沒有文章內容。');
+      const parts = articleParts(article.content || article.excerpt || '目前沒有文章內容。');
+      content.innerHTML = parts.copy;
 
-      const image = imageUrl(article.image);
-      if (image) {
-        imageContainer.innerHTML = '<img src="' + escapeHtml(image) + '" alt="' + escapeHtml(article.title) + '">';
-      } else {
-        imageContainer.hidden = true;
+      if (Array.isArray(article.layout) && article.layout.length) {
+        const shell = imageContainer.parentElement;
+        const allowed = new Set(['date', 'title', 'copy', 'image', 'gallery', 'text']);
+        const blocks = article.layout.filter(block => block && allowed.has(block.type));
+        const safeLink = value => /^(https?:\/\/|\/)/i.test(String(value || '').trim()) ? String(value).trim() : '';
+        const blockHtml = block => ({
+          date: '<p class="latest-news-layout-date"><span aria-hidden="true">◷</span>' + escapeHtml(formatDate(article.publishAt || article.createdAt)) + '</p>',
+          title: '<h1 class="latest-news-layout-title">' + escapeHtml(article.title || '最新消息') + '</h1>',
+          copy: '<div class="latest-news-layout-copy">' + parts.copy + '</div>',
+          text: '<div class="latest-news-layout-copy">' + plainTextToHtml(block.value || '') + '</div>',
+          gallery: '<div class="latest-news-layout-gallery">' + (Array.isArray(block.images) ? block.images : []).map(image => '<img class="latest-news-layout-image" src="' + escapeHtml(imageUrl(image)) + '" alt="' + escapeHtml(article.title) + '－內文圖片" loading="lazy">').join('') + '</div>',
+          image: '<img class="latest-news-layout-image" src="' + escapeHtml(imageUrl(block.src)) + '" alt="' + escapeHtml(article.title) + '－內文圖片" loading="lazy">'
+        }[block.type]);
+        shell.className = 'latest-news-article-shell is-free-layout';
+        shell.innerHTML = blocks.map(block => {
+          const markup = blockHtml(block);
+          const link = safeLink(block.link);
+          return '<section class="latest-news-layout-block span-' + (Number(block.span) === 6 ? '6' : '12') + '">' + (link ? '<a class="latest-news-layout-link" href="' + escapeHtml(link) + '">' + markup + '</a>' : markup) + '</section>';
+        }).join('');
+        return;
       }
+
+      // Only article-specific images appear here; the cover stays on listing cards.
+      imageContainer.innerHTML = parts.images.map((image, index) =>
+        '<img src="' + escapeHtml(imageUrl(image)) + '" alt="' + escapeHtml(article.title) + '－內文圖片 ' + (index + 1) + '" loading="lazy">'
+      ).join('');
+      imageContainer.hidden = parts.images.length === 0;
+      category.hidden = true;
+      const header = document.createElement('header');
+      header.className = 'latest-news-article-header';
+      header.append(date, title);
+      imageContainer.parentElement.insertBefore(header, imageContainer);
     })
     .catch(error => showError(error.message || '目前無法載入這則最新消息。'));
 })();

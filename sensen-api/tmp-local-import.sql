@@ -14,7 +14,7 @@ INSERT INTO categories (name, slug) VALUES ('造型蛋糕', '造型蛋糕');
 INSERT INTO categories (name, slug) VALUES ('冰淇淋蛋糕', '冰淇淋蛋糕');
 INSERT INTO categories (name, slug) VALUES ('伴手禮', '伴手禮');
 INSERT INTO categories (name, slug) VALUES ('飲品 MENU', '飲品-menu');
-INSERT INTO users (external_id, name, email, created_at, updated_at) VALUES ('sensen-admin-2026', '森森管理員', 'admin@sensen.local', COALESCE('2026-08-14T00:00:00.000Z', CURRENT_TIMESTAMP), COALESCE('2026-08-14T00:00:00.000Z', CURRENT_TIMESTAMP));
+INSERT INTO users (external_id, name, email, created_at, updated_at) VALUES ('sensen-admin-2026', '管理員', 'admin@sensen.local', COALESCE('2026-08-14T00:00:00.000Z', CURRENT_TIMESTAMP), COALESCE('2026-08-14T00:00:00.000Z', CURRENT_TIMESTAMP));
 INSERT INTO legacy_records (entity_type, source_key, payload_json) VALUES ('user_auth', 'sensen-admin-2026', '{"role":"admin","isAdmin":true,"salt":"41f6df27492aae5990604d12c4596db3","passwordHash":"086e1dd897d09b6710141f1e28ef2e191f972208c48354c2d8299389188496fe69af3b7d0ad7f1b61bb23e53393b47eb0def3b2a509b897e073bc830defdb276"}');
 INSERT INTO users (external_id, name, email, created_at, updated_at) VALUES ('6e351042aab2f8387e5a72e9ca5e3ed8851c1f74f3dcc2f7d2ffe46c00c9cf4b', 'Test User', 'test1785317734967@example.com', COALESCE('2026-07-29T09:35:35.070Z', CURRENT_TIMESTAMP), COALESCE('2026-07-29T09:35:35.070Z', CURRENT_TIMESTAMP));
 INSERT INTO legacy_records (entity_type, source_key, payload_json) VALUES ('user_auth', '6e351042aab2f8387e5a72e9ca5e3ed8851c1f74f3dcc2f7d2ffe46c00c9cf4b', '{"role":"customer","isAdmin":false,"salt":"4bb9b84915322932b8638c427fdaf9c5","passwordHash":"b25a63e18aafaf8c9b2bddb56d3bf4e75bbef369e31102641146edc89dcfdbc05dbd8ac9e70f150a26c41b98dc79b95c76aacc4978da47fea9489c8eb5587e64"}');

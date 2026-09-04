@@ -1085,7 +1085,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="/assets/site.css?v=20260904-8">
+  <link rel="stylesheet" href="/assets/site.css?v=20260905-1">
   ${checkoutStyle}
 </head>
 <body>
@@ -2263,7 +2263,11 @@ function latestNewsContent(page) {
 }
 
 function latestNewsArticleContent() {
-  return `<section class="latest-news-article-page" data-latest-news-article-page aria-labelledby="latest-news-article-title">
+  return `<section class="page-hero about-hero">
+    <div class="hero-banner"><div class="image-slot" data-image-source="/assets/images/headtitle-bg2.jpg"><img src="/assets/images/headtitle-bg2.jpg" alt="頁首背景圖片"></div><div class="hero-banner-title"><p>/最新消息</p><h1>最新消息</h1></div></div>
+  </section>
+  <section class="latest-news-article-page" data-latest-news-article-page aria-labelledby="latest-news-article-title">
+    <img class="latest-news-article-icon" src="/assets/images/icon-wheat.png" alt="" aria-hidden="true">
     <a class="latest-news-article-back" href="/最新消息/">← 返回最新消息</a>
     <div class="latest-news-article-shell">
       <p class="latest-news-article-status" data-article-status role="status">載入文章中…</p>

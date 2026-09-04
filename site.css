@@ -187,7 +187,7 @@ body:has(.account-shell) .account-nav button em { margin-left: auto; color: curr
 .account-summary-card b, .account-summary-card strong { display: block; }
 .account-summary-card b { color: #8a5d47; font-size: .8rem; letter-spacing: .06em; }
 .account-summary-card strong { margin-top: 5px; color: #e8281a; font-size: 1.25rem; }
-.account-lower-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; margin-top: 34px; }
+.account-lower-grid { display: none; }
 .account-preview-card h2 { margin: 0 0 16px; color: #3a1f14; font-family: Georgia, "Times New Roman", var(--font-main); font-size: clamp(1.5rem, 2vw, 2rem); }
 .account-preview-card p { min-height: 45px; color: #6b5145; }
 .account-preview-card button { padding: 11px 18px; border: 1px solid #e8281a; border-radius: 7px; color: #e8281a; background: transparent; font-weight: 800; cursor: pointer; }
@@ -3747,9 +3747,21 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 }
 
 .latest-news-article-page {
+  position: relative;
   width: min(1160px, calc(100% - 80px));
   margin: 0 auto;
-  padding: 96px 0 120px;
+  padding: 150px 0 120px;
+}
+
+.latest-news-article-icon {
+  position: absolute;
+  top: -62px;
+  left: 50%;
+  z-index: 2;
+  width: 88px;
+  height: 104px;
+  object-fit: contain;
+  transform: translateX(-50%);
 }
 
 .latest-news-article-back {
