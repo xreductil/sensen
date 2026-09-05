@@ -5,6 +5,9 @@
   <meta charset="UTF-8" />
   <title>登入｜森森點心坊</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="登入｜森森點心坊，僅供授權人員使用。">
+  <link rel="canonical" href="https://www.sensen.com.tw/admin/signin.html">
+  <meta name="robots" content="noindex, nofollow">
    <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.webp">
   <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.webp">
   <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.webp">
@@ -19,6 +22,7 @@
   </script>
   <script type="module" src="./assets/js/main-CnSylLUz.js"></script>
   <link rel="stylesheet" href="./assets/css/main-CM9hUMvt.css">
+  <link rel="stylesheet" href="./password-toggle.css">
 </head>
 
 <body>
@@ -35,9 +39,9 @@
 
       <form class="needs-validation mt-3" novalidate>
         <div class="mb-3">
-          <label for="email" class="form-label">Email address</label>
-          <input id="email" type="email" class="form-control" placeholder="name@example.com" required autofocus>
-          <div class="invalid-feedback">Please enter a valid email.</div>
+          <label for="email" class="form-label">帳號或 Email</label>
+          <input id="email" type="text" class="form-control" placeholder="管理員" required autofocus>
+          <div class="invalid-feedback">請輸入帳號或 Email。</div>
         </div>
 
         <div class="mb-3">
@@ -45,7 +49,7 @@
             <span>Password</span>
             <a href="#" class="small link-primary">Forgot Password?</a>
           </label>
-          <input id="password" type="password" class="form-control" placeholder="Password" required minlength="6">
+          <div class="password-field"><input id="password" type="password" class="form-control" placeholder="Password" required minlength="6"><button class="password-toggle" type="button" data-password-toggle="password" aria-label="顯示密碼" title="顯示密碼"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.5"></circle></svg></button></div>
           <div class="invalid-feedback">Please provide a password (min 6 characters).</div>
         </div>
 
@@ -72,6 +76,7 @@
 
 
 <script src="./assets/zh-admin.js?v=sensen-20260814"></script>
+<script src="./password-toggle.js"></script>
 </body>
 
 </html>""
