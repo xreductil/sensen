@@ -185,6 +185,82 @@ const newsFromRow = (row: Record<string, unknown>) => ({
   status: Number(row.is_published) === 1 ? "published" : "draft",
 });
 
+const SITE_ORIGIN = "https://www.sensen.com.tw";
+const RETIRED_CONTENT_PATHS = new Set([
+  "/author/admin", "/slide-types/index-slider",
+  "/產品介紹/page/2", "/產品介紹/page/3", "/產品介紹/生日蛋糕-下方有dm供下載-264/page/2",
+  "/latest-news/²⁰²¹-𝐅𝐚𝐭𝐡𝐞𝐫𝐬-𝐃𝐚𝐲✨-2", "/latest-news/父親節蛋糕預購開跑囉-2",
+  "/latest-news/吉祥桂圓糕-2", "/latest-news/肉鬆餅-2", "/latest-news/彌月試吃品項-2",
+  "/new-arrival/多佳米拉-2", "/new-arrival/芒果奶露麵包-2", "/new-arrival/草莓甜心-2",
+  "/latest-news/📣澄和店週年慶📣", "/latest-news/2019頂家彌月目錄", "/latest-news/2021母親節蛋糕",
+  "/latest-news/2022中秋dm", "/latest-news/2023中秋dm", "/latest-news/2023母親節蛋糕",
+  "/latest-news/2024母親節蛋糕", "/latest-news/2024新春禮盒", "/latest-news/88節蛋糕預購開跑",
+  "/latest-news/中秋dm出爐囉", "/latest-news/今年的森森芒果季開始囉-3", "/latest-news/文龍年中慶",
+  "/latest-news/文龍初秋賞", "/latest-news/生日蛋糕卷", "/latest-news/肉鬆餅禮盒", "/latest-news/芋見幸福",
+  "/latest-news/波蘿蛋黃酥-2", "/latest-news/春節禮盒預購開跑囉", "/latest-news/草莓大福禮盒",
+  "/latest-news/頂家彌月🔥人氣波士頓派🔥", "/latest-news/森森吐司", "/latest-news/新富店開幕慶",
+  "/latest-news/澄和店優惠", "/latest-news/餐盒", "/latest-news/餐盒menu", "/latest-news/歡慶新富店開幕",
+  "/latest-news/bebuilder-1930", "/new-arrival/布丁燒", "/new-arrival/栗子蒙布朗-mont-blanc",
+  "/new-arrival/森森蝴蝶酥", "/new-arrival/新品上市", "/new-arrival/新品上市-2", "/new-arrival/蝴蝶酥",
+  "/new-arrival/優荔-lichi", "/new-arrival/new-杏仁千層酥-new",
+]);
+const escapeMarkup = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, character => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[character] || character));
+const newsImageUrl = (value: unknown) => {
+  const image = publicNewsImageUrl(value);
+  if (!image) return "";
+  if (/^https?:\/\//i.test(image)) return image;
+  return `${SITE_ORIGIN}${image.startsWith("/") ? "" : "/"}${image}`;
+};
+const newsDate = (value: unknown) => {
+  const raw = String(value || "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw.replace(/-/g, ".") : "";
+};
+const newsCopyHtml = (value: unknown) => {
+  const imagePattern = /^(?:https?:\/\/|\/images\/)\S+\.(?:avif|gif|jpe?g|png|webp)(?:\?\S*)?$/i;
+  return String(value || "").split(/\r?\n/).filter(line => !imagePattern.test(line.trim())).map(escapeMarkup).join("<br>");
+};
+const renderNewsArticleShell = (row: Record<string, unknown>) => {
+  const title = String(row.title || "最新消息");
+  const copy = newsCopyHtml(row.content || row.excerpt || "目前沒有文章內容。");
+  const date = newsDate(row.publish_at || row.created_at);
+  const layout = parseJson<Record<string, unknown>[] | null>(String(row.layout_json || ""), null);
+  if (layout?.length) {
+    const blocks = layout.filter(block => ["date", "title", "copy", "image", "gallery", "text"].includes(String(block.type || "")));
+    const blockHtml = (block: Record<string, unknown>) => {
+      if (block.type === "date") return `<p class="latest-news-layout-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p>`;
+      if (block.type === "title") return `<h1 class="latest-news-layout-title">${escapeMarkup(title)}</h1>`;
+      if (block.type === "copy") return `<div class="latest-news-layout-copy">${copy}</div>`;
+      if (block.type === "text") return `<div class="latest-news-layout-copy">${escapeMarkup(block.value).replace(/\r?\n/g, "<br>")}</div>`;
+      if (block.type === "image") return `<img class="latest-news-layout-image" src="${escapeMarkup(newsImageUrl(block.src))}" alt="${escapeMarkup(title)}－內文圖片" loading="lazy">`;
+      const images = Array.isArray(block.images) ? block.images : [];
+      return `<div class="latest-news-layout-gallery">${images.map(image => `<img class="latest-news-layout-image" src="${escapeMarkup(newsImageUrl(image))}" alt="${escapeMarkup(title)}－內文圖片" loading="lazy">`).join("")}</div>`;
+    };
+    return `<div class="latest-news-article-shell is-free-layout">${blocks.map(block => {
+      const markup = blockHtml(block);
+      const link = /^(https?:\/\/|\/)/i.test(String(block.link || "").trim()) ? String(block.link).trim() : "";
+      return `<section class="latest-news-layout-block span-${Number(block.span) === 6 ? "6" : "12"}">${link ? `<a class="latest-news-layout-link" href="${escapeMarkup(link)}">${markup}</a>` : markup}</section>`;
+    }).join("")}</div>`;
+  }
+  const imagePattern = /^(?:https?:\/\/|\/images\/)\S+\.(?:avif|gif|jpe?g|png|webp)(?:\?\S*)?$/i;
+  const images = String(row.content || "").split(/\r?\n/).map(line => line.trim()).filter(line => imagePattern.test(line));
+  return `<div class="latest-news-article-shell"><header class="latest-news-article-header"><p class="latest-news-card-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p><h1 id="latest-news-article-title">${escapeMarkup(title)}</h1></header><div class="latest-news-article-image"${images.length ? "" : " hidden"}>${images.map((image, index) => `<img src="${escapeMarkup(newsImageUrl(image))}" alt="${escapeMarkup(title)}－內文圖片 ${index + 1}" loading="lazy">`).join("")}</div><div class="latest-news-article-copy"><div class="latest-news-article-content">${copy}</div></div></div>`;
+};
+
+const renderNewsArticlePage = (template: string, row: Record<string, unknown>) => {
+  const title = String(row.title || "最新消息");
+  const description = String(row.excerpt || newsCopyHtml(row.content).replace(/<br>/g, " ") || title).replace(/\s+/g, " ").trim().slice(0, 155);
+  const articleKey = String(row.slug || row.id || "");
+  const canonical = `${SITE_ORIGIN}/latest-news/article/${encodeURIComponent(articleKey)}/`;
+  const image = newsImageUrl(row.image_key);
+  const seo = `<title>${escapeMarkup(title)} – 森森點心坊</title>\n  <meta name="description" content="${escapeMarkup(description)}">\n  <link rel="canonical" href="${escapeMarkup(canonical)}">\n  <meta name="robots" content="index, follow">\n  <meta property="og:locale" content="zh_TW">\n  <meta property="og:type" content="article">\n  <meta property="og:site_name" content="森森點心坊">\n  <meta property="og:title" content="${escapeMarkup(title)}">\n  <meta property="og:description" content="${escapeMarkup(description)}">\n  <meta property="og:url" content="${escapeMarkup(canonical)}">${image ? `\n  <meta property="og:image" content="${escapeMarkup(image)}">` : ""}`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>[\s\S]*?<meta property="og:url"[^>]*>/i, seo)
+    .replace('data-latest-news-article-page', 'data-latest-news-article-page data-article-hydrated="true"')
+    .replace(/<!-- NEWS_ARTICLE_SHELL_START -->[\s\S]*?<!-- NEWS_ARTICLE_SHELL_END -->/, `<!-- NEWS_ARTICLE_SHELL_START -->${renderNewsArticleShell(row)}<!-- NEWS_ARTICLE_SHELL_END -->`);
+};
+
 const adminProductFromRow = (row: ProductRow) => {
   const product = productFromRow(row);
   const metadata = parseJson<Record<string, unknown>>(row.metadata_json, {});
@@ -362,6 +438,34 @@ export default {
     }
 
     try {
+      const decodedPathname = decodeURI(url.pathname);
+      const normalizedPathname = decodedPathname.replace(/\/+$/, "") || "/";
+      if ((request.method === "GET" || request.method === "HEAD") && RETIRED_CONTENT_PATHS.has(normalizedPathname)) {
+        return new Response("此內容已永久移除。", {
+          status: 410,
+          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" },
+        });
+      }
+      if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/product-item/法式蝶蝨酥-1657") {
+        return Response.redirect(`${url.origin}/product-item/${encodeURIComponent("法式蝴蝶酥-1657")}/`, 301);
+      }
+      if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/隱私權條件") {
+        return Response.redirect(`${url.origin}/${encodeURIComponent("隱私權條款")}/`, 301);
+      }
+
+      if ((request.method === "GET" || request.method === "HEAD") && /^\/latest-news\/article\/?$/.test(url.pathname) && url.searchParams.get("id")) {
+        return Response.redirect(`${url.origin}/latest-news/article/${encodeURIComponent(url.searchParams.get("id") || "")}/`, 301);
+      }
+
+      if ((request.method === "GET" || request.method === "HEAD")
+        && !url.pathname.endsWith("/")
+        && !url.pathname.startsWith("/api/")
+        && !url.pathname.startsWith("/images/")
+        && url.pathname !== "/health"
+        && !/\/[^/]+\.[a-z0-9]+$/i.test(url.pathname)) {
+        return Response.redirect(`${url.origin}${url.pathname}/${url.search}`, 301);
+      }
+
       if (url.pathname === "/health" && request.method === "GET") {
         const result = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
         return json(request, { ok: result?.ok === 1, database: "connected" });
@@ -1037,6 +1141,34 @@ export default {
         return imageResponse(request, env);
       }
 
+      const articlePathMatch = url.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/);
+      if (articlePathMatch && request.method === "GET") {
+        const articleKey = decodeURIComponent(articlePathMatch[1] || "").trim();
+        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/latest-news/article/`, request));
+        const template = await templateResponse.text();
+        const row = articleKey
+          ? await env.DB.prepare(`
+              SELECT * FROM news
+              WHERE is_published = 1 AND (id = ?1 OR slug = ?1)
+                AND (publish_at IS NULL OR datetime(replace(publish_at, 'T', ' ')) <= CURRENT_TIMESTAMP)
+              LIMIT 1
+            `).bind(articleKey).first<Record<string, unknown>>()
+          : null;
+        if (!row) {
+          const missing = template
+            .replace('<p class="latest-news-article-status" data-article-status role="status">載入文章中…</p>', '<p class="latest-news-article-status is-error" data-article-status role="status">找不到這則最新消息，可能已下架或不存在。</p>')
+            .replace(/<meta name="robots" content="[^"]*">/i, '<meta name="robots" content="noindex, nofollow">');
+          return new Response(missing, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" } });
+        }
+        const articleSlug = String(row.slug || "").trim();
+        if (articleSlug && articleKey !== articleSlug) {
+          return Response.redirect(`${url.origin}/latest-news/article/${encodeURIComponent(articleSlug)}/`, 301);
+        }
+        return new Response(renderNewsArticlePage(template, row), {
+          headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60, s-maxage=300" },
+        });
+      }
+
       if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
         return json(request, { error: "找不到 API 路徑。" }, 404);
       }
@@ -1047,6 +1179,11 @@ export default {
       const assetResponse = await env.ASSETS.fetch(assetRequest);
       if (assetResponse.status === 404) {
         return json(request, { error: "找不到 API 路徑。" }, 404);
+      }
+      if (/^\/(?:admin|customer|cart|checkout|orders)(?:\/|$)/i.test(url.pathname)) {
+        const headers = new Headers(assetResponse.headers);
+        headers.set("X-Robots-Tag", "noindex, nofollow");
+        return new Response(assetResponse.body, { status: assetResponse.status, statusText: assetResponse.statusText, headers });
       }
       return assetResponse;
     } catch (error) {

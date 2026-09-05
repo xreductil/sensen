@@ -32,6 +32,56 @@ const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/2024母親節蛋糕/", "latest-detail-11.md"],
 ];
 const SOURCE_ORIGIN = "https://www.sensen.com.tw";
+const RETIRED_CONTENT_PATHS = new Set([
+  "/author/admin",
+  "/slide-types/index-slider",
+  "/產品介紹/page/2",
+  "/產品介紹/page/3",
+  "/產品介紹/生日蛋糕-下方有dm供下載-264/page/2",
+  "/latest-news/²⁰²¹-𝐅𝐚𝐭𝐡𝐞𝐫𝐬-𝐃𝐚𝐲✨-2",
+  "/latest-news/父親節蛋糕預購開跑囉-2",
+  "/latest-news/吉祥桂圓糕-2",
+  "/latest-news/肉鬆餅-2",
+  "/latest-news/彌月試吃品項-2",
+  "/new-arrival/多佳米拉-2",
+  "/new-arrival/芒果奶露麵包-2",
+  "/new-arrival/草莓甜心-2",
+  "/latest-news/📣澄和店週年慶📣",
+  "/latest-news/2019頂家彌月目錄",
+  "/latest-news/2021母親節蛋糕",
+  "/latest-news/2022中秋dm",
+  "/latest-news/2023中秋dm",
+  "/latest-news/2023母親節蛋糕",
+  "/latest-news/2024母親節蛋糕",
+  "/latest-news/2024新春禮盒",
+  "/latest-news/88節蛋糕預購開跑",
+  "/latest-news/中秋dm出爐囉",
+  "/latest-news/今年的森森芒果季開始囉-3",
+  "/latest-news/文龍年中慶",
+  "/latest-news/文龍初秋賞",
+  "/latest-news/生日蛋糕卷",
+  "/latest-news/肉鬆餅禮盒",
+  "/latest-news/芋見幸福",
+  "/latest-news/波蘿蛋黃酥-2",
+  "/latest-news/春節禮盒預購開跑囉",
+  "/latest-news/草莓大福禮盒",
+  "/latest-news/頂家彌月🔥人氣波士頓派🔥",
+  "/latest-news/森森吐司",
+  "/latest-news/新富店開幕慶",
+  "/latest-news/澄和店優惠",
+  "/latest-news/餐盒",
+  "/latest-news/餐盒menu",
+  "/latest-news/歡慶新富店開幕",
+  "/latest-news/bebuilder-1930",
+  "/new-arrival/布丁燒",
+  "/new-arrival/栗子蒙布朗-mont-blanc",
+  "/new-arrival/森森蝴蝶酥",
+  "/new-arrival/新品上市",
+  "/new-arrival/新品上市-2",
+  "/new-arrival/蝴蝶酥",
+  "/new-arrival/優荔-lichi",
+  "/new-arrival/new-杏仁千層酥-new",
+]);
 const HOME_SLIDES = [
   ["/assets/images/image-photo-4.jpg", "SenSen Bakery bread promotion"],
   ["/assets/images/image-photo-6.jpg", "SenSen Bakery coffee promotion"],
@@ -796,6 +846,20 @@ function titleFromPage(page) {
   return page.title || page.metadata?.title || "森森點心坊";
 }
 
+function pageTitleFor(page, localPath) {
+  if (localPath === "/404-error") return "找不到頁面 – 森森點心坊";
+  if (localPath === PRODUCT_INTRO_PATH) return "線上商城 – 森森點心坊";
+  if (localPath === BIRTHDAY_CAKE_PATH) return BIRTHDAY_CAKE_PAGE_TITLE;
+  return titleFromPage(page);
+}
+
+function uniquePageTitle(title, localPath, duplicatedTitles) {
+  if (!duplicatedTitles.has(title)) return title;
+  const routeLabel = decodeURI(localPath).replace(/^\/+|\/+$/g, "").replace(/\//g, " › ") || "首頁";
+  const cleanTitle = String(title).replace(/\s*[–|-]\s*森森點心坊\s*$/i, "").trim() || "森森點心坊";
+  return `${cleanTitle}｜${routeLabel} – 森森點心坊`;
+}
+
 function markdownFromPage(page) {
   return page.markdown || page.content || page.text || "";
 }
@@ -974,8 +1038,32 @@ function createIndex(pages) {
     </section>`).join("");
 }
 
+function seoDescription(title, pathLabel, isHome) {
+  if (isHome) return "森森點心坊提供生日蛋糕、彌月禮盒、伴手禮、冷凍麵包、飲品與精緻外燴服務，分享新鮮、健康、美味的幸福滋味。";
+  const cleanTitle = String(title || "森森點心坊").replace(/\s+[–|-]\s+森森點心坊$/, "").trim();
+  if (pathLabel === "/最新消息") return "掌握森森點心坊最新消息、季節限定商品、新品上市與門市活動資訊。";
+  if (/產品介紹|蛋糕|禮盒|麵包|伴手禮|咖啡|飲品/.test(pathLabel)) return `探索森森點心坊的${cleanTitle}，查看商品特色、規格與訂購資訊。`;
+  if (/聯絡我們|contact/.test(pathLabel)) return "聯絡森森點心坊，洽詢商品訂購、門市服務、彌月禮盒與精緻外燴需求。";
+  return `${cleanTitle}｜森森點心坊提供新鮮、健康、美味的烘焙點心與貼心服務。`;
+}
+
+function normalizeHeadingStructure(content, localPath) {
+  if (localPath === "/") {
+    return `<h1 class="site-sr-only">森森點心坊｜高雄蛋糕、伴手禮與彌月禮盒</h1>${content}`;
+  }
+  if (["/customer", "/customer/admin", "/customer/admin/backup"].includes(localPath)) {
+    return `<h1 class="site-sr-only">森森點心坊會員中心</h1>${content.replace(/<h1\b/g, "<h2").replace(/<\/h1>/g, "</h2>")}`;
+  }
+  return content;
+}
+
 function layout({ title, pathLabel, content, isHome = false, isAbout = false, isEmeraldLysk = false, isCakeProduct = false, isBeanTartProduct = false, isSouvenirProduct = false, heroCategoryLabel = "所有蛋糕, 生日蛋糕", hasBrandedHero = false, heroSource = "/assets/images/headtitle-bg2.jpg", showHero = true }) {
   const checkoutStyle = pathLabel === "/checkout" ? '<link rel="stylesheet" href="/assets/checkout.css">' : "";
+  const normalizedPath = pathLabel === "/" ? "/" : `/${String(pathLabel || "").replace(/^\/+|\/+$/g, "")}/`;
+  const canonical = `${SOURCE_ORIGIN}${encodeURI(normalizedPath)}`;
+  const description = seoDescription(title, normalizedPath.replace(/\/$/, "") || "/", isHome);
+  const privatePage = /^\/(?:admin|customer|cart|checkout|orders)(?:\/|$)/i.test(normalizedPath) || normalizedPath === "/最新消息文章/";
+  const robotsMeta = privatePage ? '<meta name="robots" content="noindex, nofollow">' : '<meta name="robots" content="index, follow">';
   const isBirthdayCakePage = pathLabel === BIRTHDAY_CAKE_PATH || (title.includes("生日蛋糕") && title.includes("DM"));
   const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
     ? '<script src="/assets/product-detail-purchase.js?v=20260904-4"></script>'
@@ -1085,7 +1173,16 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${escapeHtml(title)}</title>
-  <link rel="stylesheet" href="/assets/site.css?v=20260905-1">
+  <meta name="description" content="${escapeAttr(description)}">
+  <link rel="canonical" href="${escapeAttr(canonical)}">
+  ${robotsMeta}
+  <meta property="og:locale" content="zh_TW">
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="森森點心坊">
+  <meta property="og:title" content="${escapeAttr(title)}">
+  <meta property="og:description" content="${escapeAttr(description)}">
+  <meta property="og:url" content="${escapeAttr(canonical)}">
+  <link rel="stylesheet" href="/assets/site.css?v=20260906-404">
   ${checkoutStyle}
 </head>
 <body>
@@ -1608,6 +1705,7 @@ const SOUVENIR_PRODUCT_DATA = new Map(SOUVENIR_PRODUCTS.map(([title, href, image
 // Keep a compatibility route for the misspelled URL that has been shared previously.
 const PRODUCT_ROUTE_ALIASES = new Map([
   ["/product-item/法式蝶蝨酥-1657", "/product-item/法式蝴蝶酥-1657"],
+  ["/隱私權條件", "/隱私權條款"],
 ]);
 
 function souvenirPageContent() {
@@ -2146,6 +2244,16 @@ function beanTartProductContent() {
 
 function pageContent(page) {
   const localPath = localPathFromUrl(page.url);
+  if (localPath === "/404-error") {
+    return `<section class="not-found-page" aria-labelledby="not-found-title">
+      <div class="not-found-card">
+        <img class="not-found-art" src="/assets/images/photo-404-error.png" alt="404 Error">
+        <h1 id="not-found-title">Page Not Found!</h1>
+        <p>We are sorry, but the page you are looking for does not exist.</p>
+        <a class="not-found-home" href="/">Back to Home</a>
+      </div>
+    </section>`;
+  }
   if (localPath === "/關於森森") {
     return aboutContent();
   }
@@ -2230,13 +2338,14 @@ function pageContent(page) {
 
   const markdown = markdownFromPage(page);
   if (markdown.trim()) {
-    const visibleMarkdown = localPath === "/最新消息"
+    const visibleMarkdown = removeRetiredContentCards(localPath === "/最新消息"
       ? removeLatestNewsPagination(markdown)
-      : markdown;
+      : markdown);
     return `<section class="content">${decorateMonthDmContent(markdownToHtml(visibleMarkdown))}</section>`;
   }
   if (page.html && page.html.trim()) {
-    return `<section class="content">${decorateMonthDmContent(sanitizeWordPressHtml(page.html))}</section>`;
+    const visibleHtml = removeRetiredContentCardsFromHtml(sanitizeWordPressHtml(page.html));
+    return `<section class="content">${decorateMonthDmContent(visibleHtml)}</section>`;
   }
   if (!markdown.trim()) {
     return `<section class="content"><div class="empty">此頁在爬取結果中沒有正文，已依標題建立本地頁面。</div></section>`;
@@ -2264,12 +2373,12 @@ function latestNewsContent(page) {
 
 function latestNewsArticleContent() {
   return `<section class="page-hero about-hero">
-    <div class="hero-banner"><div class="image-slot" data-image-source="/assets/images/headtitle-bg2.jpg"><img src="/assets/images/headtitle-bg2.jpg" alt="頁首背景圖片"></div><div class="hero-banner-title"><p>/最新消息</p><h1>最新消息</h1></div></div>
+    <div class="hero-banner"><div class="image-slot" data-image-source="/assets/images/headtitle-bg2.jpg"><img src="/assets/images/headtitle-bg2.jpg" alt="頁首背景圖片"></div><div class="hero-banner-title"><p>/最新消息</p><h2 class="latest-news-article-section-title">最新消息</h2></div></div>
   </section>
   <section class="latest-news-article-page" data-latest-news-article-page aria-labelledby="latest-news-article-title">
     <img class="latest-news-article-icon" src="/assets/images/icon-wheat.png" alt="" aria-hidden="true">
     <a class="latest-news-article-back" href="/最新消息/">← 返回最新消息</a>
-    <div class="latest-news-article-shell">
+    <!-- NEWS_ARTICLE_SHELL_START --><div class="latest-news-article-shell">
       <p class="latest-news-article-status" data-article-status role="status">載入文章中…</p>
       <div class="latest-news-article-image" data-article-image></div>
       <div class="latest-news-article-copy">
@@ -2278,7 +2387,7 @@ function latestNewsArticleContent() {
         <h1 id="latest-news-article-title" data-article-title>最新消息</h1>
         <div class="latest-news-article-content" data-article-content></div>
       </div>
-    </div>
+    </div><!-- NEWS_ARTICLE_SHELL_END -->
     <script src="/assets/latest-news-article.js"></script>
   </section>`;
 }
@@ -2292,6 +2401,50 @@ function removeLatestNewsPagination(markdown) {
   const nextContent = lines.slice(paginationIndex + 1).find((line) => line.trim());
   if (!nextContent || !/^\[下一頁\]/.test(nextContent.trim())) return markdown;
   return lines.slice(0, paginationIndex).join("\n");
+}
+
+function removeRetiredContentCards(markdown) {
+  const blocks = String(markdown || "").split(/\n\s*\n/);
+  const cardStarts = [];
+  for (let index = 0; index < blocks.length - 1; index += 1) {
+    if (/^\s*\d{4}-\d{2}-\d{2}\s*$/.test(blocks[index]) && /\]\([^)]+\)/.test(blocks[index + 1])) {
+      cardStarts.push(index);
+    }
+  }
+  if (!cardStarts.length) return markdown;
+  cardStarts.push(blocks.length);
+  const removed = new Set();
+  for (let card = 0; card < cardStarts.length - 1; card += 1) {
+    const start = cardStarts[card];
+    const end = cardStarts[card + 1];
+    const linksToRetiredContent = blocks.slice(start, end).some((block) =>
+      [...block.matchAll(/\]\((https?:\/\/[^)]+|\/[^)]+)\)/g)].some((match) => {
+        try {
+          return RETIRED_CONTENT_PATHS.has(localPathFromUrl(new URL(match[1], SOURCE_ORIGIN).href));
+        } catch {
+          return false;
+        }
+      }),
+    );
+    if (linksToRetiredContent) {
+      for (let index = start; index < end; index += 1) removed.add(index);
+    }
+  }
+  return blocks.filter((block, index) => !removed.has(index)).join("\n\n");
+}
+
+function removeRetiredContentCardsFromHtml(html) {
+  const cardPattern = /<p>\s*\d{4}-\d{2}-\d{2}\s*<\/p>[\s\S]*?<p>\s*<a\s+href="([^"]+)"[^>]*>更多<\/a>\s*<\/p>/gi;
+  return String(html || "").replace(cardPattern, (card) => {
+    const linksToRetiredContent = [...card.matchAll(/(?:href|data-image-source)="([^"]+)"/gi)].some((match) => {
+      try {
+        return RETIRED_CONTENT_PATHS.has(localPathFromUrl(new URL(match[1], SOURCE_ORIGIN).href));
+      } catch {
+        return false;
+      }
+    });
+    return linksToRetiredContent ? "" : card;
+  });
 }
 
 function decorateMonthDmContent(html) {
@@ -2348,7 +2501,13 @@ function ensureDir(filePath) {
 function copyHomeFallback() {
   const indexFile = path.join(ROOT, "index.html");
   if (fs.existsSync(indexFile)) {
-    fs.copyFileSync(indexFile, path.join(OUT_DIR, "standalone-home.html"));
+    const fallback = fs.readFileSync(indexFile, "utf8");
+    const description = seoDescription("森森點心坊", "/", true);
+    const seoHead = `<meta name="description" content="${escapeAttr(description)}">\n  <meta name="robots" content="noindex, follow">`;
+    const optimizedFallback = fallback
+      .replace(/(<meta name="viewport"[^>]*>)/i, `$1\n  ${seoHead}`)
+      .replace(/<title>[\s\S]*?<\/title>/i, "<title>備用首頁 – 森森點心坊</title>");
+    fs.writeFileSync(path.join(OUT_DIR, "standalone-home.html"), optimizedFallback);
   }
 }
 
@@ -2380,11 +2539,29 @@ function main() {
       pageMap.set(key, mergePage(pageMap.get(key), page));
     });
 
+  for (const page of pageMap.values()) {
+    const localPath = localPathFromUrl(page.url);
+    const canonicalPath = localPath.replace(/-2$/, "");
+    const canonicalPage = pageMap.get(canonicalPath.toLocaleLowerCase());
+    if (canonicalPath !== localPath && canonicalPage && titleFromPage(canonicalPage) === titleFromPage(page)) {
+      PRODUCT_ROUTE_ALIASES.set(localPath, canonicalPath);
+    }
+  }
   const pages = [...pageMap.values()]
+    .filter((page) => !PRODUCT_ROUTE_ALIASES.has(localPathFromUrl(page.url)))
+    .filter((page) => !RETIRED_CONTENT_PATHS.has(localPathFromUrl(page.url)))
     .sort((a, b) => localPathFromUrl(a.url).localeCompare(localPathFromUrl(b.url), "zh-Hant"));
+  const titleCounts = new Map();
+  for (const page of pages) {
+    const localPath = localPathFromUrl(page.url);
+    const title = pageTitleFor(page, localPath);
+    titleCounts.set(title, (titleCounts.get(title) || 0) + 1);
+  }
+  const duplicatedTitles = new Set([...titleCounts].filter(([, count]) => count > 1).map(([title]) => title));
 
   fs.rmSync(OUT_DIR, { recursive: true, force: true });
   fs.mkdirSync(path.join(OUT_DIR, "assets"), { recursive: true });
+  fs.writeFileSync(path.join(OUT_DIR, ".assetsignore"), "# Dropbox conflict copies are local sync artifacts, not public site assets.\n*與 Chi Feng Kao 衝突的複本*\n");
   fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
   fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
@@ -2403,6 +2580,15 @@ function main() {
   const adminFrontendDir = path.join(ROOT, "frontend", "admin");
   if (fs.existsSync(adminFrontendDir)) {
     fs.cpSync(adminFrontendDir, path.join(OUT_DIR, "admin"), { recursive: true });
+    for (const file of fs.readdirSync(path.join(OUT_DIR, "admin"))) {
+      if (!file.endsWith(".html")) continue;
+      const adminFile = path.join(OUT_DIR, "admin", file);
+      const html = fs.readFileSync(adminFile, "utf8");
+      const adminTitle = (html.match(/<title>(.*?)<\/title>/i) || [])[1] || "森森點心坊後台";
+      const adminPath = file === "index.html" ? "/admin/" : `/admin/${file}`;
+      const seoHead = `<meta name="description" content="${escapeAttr(adminTitle)}，僅供授權人員使用。">\n  <link rel="canonical" href="${SOURCE_ORIGIN}${adminPath}">\n  <meta name="robots" content="noindex, nofollow">`;
+      fs.writeFileSync(adminFile, html.replace(/(<meta name="viewport"[^>]*>)/i, `$1\n  ${seoHead}`));
+    }
   }
 
   const home = pages.find((page) => localPathFromUrl(page.url) === "/") || pages[0];
@@ -2411,9 +2597,10 @@ function main() {
     const isAboutPage = localPath === "/關於森森" || localPath === "/產品介紹/伴手禮" || localPath === "/森森咖啡";
     const filePath = htmlFileForLocalPath(localPath);
     ensureDir(filePath);
-    const content = localPath === "/" ? homeContent(pages) : pageContent(page);
+    const rawContent = localPath === "/" ? homeContent(pages) : pageContent(page);
+    const content = normalizeHeadingStructure(rawContent, localPath);
     fs.writeFileSync(filePath, layout({
-      title: localPath === PRODUCT_INTRO_PATH ? "線上商城 – 森森點心坊" : localPath === BIRTHDAY_CAKE_PATH ? BIRTHDAY_CAKE_PAGE_TITLE : titleFromPage(page),
+      title: uniquePageTitle(pageTitleFor(page, localPath), localPath, duplicatedTitles),
       pathLabel: decodeURI(localPath),
       content,
       isHome: localPath === "/",
@@ -2424,17 +2611,9 @@ function main() {
       isSouvenirProduct: SOUVENIR_PRODUCT_PATHS.has(localPath),
       heroCategoryLabel: SOUVENIR_PRODUCT_PATHS.has(localPath) ? "伴手禮" : CAKE_PRODUCT_CATEGORY_LABELS.get(localPath),
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
-      showHero: localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup",
+      showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
       heroSource: localPath === EMERALD_LYSK_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/assets/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/assets/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : localPath === "/森森咖啡" ? "/assets/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/assets/images/headtitle-bg2.jpg",
     }));
-  }
-
-  for (const [aliasPath, canonicalPath] of PRODUCT_ROUTE_ALIASES) {
-    const canonicalFile = htmlFileForLocalPath(canonicalPath);
-    if (!fs.existsSync(canonicalFile)) continue;
-    const aliasFile = htmlFileForLocalPath(aliasPath);
-    ensureDir(aliasFile);
-    fs.copyFileSync(canonicalFile, aliasFile);
   }
 
   if (!home || localPathFromUrl(home.url) !== "/") {
@@ -2482,9 +2661,9 @@ function main() {
     heroSource: "/assets/images/headtitle-bg2.jpg",
   });
   fs.writeFileSync(privacyFile, privacyHtml);
-  const privacyAlias = path.join(OUT_DIR, "隱私權條件", "index.html");
-  ensureDir(privacyAlias);
-  fs.writeFileSync(privacyAlias, privacyHtml);
+  fs.writeFileSync(path.join(OUT_DIR, "_redirects"), `${[...PRODUCT_ROUTE_ALIASES]
+    .map(([aliasPath, canonicalPath]) => `${encodeURI(aliasPath)}/ ${encodeURI(canonicalPath)}/ 301`)
+    .join("\n")}\n`);
 
   copyHomeFallback();
   fs.writeFileSync(path.join(OUT_DIR, "site-map.json"), JSON.stringify(pages.map((page) => ({

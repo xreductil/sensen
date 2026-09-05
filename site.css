@@ -16,6 +16,43 @@
   --font-main: "Microsoft JhengHei", "微軟正黑體", "Noto Sans TC", system-ui, sans-serif;
 }
 
+/* 404 page: full-bleed bakery background with a centered translucent panel. */
+body:has(.not-found-page) { background: #f2ede7; }
+body:has(.not-found-page) .page-main { max-width: none; padding: 0; }
+.not-found-page {
+  min-height: clamp(680px, calc(100svh - 150px), 980px);
+  display: grid;
+  place-items: center;
+  padding: clamp(52px, 8vh, 112px) 24px;
+  background-image: linear-gradient(rgba(255, 252, 247, .70), rgba(255, 252, 247, .78)), url("/assets/images/full-bg-2.jpg");
+  background-position: center;
+  background-size: cover;
+}
+.not-found-card {
+  width: min(1156px, 100%);
+  min-height: clamp(560px, 68vh, 790px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(32px, 4vw, 68px) 28px clamp(44px, 5vw, 78px);
+  text-align: center;
+  background: rgba(255, 255, 255, .72);
+  box-shadow: 0 12px 34px rgba(78, 52, 46, .05);
+}
+.not-found-art { display: block; width: min(489px, 62vw); height: auto; margin: 0 auto clamp(22px, 3vh, 38px); }
+.not-found-card h1 { margin: 0; color: #0d2516; font-size: clamp(2rem, 3.5vw, 3.15rem); font-weight: 800; line-height: 1.15; }
+.not-found-card p { margin: 24px 0 32px; color: #4c4b49; font-size: clamp(1rem, 1.45vw, 1.32rem); line-height: 1.6; }
+.not-found-home { display: inline-flex; align-items: center; justify-content: center; min-width: 222px; min-height: 80px; padding: 14px 28px; color: #74431c; background: #f0cf9f; font-size: 1.22rem; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+.not-found-home:hover { background: #e9bd83; transform: translateY(-2px); }
+@media (max-width: 760px) {
+  .not-found-page { min-height: calc(100svh - 106px); padding: 34px 16px 48px; }
+  .not-found-card { min-height: 540px; padding: 34px 20px 46px; }
+  .not-found-art { width: min(420px, 88vw); margin-bottom: 24px; }
+  .not-found-card p { margin: 18px 0 26px; }
+  .not-found-home { min-width: 190px; min-height: 58px; font-size: 1.05rem; }
+}
+
 /* Customer dashboard: Patria-inspired workspace styling */
 body:has(.account-shell) { background: #f5f7fb; color: #263238; }
 body:has(.account-shell) .account-shell { width: min(1260px, calc(100% - 48px)); padding: 42px 0 64px; }
@@ -129,8 +166,8 @@ body:has([data-account-route="login"]) .account-content { width: 100%; }
 body:has([data-account-route="login"]) .account-topbar { margin-bottom: 34px; }
 .account-auth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 68px; align-items: start; }
 .account-auth-grid .account-login-card { width: 100%; min-height: 620px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
-.account-auth-grid .account-login-card h1 { display: flex; align-items: center; gap: 16px; margin: 0 0 28px; color: #3a1f14; font-family: Georgia, "Times New Roman", var(--font-main); font-size: clamp(2.15rem, 3.4vw, 3.35rem); line-height: 1; }
-.account-auth-grid .account-login-card h1 span { display: inline-block; width: 12px; height: 50px; border-radius: 999px; background: #e8281a; box-shadow: 0 8px 20px rgba(232, 40, 26, .18); }
+.account-auth-grid .account-login-card h2 { display: flex; align-items: center; gap: 16px; margin: 0 0 28px; color: #3a1f14; font-family: Georgia, "Times New Roman", var(--font-main); font-size: clamp(2.15rem, 3.4vw, 3.35rem); line-height: 1; }
+.account-auth-grid .account-login-card h2 span { display: inline-block; width: 12px; height: 50px; border-radius: 999px; background: #e8281a; box-shadow: 0 8px 20px rgba(232, 40, 26, .18); }
 .account-auth-grid .account-form { min-height: 510px; padding: 60px; border: 1px solid #efd7bb; border-radius: 12px; background: #fffdfa; box-shadow: 0 18px 40px rgba(58, 31, 20, .06); }
 .account-auth-grid .account-form label { gap: 9px; color: #3a1f14; font-size: 1rem; font-weight: 800; }
 .account-auth-grid .account-form label b { color: #3a1f14; }
@@ -150,8 +187,8 @@ body:has([data-account-route="login"]) .account-topbar { margin-bottom: 34px; }
 @media (max-width: 760px) {
   .account-auth-grid { grid-template-columns: 1fr; gap: 42px; }
   .account-auth-grid .account-login-card { min-height: 0; }
-  .account-auth-grid .account-login-card h1 { font-size: 2.25rem; }
-  .account-auth-grid .account-login-card h1 span { height: 38px; }
+  .account-auth-grid .account-login-card h2 { font-size: 2.25rem; }
+  .account-auth-grid .account-login-card h2 span { height: 38px; }
   .account-auth-grid .account-form { min-height: 0; padding: 26px 20px; }
   .account-auth-grid .account-form input { height: 62px; }
 }
@@ -208,8 +245,8 @@ body:has(.account-shell) .account-brand-mark { color: #fffaf2; }
 body:has(.account-shell) .account-user-card { background: #f5e6cf; }
 body:has(.account-shell) .account-brand b,
 body:has(.account-shell) .account-user-card strong,
-body:has(.account-shell) .account-heading h1,
-body:has(.account-shell) .account-login-card h1,
+body:has(.account-shell) .account-heading h2,
+body:has(.account-shell) .account-login-card h2,
 body:has(.account-shell) .content-section h2,
 body:has(.account-shell) .account-preview-card h2,
 body:has(.account-shell) .order-row b { color: #4e342e; }
@@ -255,10 +292,10 @@ body:has(.account-shell) .account-topbar b { color: #3a1f14; }
 body:has(.account-shell) .account-topbar a { border-color: #efd7bb; color: #e8281a; background: #fffdfa; }
 body:has(.account-shell) .account-topbar a b { background: #e8281a; }
 body:has(.account-shell) .account-kicker { color: #8a5d47; letter-spacing: .12em; }
-body:has(.account-shell) .account-heading h1,
-body:has(.account-shell) .account-login-card h1,
+body:has(.account-shell) .account-heading h2,
+body:has(.account-shell) .account-login-card h2,
 body:has(.account-shell) .content-section h2 { font-family: Georgia, "Times New Roman", var(--font-main); color: #3a1f14; font-weight: 900; }
-body:has(.account-shell) .account-heading h1 { font-size: clamp(2rem, 3.5vw, 3rem); line-height: 1.12; }
+body:has(.account-shell) .account-heading h2 { font-size: clamp(2rem, 3.5vw, 3rem); line-height: 1.12; }
 body:has(.account-shell) .account-desc { color: #4e392f; font-size: .98rem; line-height: 1.65; }
 body:has(.account-shell) .stat-grid { gap: 22px; margin: 28px 0 24px; }
 body:has(.account-shell) .stat { display: flex; align-items: center; gap: 18px; min-height: 112px; padding: 24px; border-color: #efd7bb; border-radius: 10px; background: #fffdfa; box-shadow: none; }
@@ -295,7 +332,7 @@ body:has(.account-shell) .account-link-btn { color: #e8281a; font-weight: 800; }
   body:has(.account-shell) .account-nav { grid-template-columns: 1fr 1fr; }
   body:has(.account-shell) .account-content { padding: 0; }
   body:has(.account-shell) .account-topbar { margin-bottom: 28px; }
-  body:has(.account-shell) .account-heading h1 { font-size: clamp(1.85rem, 8vw, 2.35rem); }
+  body:has(.account-shell) .account-heading h2 { font-size: clamp(1.85rem, 8vw, 2.35rem); }
   body:has(.account-shell) .content-section { padding: 20px; }
   body:has(.account-shell) .order-row { grid-template-columns: 1fr auto; padding: 15px; }
   body:has(.account-shell) .account-login-card { padding: 28px 20px; }
@@ -330,7 +367,7 @@ body:has(.account-shell) .site-header { background: #fff; }
 .account-topbar a b { display: inline-grid; min-width: 20px; height: 20px; margin-left: 5px; place-items: center; border-radius: 50%; color: #fff; background: #c98245; font-size: .7rem; }
 .account-kicker { margin: 0 0 5px; color: #c98245; font-size: .68rem; font-weight: 700; letter-spacing: .18em; }
 .account-heading { margin-bottom: 28px; }
-.account-heading h1 { margin: 0; font-size: clamp(1.7rem, 2.6vw, 2.3rem); letter-spacing: .02em; }
+.account-heading h2 { margin: 0; font-size: clamp(1.7rem, 2.6vw, 2.3rem); letter-spacing: .02em; }
 .account-heading .account-desc { margin: 6px 0 0; }
 .stat-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 15px; margin-bottom: 27px; }
 .stat { position: relative; min-height: 116px; padding: 20px 20px 18px; border: 1px solid #e4e9ee; border-radius: 11px; background: #fff; }
@@ -344,7 +381,7 @@ body:has(.account-shell) .site-header { background: #fff; }
 .section-title button { border: 0; color: #b36b32; background: transparent; cursor: pointer; font: inherit; font-size: .82rem; }
 .account-login-card { width: min(560px, 100%); margin: 18px auto; padding: 42px 44px; border: 1px solid #e2e8ee; border-radius: 14px; background: #fff; box-shadow: 0 8px 25px rgba(45, 58, 72, .06); }
 .account-login-mark { margin-bottom: 20px; }
-.account-login-card h1 { margin: 0; }
+.account-login-card h2 { margin: 0; }
 .account-login-card .account-desc { margin-bottom: 25px; }
 
 @media (max-width: 760px) {
@@ -652,6 +689,18 @@ a { color: inherit; text-decoration: none; }
   min-height: calc(100vh - 147px);
 }
 
+.site-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 .page-hero {
   width: min(1120px, calc(100% - 40px));
   margin: 0 auto;
@@ -798,6 +847,14 @@ a { color: inherit; text-decoration: none; }
 .about-hero .hero-banner-title h1 {
   color: #fff;
   font-size: clamp(38px, 3.2vw, 50px);
+  letter-spacing: .04em;
+}
+
+.about-hero .hero-banner-title .latest-news-article-section-title {
+  margin: .67em 0;
+  color: #fff;
+  font-size: clamp(32px, 2.6vw, 42px);
+  line-height: 1.2;
   letter-spacing: .04em;
 }
 
