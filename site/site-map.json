@@ -45,11 +45,6 @@
     "path": "/產品介紹/冷凍麵包"
   },
   {
-    "title": "產品介紹",
-    "url": "https://www.sensen.com.tw/產品介紹/page/4/",
-    "path": "/產品介紹/page/4"
-  },
-  {
     "title": "頂家彌月 – 森森點心坊",
     "url": "https://www.sensen.com.tw/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/",
     "path": "/頂家彌月"
@@ -125,119 +120,9 @@
     "path": "/關於森森"
   },
   {
-    "title": "孟瑾 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/author/mon/",
-    "path": "/author/mon"
-  },
-  {
     "title": "購物車",
     "url": "https://www.sensen.com.tw/cart/",
     "path": "/cart"
-  },
-  {
-    "title": "最新消息 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/category/latest-news/",
-    "path": "/category/latest-news"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/10",
-    "path": "/category/latest-news/page/10"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/11",
-    "path": "/category/latest-news/page/11"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/12",
-    "path": "/category/latest-news/page/12"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/2",
-    "path": "/category/latest-news/page/2"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/3",
-    "path": "/category/latest-news/page/3"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/4",
-    "path": "/category/latest-news/page/4"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/5",
-    "path": "/category/latest-news/page/5"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/6",
-    "path": "/category/latest-news/page/6"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/7",
-    "path": "/category/latest-news/page/7"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/8",
-    "path": "/category/latest-news/page/8"
-  },
-  {
-    "title": "最新消息",
-    "url": "https://www.sensen.com.tw/category/latest-news/page/9",
-    "path": "/category/latest-news/page/9"
-  },
-  {
-    "title": "新品上市 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/category/new-arrival/",
-    "path": "/category/new-arrival"
-  },
-  {
-    "title": "新品上市",
-    "url": "https://www.sensen.com.tw/category/new-arrival/page/2",
-    "path": "/category/new-arrival/page/2"
-  },
-  {
-    "title": "新品上市",
-    "url": "https://www.sensen.com.tw/category/new-arrival/page/3",
-    "path": "/category/new-arrival/page/3"
-  },
-  {
-    "title": "新品上市",
-    "url": "https://www.sensen.com.tw/category/new-arrival/page/4",
-    "path": "/category/new-arrival/page/4"
-  },
-  {
-    "title": "新品上市",
-    "url": "https://www.sensen.com.tw/category/new-arrival/page/5",
-    "path": "/category/new-arrival/page/5"
-  },
-  {
-    "title": "季節限定 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/category/season-only/",
-    "path": "/category/season-only"
-  },
-  {
-    "title": "季節限定",
-    "url": "https://www.sensen.com.tw/category/season-only/page/2",
-    "path": "/category/season-only/page/2"
-  },
-  {
-    "title": "季節限定",
-    "url": "https://www.sensen.com.tw/category/season-only/page/3",
-    "path": "/category/season-only/page/3"
-  },
-  {
-    "title": "森森飲品 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/category/sensen-coffee/",
-    "path": "/category/sensen-coffee"
   },
   {
     "title": "結帳",
@@ -398,11 +283,6 @@
     "title": "2022母親節蛋糕 – 森森點心坊",
     "url": "https://www.sensen.com.tw/latest-news/2022%e6%af%8d%e8%a6%aa%e7%af%80%e8%9b%8b%e7%b3%95/",
     "path": "/latest-news/2022母親節蛋糕"
-  },
-  {
-    "title": "2022母親節蛋糕",
-    "url": "https://www.sensen.com.tw/latest-news/2022%e6%af%8d%e8%a6%aa%e7%af%80%e8%9b%8b%e7%b3%95-2/",
-    "path": "/latest-news/2022母親節蛋糕-2"
   },
   {
     "title": "2022新春禮盒 – 森森點心坊",
@@ -1090,46 +970,6 @@
     "path": "/product-item/oreo冰淇淋蛋糕-1878"
   },
   {
-    "title": "生日蛋糕 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/product-types/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95/",
-    "path": "/product-types/生日蛋糕"
-  },
-  {
-    "title": "生日蛋糕",
-    "url": "https://www.sensen.com.tw/product-types/生日蛋糕/page/2/",
-    "path": "/product-types/生日蛋糕/page/2"
-  },
-  {
-    "title": "冰淇淋蛋糕 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/product-types/%e5%86%b0%e6%b7%87%e6%b7%8b%e8%9b%8b%e7%b3%95/",
-    "path": "/product-types/冰淇淋蛋糕"
-  },
-  {
-    "title": "伴手禮 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/product-types/%e4%bc%b4%e6%89%8b%e7%a6%ae/",
-    "path": "/product-types/伴手禮"
-  },
-  {
-    "title": "所有蛋糕 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/product-types/%e6%89%80%e6%9c%89%e8%9b%8b%e7%b3%95/",
-    "path": "/product-types/所有蛋糕"
-  },
-  {
-    "title": "所有蛋糕",
-    "url": "https://www.sensen.com.tw/product-types/所有蛋糕/page/2/",
-    "path": "/product-types/所有蛋糕/page/2"
-  },
-  {
-    "title": "所有蛋糕",
-    "url": "https://www.sensen.com.tw/product-types/所有蛋糕/page/3/",
-    "path": "/product-types/所有蛋糕/page/3"
-  },
-  {
-    "title": "造形蛋糕 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/product-types/%e9%80%a0%e5%bd%a2%e8%9b%8b%e7%b3%95/",
-    "path": "/product-types/造形蛋糕"
-  },
-  {
     "title": "森森芒果季! – 森森點心坊",
     "url": "https://www.sensen.com.tw/season-only/%e4%bb%8a%e5%b9%b4%e7%9a%84%e6%a3%ae%e6%a3%ae%e8%8a%92%e6%9e%9c%e5%ad%a3%e9%96%8b%e5%a7%8b%e5%9b%89/",
     "path": "/season-only/今年的森森芒果季開始囉"
@@ -1158,15 +998,5 @@
     "title": "黑糖鮮奶",
     "url": "https://www.sensen.com.tw/sensen-coffee/%e9%bb%91%e7%b3%96%e9%ae%ae%e5%a5%b6/",
     "path": "/sensen-coffee/黑糖鮮奶"
-  },
-  {
-    "title": "好康 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/tag/%e5%a5%bd%e5%ba%b7/",
-    "path": "/tag/好康"
-  },
-  {
-    "title": "新品 – 森森點心坊",
-    "url": "https://www.sensen.com.tw/tag/%e6%96%b0%e5%93%81/",
-    "path": "/tag/新品"
   }
 ]
