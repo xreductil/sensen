@@ -2546,7 +2546,24 @@ function copyHomeFallback() {
   }
 }
 
+function hasImportedContentSources() {
+  return [
+    CRAWL_FILE,
+    FALLBACK_FILE,
+    ...WP_FILES,
+    ...WORDPRESS_EXPORT_FILES,
+  ].some((filePath) => fs.existsSync(filePath));
+}
+
 function main() {
+  // The crawler/API exports are intentionally not part of the deployable repo.
+  // Keep the committed static snapshot when those optional source files are absent;
+  // otherwise a clean Vercel build would erase the published pages before writing
+  // only the small set of built-in module pages.
+  if (!hasImportedContentSources() && fs.existsSync(path.join(OUT_DIR, "index.html"))) {
+    process.stdout.write("No crawler/export sources found; preserving the committed static site snapshot.\n");
+    return;
+  }
   const crawlPages = fs.existsSync(CRAWL_FILE)
     ? normalizeCrawlPayload(readJson(CRAWL_FILE))
     : [];
