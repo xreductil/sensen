@@ -116,6 +116,9 @@ const RETIRED_CONTENT_PATHS = new Set([
   "/category/sensen-coffee",
   "/tag/好康",
   "/tag/新品",
+  "/season-only/今年的森森芒果季開始囉",
+  "/season-only/今年的森森芒果季開始囉-2",
+  "/season-only/草莓芙蓮蛋糕盒",
 ]);
 const HOME_SLIDES = [
   ["/assets/images/image-photo-4.jpg", "SenSen Bakery bread promotion"],
