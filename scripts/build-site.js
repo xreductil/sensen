@@ -119,6 +119,119 @@ const RETIRED_CONTENT_PATHS = new Set([
   "/season-only/今年的森森芒果季開始囉",
   "/season-only/今年的森森芒果季開始囉-2",
   "/season-only/草莓芙蓮蛋糕盒",
+  // 90 orphaned latest-news pages and 22 orphaned new-arrival pages.
+  "/latest-news/【2019moon-cake】",
+  "/latest-news/🍍🍍🍍鳳梨來了🍍🍍🍍",
+  "/latest-news/🍓🍓🍓黃金草莓捲🍓🍓🍓",
+  "/latest-news/🍓草莓蛋糕罐子🍓",
+  "/latest-news/🍹森森全新飲品上市🍹",
+  "/latest-news/🎀2019母親節蛋糕🎀預購開跑囉",
+  "/latest-news/🎉春節伴手禮系列🎉",
+  "/latest-news/💐明天就是母親節了💐",
+  "/latest-news/100元生日蛋糕抵用卷",
+  "/latest-news/11月份的好康大放送將於10號開始舉行囉",
+  "/latest-news/11月份的好康大放送熱烈進行中",
+  "/latest-news/1460",
+  "/latest-news/1489",
+  "/latest-news/1522",
+  "/latest-news/1577",
+  "/latest-news/2019中秋目錄即將出爐",
+  "/latest-news/2019母親節蛋糕預告",
+  "/latest-news/2019頂家彌月新目錄",
+  "/latest-news/2019聖誕新品",
+  "/latest-news/2020中秋禮盒",
+  "/latest-news/2020父親節",
+  "/latest-news/2020母親節蛋糕",
+  "/latest-news/²⁰²¹-𝐅𝐚𝐭𝐡𝐞𝐫𝐬-𝐃𝐚𝐲✨",
+  "/latest-news/2021中秋dm",
+  "/latest-news/2021父親節蛋糕",
+  "/latest-news/2022母親節蛋糕",
+  "/latest-news/2022新春禮盒",
+  "/latest-news/88節快樂",
+  "/latest-news/土鳳梨酥禮盒",
+  "/latest-news/中秋月圓",
+  "/latest-news/中秋預購開跑",
+  "/latest-news/丹麥波羅",
+  "/latest-news/五倍券優惠",
+  "/latest-news/文龍周年慶",
+  "/latest-news/文龍週年慶",
+  "/latest-news/文龍感恩季",
+  "/latest-news/父愛",
+  "/latest-news/父親節蛋糕預購",
+  "/latest-news/父親節蛋糕預購開跑囉",
+  "/latest-news/布丁燒禮盒",
+  "/latest-news/生吐司",
+  "/latest-news/仲夏88折",
+  "/latest-news/吉祥桂圓糕",
+  "/latest-news/肉鬆餅",
+  "/latest-news/初夏賞",
+  "/latest-news/芋頭蛋糕罐",
+  "/latest-news/咖啡買一送一",
+  "/latest-news/果乾塔",
+  "/latest-news/法式經典檸檬塔",
+  "/latest-news/法式蝴蝶酥",
+  "/latest-news/波蘿蛋黃酥",
+  "/latest-news/春節日式大福禮盒",
+  "/latest-news/春節限定-如意發糕",
+  "/latest-news/春節禮盒-買10送1",
+  "/latest-news/活力陽光三明治",
+  "/latest-news/重要公告",
+  "/latest-news/振興券專屬優惠",
+  "/latest-news/桂圓糕",
+  "/latest-news/㊙情人節限定㊙",
+  "/latest-news/草莓芙蓮蛋糕盒-2",
+  "/latest-news/草莓芙蓮蛋糕盒-3",
+  "/latest-news/草莓蛋糕盒開賣",
+  "/latest-news/草莓蛋糕盒熱銷中🔥🔥🔥",
+  "/latest-news/草莓藏心－季節限定",
+  "/latest-news/頂家彌月油飯",
+  "/latest-news/頂家彌月試吃",
+  "/latest-news/森森日式烤年糕",
+  "/latest-news/森森春節伴手禮預購中",
+  "/latest-news/森森特調",
+  "/latest-news/森森草莓季",
+  "/latest-news/森森感恩季part2",
+  "/latest-news/森森vip集點卡",
+  "/latest-news/週三新富優惠日",
+  "/latest-news/陽光三明治",
+  "/latest-news/新春禮盒",
+  "/latest-news/新富仲夏賞",
+  "/latest-news/預購活動",
+  "/latest-news/實聯制登記",
+  "/latest-news/瑪格麗特",
+  "/latest-news/維也納麵包",
+  "/latest-news/聚財金元寶",
+  "/latest-news/慶新年",
+  "/latest-news/摩登媽咪",
+  "/latest-news/摯愛森林",
+  "/latest-news/澄和初夏賞",
+  "/latest-news/澄和感恩季",
+  "/latest-news/澄和慶新年",
+  "/latest-news/蝴蝶酥宅配訂購",
+  "/latest-news/彌月試吃品項",
+  "/latest-news/職人手感",
+  "/new-arrival/🍫義式巧克🍫",
+  "/new-arrival/🎉蛋糕罐子-新發售🎉",
+  "/new-arrival/3吋草莓塔",
+  "/new-arrival/日式烤年糕",
+  "/new-arrival/白葡萄",
+  "/new-arrival/多佳米拉",
+  "/new-arrival/芒果仙境",
+  "/new-arrival/芒果奶酪",
+  "/new-arrival/芒果奶露麵包",
+  "/new-arrival/芒果季即將開始囉",
+  "/new-arrival/芒果蛋糕盒",
+  "/new-arrival/芒果輕乳酪",
+  "/new-arrival/芒果慕斯",
+  "/new-arrival/法式核桃",
+  "/new-arrival/洛神花小吐司",
+  "/new-arrival/香芒泡芙",
+  "/new-arrival/草莓甜心",
+  "/new-arrival/新品上市✨肉鬆球✨",
+  "/new-arrival/新品上市✨蔥酥熱狗✨",
+  "/new-arrival/聖誕草莓泡芙",
+  "/new-arrival/葡萄圓舞曲",
+  "/new-arrival/戀戀草莓季",
 ]);
 const HOME_SLIDES = [
   ["/assets/images/image-photo-4.jpg", "SenSen Bakery bread promotion"],
@@ -2558,12 +2671,57 @@ function hasImportedContentSources() {
   ].some((filePath) => fs.existsSync(filePath));
 }
 
+function pruneRetiredStaticSnapshot() {
+  for (const localPath of RETIRED_CONTENT_PATHS) {
+    const filePath = htmlFileForLocalPath(localPath);
+    if (!filePath.startsWith(`${OUT_DIR}${path.sep}`) || localPath === "/") continue;
+    if (fs.existsSync(filePath)) fs.rmSync(path.dirname(filePath), { recursive: true, force: true });
+  }
+
+  const sitemapJsonFile = path.join(OUT_DIR, "site-map.json");
+  if (fs.existsSync(sitemapJsonFile)) {
+    const entries = readJson(sitemapJsonFile).filter((page) => {
+      const localPath = String(page.path || localPathFromUrl(page.url || "")).replace(/\/+$/, "") || "/";
+      return !RETIRED_CONTENT_PATHS.has(localPath);
+    });
+    fs.writeFileSync(sitemapJsonFile, `${JSON.stringify(entries, null, 2)}\n`);
+  }
+
+  const sitemapHtmlFile = path.join(OUT_DIR, "site-map.html");
+  if (fs.existsSync(sitemapHtmlFile)) {
+    let html = fs.readFileSync(sitemapHtmlFile, "utf8");
+    html = html.replace(/\s*<a class="directory-card" href="([^"]+)">[\s\S]*?<\/a>/gi, (card, href) => {
+      const localPath = localPathFromUrl(new URL(href, SOURCE_ORIGIN).href);
+      return RETIRED_CONTENT_PATHS.has(localPath) ? "" : card;
+    });
+    html = html.replace(/\s*<section class="directory-group">\s*<h2>[^<]*<\/h2>\s*<div class="directory-grid">\s*<\/div>\s*<\/section>/gi, "");
+    fs.writeFileSync(sitemapHtmlFile, html);
+  }
+
+  const redirectsFile = path.join(OUT_DIR, "_redirects");
+  if (fs.existsSync(redirectsFile)) {
+    const redirects = fs.readFileSync(redirectsFile, "utf8").split(/\r?\n/).filter((line) => {
+      const fields = line.trim().split(/\s+/);
+      if (fields.length < 2) return true;
+      return !fields.slice(0, 2).some((field) => {
+        try {
+          return RETIRED_CONTENT_PATHS.has(localPathFromUrl(new URL(field, SOURCE_ORIGIN).href));
+        } catch {
+          return false;
+        }
+      });
+    });
+    fs.writeFileSync(redirectsFile, `${redirects.join("\n").replace(/\n+$/, "")}\n`);
+  }
+}
+
 function main() {
   // The crawler/API exports are intentionally not part of the deployable repo.
   // Keep the committed static snapshot when those optional source files are absent;
   // otherwise a clean Vercel build would erase the published pages before writing
   // only the small set of built-in module pages.
   if (!hasImportedContentSources() && fs.existsSync(path.join(OUT_DIR, "index.html"))) {
+    pruneRetiredStaticSnapshot();
     process.stdout.write("No crawler/export sources found; preserving the committed static site snapshot.\n");
     return;
   }
