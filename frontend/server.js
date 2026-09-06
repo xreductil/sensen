@@ -9,6 +9,7 @@ const API_PORT = Number(process.env.API_PORT || 8081);
 const ROOT = path.resolve(__dirname, '..');
 const SITE_ROOT = path.join(ROOT, 'site');
 const ADMIN_ROOT = path.join(__dirname, 'admin');
+const IMAGE_CACHE_ROOT = path.join(ROOT, 'data', 'images');
 const CRAWL_ROOT = path.join(ROOT, 'data', 'crawl');
 
 const CONTENT_TYPES = {
@@ -56,8 +57,16 @@ function fileForRoute(urlPath) {
         path.join(baseRoot, `${cleanPath}.html`)
       ];
 
-  return candidates.map(candidate => safeFilePath(baseRoot, path.relative(baseRoot, candidate)))
-    .find(candidate => candidate && fs.existsSync(candidate) && fs.statSync(candidate).isFile()) || null;
+  const siteFile = candidates
+    .map(candidate => safeFilePath(baseRoot, path.relative(baseRoot, candidate)))
+    .find(candidate => candidate && fs.existsSync(candidate) && fs.statSync(candidate).isFile());
+  // Git LFS pointer files can be present in a local checkout when git-lfs is not
+  // installed. Serve the tracked image cache so the local preview still renders.
+  if (!isAdmin && cleanPath.startsWith('/assets/images/')) {
+    const cachedImage = safeFilePath(IMAGE_CACHE_ROOT, cleanPath.slice('/assets/images/'.length));
+    if (cachedImage && fs.existsSync(cachedImage) && fs.statSync(cachedImage).isFile()) return cachedImage;
+  }
+  return siteFile || null;
 }
 
 function proxyApi(request, response, url) {
