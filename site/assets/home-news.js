@@ -18,7 +18,7 @@
       section.hidden = true;
       return;
     }
-    list.innerHTML = visible.map(article => `<a class="home-news-card" href="/latest-news/article/?id=${escapeHtml(encodeURIComponent(article.id || ''))}">
+    list.innerHTML = visible.map(article => `<a class="home-news-card" href="/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id || ''))}/">
       <small>${escapeHtml(formatDate(article.publishAt || article.createdAt))}</small><h3>${escapeHtml(article.title || '最新消息')}</h3><span>更多</span>
     </a>`).join('');
     section.hidden = false;

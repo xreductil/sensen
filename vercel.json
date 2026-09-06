@@ -2,5 +2,19 @@
   "version": 2,
   "buildCommand": "npm run build",
   "outputDirectory": "site",
-  "installCommand": "npm install"
+  "installCommand": "npm install",
+  "rewrites": [
+    {
+      "source": "/api/:path*",
+      "destination": "https://sensen.jinfeng8605.workers.dev/api/:path*"
+    },
+    {
+      "source": "/images/:path*",
+      "destination": "https://sensen.jinfeng8605.workers.dev/images/:path*"
+    },
+    {
+      "source": "/health",
+      "destination": "https://sensen.jinfeng8605.workers.dev/health"
+    }
+  ]
 }

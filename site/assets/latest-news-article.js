@@ -1,6 +1,7 @@
 (() => {
   const page = document.querySelector('[data-latest-news-article-page]');
   if (!page) return;
+  if (page.dataset.articleHydrated === 'true') return;
 
   const status = page.querySelector('[data-article-status]');
   const imageContainer = page.querySelector('[data-article-image]');
@@ -47,7 +48,7 @@
       copy: lines.filter(line => !imageLinePattern.test(line.trim())).map(escapeHtml).join('<br>')
     };
   };
-  const articleId = new URLSearchParams(window.location.search).get('id');
+  const articleId = new URLSearchParams(window.location.search).get('id') || decodeURIComponent(window.location.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/)?.[1] || '');
 
   const showError = message => {
     status.textContent = message;

@@ -2623,7 +2623,7 @@ body:has(.menu.is-open)::after {
 .boston-gift-section > h2 {
   margin: 0;
   color: #8c3e0d;
-  font-size: clamp(23px, 2.5vw, 36px);
+  font-size: clamp(1.7rem, 3.2vw, 3.4rem);
   line-height: 1.25;
 }
 
@@ -3303,9 +3303,7 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
     grid-template-columns: 1fr;
   }
 
-  .boston-gift-section > h2 {
-    font-size: 21px;
-  }
+  .boston-gift-section > h2 { font-size: 1.8rem; }
 
   .boston-gift-card h3 {
     margin-top: 18px;
@@ -5062,6 +5060,7 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
 .big-bear-baby img { display: block; width: 100%; height: 100%; object-fit: contain; }
 .big-bear-section { width: min(1460px, calc(100% - 72px)); margin: 0 auto; padding: 20px 0 72px; }
 .big-bear-section h2, .big-bear-styles h2 { position: relative; margin: 0 0 62px; padding-bottom: 24px; color: #c9913a; font-size: clamp(2.2rem, 4vw, 3.5rem); font-weight: 700; letter-spacing: .08em; text-align: center; }
+.big-bear-page > .big-bear-section h2, .big-bear-page > .big-bear-styles h2 { font-size: clamp(1.7rem, 3.2vw, 3.4rem); }
 .big-bear-section h2::after, .big-bear-styles h2::after { position: absolute; right: 0; bottom: 0; left: 0; height: 1px; background: #e7e1dd; content: ""; }
 .big-bear-section h2::before, .big-bear-styles h2::before { position: absolute; z-index: 1; bottom: -5px; left: 50%; width: 11px; height: 11px; border-right: 1px solid #e7e1dd; border-bottom: 1px solid #e7e1dd; background: #fff; content: ""; transform: translateX(-50%) rotate(45deg); }
 .big-bear-grid { display: grid; align-items: start; gap: clamp(34px, 5vw, 90px); }
@@ -5070,10 +5069,24 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
 .big-bear-card { min-width: 0; text-align: center; }
 .big-bear-card img { display: block; width: 100%; height: 360px; object-fit: contain; }
 .big-bear-grid-four .big-bear-card img { height: 410px; }
-.big-bear-card h3 { margin: 26px 0 13px; color: #ff686d; font-size: clamp(1.5rem, 2.2vw, 2.25rem); font-weight: 700; }
-.big-bear-card p { max-width: 360px; margin: 0 auto; color: #686462; font-size: clamp(.95rem, 1.3vw, 1.25rem); line-height: 1.8; }
+.big-bear-card h3 { margin: 26px 0 13px; color: #ff686d; font-size: clamp(1.3rem, 1.9vw, 1.95rem); font-weight: 700; }
+.big-bear-card p { max-width: 360px; margin: 0 auto; color: #686462; font-size: clamp(.85rem, 1.1vw, 1.1rem); line-height: 1.8; }
+.big-bear-grid-four .big-bear-card-c4 img { height: 280px; }
 .big-bear-little-section { padding-top: 15px; }
-.big-bear-styles { padding: 88px max(36px, 5vw) 74px; background: #ffd9e1; }
+.big-bear-styles { position: relative; margin-top: clamp(48px, 5vw, 80px); padding: 88px max(36px, 5vw) 74px; background: #ffd9e1; }
+.big-bear-styles::before {
+  position: absolute;
+  top: -42px;
+  right: 0;
+  left: 0;
+  height: 42px;
+  background-color: #ffd9e1;
+  background-image: radial-gradient(42px 28px at 50% 0, #fff 98%, transparent 100%);
+  background-position: 0 0;
+  background-size: 84px 42px;
+  background-repeat: repeat-x;
+  content: "";
+}
 .big-bear-styles h2 { margin-bottom: 46px; color: #4b423f; }
 .big-bear-styles h2::before { background: #ffd9e1; }
 .big-bear-style-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(18px, 2.5vw, 48px); width: min(1460px, 100%); margin: 0 auto; }
@@ -5089,6 +5102,7 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
   .big-bear-section { width: min(620px, calc(100% - 36px)); }
   .big-bear-grid-three, .big-bear-grid-four { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 30px 22px; }
   .big-bear-card img, .big-bear-grid-four .big-bear-card img { height: 300px; }
+  .big-bear-grid-four .big-bear-card-c4 img { height: 240px; }
   .big-bear-style-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .big-bear-dm { grid-template-columns: 1fr auto; }
   .big-bear-dm-link { text-align: left; }
@@ -5099,9 +5113,10 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
   .big-bear-baby { width: 92px; height: 92px; margin-top: -46px; }
   .big-bear-section { width: calc(100% - 28px); padding-bottom: 48px; }
   .big-bear-section h2, .big-bear-styles h2 { margin-bottom: 34px; font-size: 2rem; }
+  .big-bear-page > .big-bear-section h2, .big-bear-page > .big-bear-styles h2 { font-size: 1.8rem; }
   .big-bear-grid-three, .big-bear-grid-four, .big-bear-style-grid { grid-template-columns: 1fr; }
   .big-bear-card img, .big-bear-grid-four .big-bear-card img { height: auto; max-height: 360px; }
-  .big-bear-styles { padding: 56px 18px 48px; }
+  .big-bear-styles { margin-top: 42px; padding: 56px 18px 48px; }
   .big-bear-dm { grid-template-columns: 1fr; gap: 18px; padding: 26px 20px; text-align: center; }
   .big-bear-dm-link { text-align: center; }
   .big-bear-dm-icon { margin: 0 auto; }
@@ -5123,27 +5138,12 @@ body:has(.country-cheese-page) .menu-item:nth-child(5) > a::after { background: 
 }
 .country-cheese-page .big-bear-card img { height: 320px; }
 .country-cheese-page .big-bear-card h3 { margin-top: 18px; }
-.country-cheese-page .big-bear-styles { padding-top: 78px; }
-.country-cheese-products::after {
-  position: absolute;
-  right: 0;
-  bottom: -1px;
-  left: 0;
-  height: 42px;
-  background-color: #ffd9e1;
-  background-image: radial-gradient(42px 28px at 50% 0, #fff 98%, transparent 100%);
-  background-position: 0 0;
-  background-size: 84px 42px;
-  background-repeat: repeat-x;
-  content: "";
-}
 @media (max-width: 900px) {
   .country-cheese-page .big-bear-card img { height: 280px; }
 }
 @media (max-width: 560px) {
   .country-cheese-page .big-bear-card img { height: auto; max-height: 360px; }
   .country-cheese-page .country-cheese-products { padding-bottom: 92px; }
-  .country-cheese-page .big-bear-styles { padding-top: 56px; }
 }
 
 
@@ -5179,7 +5179,7 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr);
   align-items: center;
   gap: clamp(38px, 7vw, 120px);
-  width: min(1738px, calc(100% - 100px));
+  width: min(1500px, calc(100% - 180px));
   margin: 0 auto 108px;
   padding: 22px clamp(28px, 6vw, 116px) 22px;
   box-sizing: border-box;
@@ -5188,7 +5188,8 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
 .long-cake-feature-image { min-width: 0; }
 .long-cake-feature-image img {
   display: block;
-  width: 100%;
+  width: 92%;
+  margin: 0 auto;
   aspect-ratio: 1.58 / 1;
   object-fit: cover;
 }
@@ -5196,13 +5197,13 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
 .long-cake-feature-copy h2 {
   margin: 0 0 22px;
   color: #15291f;
-  font-size: clamp(1.6rem, 2.4vw, 2.5rem);
+  font-size: clamp(1.4rem, 2.1vw, 2.2rem);
   letter-spacing: .04em;
 }
 .long-cake-feature-copy p {
   margin: 0;
   color: #666264;
-  font-size: clamp(1rem, 1.45vw, 1.55rem);
+  font-size: clamp(.9rem, 1.25vw, 1.35rem);
   line-height: 1.9;
 }
 .long-cake-feature-copy .long-cake-feature-filling { margin-bottom: 8px; }
@@ -5255,6 +5256,8 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
   font-weight: 700;
   letter-spacing: .18em;
 }
+.long-cake-heading-hot p { font-size: clamp(.9rem, 1.2vw, 1.15rem); }
+.long-cake-heading-hot h2 { font-size: clamp(1.7rem, 3.2vw, 3.4rem); }
 .long-cake-grid { display: grid; align-items: start; gap: clamp(22px, 3.2vw, 60px); }
 .long-cake-grid-five { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .long-cake-product { min-width: 0; text-align: center; }
@@ -5286,10 +5289,11 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
 .long-cake-napoleon {
   width: 100%;
   max-width: none;
-  padding: 82px max(40px, calc((100% - 1500px) / 2)) 106px;
+  padding: 42px max(40px, calc((100% - 1500px) / 2)) 56px;
   box-sizing: border-box;
   background: url("/assets/images/tileable_wood_texture.png") center / 420px repeat;
 }
+.long-cake-napoleon .long-cake-heading { margin-bottom: 34px; }
 .long-cake-heading-napoleon h2 {
   color: #183222;
   letter-spacing: .28em;
@@ -5314,7 +5318,7 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
   margin: 0 auto;
   gap: clamp(50px, 8vw, 150px);
 }
-.long-cake-napoleon-product img { height: 300px; }
+.long-cake-napoleon-product img { height: 230px; }
 .long-cake-dm {
   display: grid;
   grid-template-columns: 1fr 120px 1fr;
@@ -5383,15 +5387,16 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
   .long-cake-feature { width: calc(100% - 28px); margin-bottom: 70px; padding: 14px; }
   .long-cake-feature-copy { padding: 0 8px 12px; }
   .long-cake-feature-copy h2 { margin-bottom: 14px; }
-  .long-cake-feature-copy p { font-size: 1rem; line-height: 1.75; }
+  .long-cake-feature-copy p { font-size: .9rem; line-height: 1.75; }
   .long-cake-series, .long-cake-napoleon { width: calc(100% - 28px); padding-bottom: 68px; }
   .long-cake-heading { margin-bottom: 38px; padding-bottom: 22px; }
   .long-cake-heading h2 { font-size: 2rem; letter-spacing: .1em; }
+  .long-cake-heading-hot h2 { font-size: 1.8rem; }
   .long-cake-grid-five, .long-cake-grid-two { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 36px 18px; }
   .long-cake-product img, .long-cake-napoleon-product img { height: 170px; }
   .long-cake-product h3 { margin-top: 12px; font-size: 1rem; }
   .long-cake-product h3::after { width: 52px; height: 2px; margin-top: 13px; }
-  .long-cake-napoleon { padding: 56px 14px 70px; width: 100%; }
+  .long-cake-napoleon { padding: 36px 14px 44px; width: 100%; }
   .long-cake-heading-napoleon h2 { font-size: 1.8rem !important; letter-spacing: .12em !important; }
   .long-cake-heading-napoleon h2::before { margin-right: 10px; }
   .long-cake-heading-napoleon h2::after { margin-left: 10px; }
@@ -5442,7 +5447,7 @@ body:has(.round-pie-page) .menu-item:nth-child(5) > a::after { background: #ae62
 .round-pie-product h2 {
   margin: 18px 0 18px;
   color: #17271d;
-  font-size: clamp(1.1rem, 1.7vw, 1.8rem);
+  font-size: clamp(.95rem, 1.4vw, 1.5rem);
   font-weight: 700;
   line-height: 1.35;
   letter-spacing: .03em;
@@ -5894,7 +5899,7 @@ body:has(.thankyou-page) .menu-item:nth-child(5) > a::after {
 .thankyou-intro h2 {
   margin: 0 0 24px;
   color: #8b4b20;
-  font-size: clamp(2.15rem, 3vw, 3.5rem);
+  font-size: clamp(1.9rem, 2.6vw, 3rem);
   font-weight: 700;
   letter-spacing: .06em;
 }
@@ -5903,7 +5908,7 @@ body:has(.thankyou-page) .menu-item:nth-child(5) > a::after {
   margin: 0;
   padding-left: 1.55em;
   color: #9a592d;
-  font-size: clamp(1.3rem, 1.7vw, 2.1rem);
+  font-size: clamp(1.15rem, 1.5vw, 1.85rem);
   line-height: 1.9;
 }
 
@@ -5941,8 +5946,8 @@ body:has(.thankyou-page) .menu-item:nth-child(5) > a::after {
   .thankyou-baby { width: 88px; height: 88px; margin-top: -44px; }
   .thankyou-content { width: calc(100% - 28px); padding: 50px 0 56px; }
   .thankyou-intro { margin-bottom: 48px; }
-  .thankyou-intro h2 { margin-bottom: 16px; font-size: 1.75rem; }
-  .thankyou-intro ul { padding-left: 1.35em; font-size: 1.05rem; line-height: 1.8; }
+  .thankyou-intro h2 { margin-bottom: 16px; font-size: 1.5rem; }
+  .thankyou-intro ul { padding-left: 1.35em; font-size: .95rem; line-height: 1.8; }
   .thankyou-grid { grid-template-columns: 1fr; gap: 26px; }
 }
  (max-width: 900px) {

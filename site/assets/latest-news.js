@@ -41,7 +41,7 @@
         : '<div class="latest-news-card-placeholder" aria-hidden="true">森森點心坊</div>';
       const description = article.excerpt || article.content || '';
       return `<article class="latest-news-card" data-news-category="${escapeHtml(article.category)}">
-        <a class="latest-news-card-link" href="/latest-news/article/?id=${escapeHtml(encodeURIComponent(article.id))}" aria-label="查看${escapeHtml(article.title)}完整內容">
+        <a class="latest-news-card-link" href="/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id))}/" aria-label="查看${escapeHtml(article.title)}完整內容">
           <div class="latest-news-card-media">
             <div class="latest-news-card-image">${imageMarkup}</div>
           </div>

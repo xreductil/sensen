@@ -156,12 +156,20 @@ const shippingLabel = (method: string | null | undefined) => ({
   frozen: "冷凍宅配",
 }[String(method || "pickup")] || "門市自取");
 
+const archivedNewsImages: Record<string, string> = {
+  "/wp-content/uploads/2025/07/1-scaled.jpg": "/assets/images/photo-1-8.jpg",
+  "/wp-content/uploads/2025/07/2-1528x1080.jpg": "/assets/images/photo-2-3.jpg",
+  "/wp-content/uploads/2025/07/3-1528x1080.jpg": "/assets/images/photo-3-3.jpg",
+  "/wp-content/uploads/2025/07/4-1528x1080.jpg": "/assets/images/photo-4-2.jpg",
+};
+
 const publicNewsImageUrl = (value: unknown) => {
   const image = String(value || "").trim();
   if (!image) return "";
   try {
     const source = new URL(image);
     if (source.hostname === "www.sensen.com.tw" && source.pathname.startsWith("/wp-content/uploads/")) {
+      if (archivedNewsImages[source.pathname]) return archivedNewsImages[source.pathname];
       return `/images/legacy-news?url=${encodeURIComponent(source.href)}`;
     }
   } catch {
@@ -178,7 +186,11 @@ const newsFromRow = (row: Record<string, unknown>) => ({
   excerpt: row.excerpt || "",
   content: row.content || "",
   image: publicNewsImageUrl(row.image_key),
-  layout: parseJson<unknown[] | null>(String(row.layout_json || ""), null),
+  layout: parseJson<Record<string, unknown>[] | null>(String(row.layout_json || ""), null)?.map(block => ({
+    ...block,
+    ...(block.type === "image" ? { src: publicNewsImageUrl(block.src) } : {}),
+    ...(block.type === "gallery" && Array.isArray(block.images) ? { images: block.images.map(publicNewsImageUrl) } : {}),
+  })) ?? null,
   publishAt: row.publish_at,
   createdAt: row.created_at,
   updatedAt: row.updated_at,
@@ -405,6 +417,10 @@ const imageResponse = async (request: Request, env: Env) => {
       return json(request, { error: "不允許代理此圖片來源。" }, 403);
     }
 
+    const archived = archivedNewsImages[source.pathname];
+    if (archived && env.ASSETS) {
+      return env.ASSETS.fetch(new Request(new URL(archived, request.url), { method: request.method }));
+    }
     const upstream = await fetch(source.href, { headers: { Accept: "image/*" } });
     const contentType = upstream.headers.get("content-type") || "";
     if (!upstream.ok || !contentType.startsWith("image/")) {
@@ -1144,7 +1160,7 @@ export default {
       const articlePathMatch = url.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/);
       if (articlePathMatch && request.method === "GET") {
         const articleKey = decodeURIComponent(articlePathMatch[1] || "").trim();
-        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/latest-news/article/`, request));
+        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/latest-news/article/index.html`, request));
         const template = await templateResponse.text();
         const row = articleKey
           ? await env.DB.prepare(`
@@ -1173,9 +1189,10 @@ export default {
         return json(request, { error: "找不到 API 路徑。" }, 404);
       }
 
-      const assetRequest = url.pathname.startsWith("/admin/")
-        ? new Request(`${request.url}${request.url.includes("?") ? "&" : "?"}sensen_admin_asset=20260826-2`, request)
-        : request;
+      const assetUrl = new URL(request.url);
+      if (assetUrl.pathname.endsWith("/")) assetUrl.pathname += "index.html";
+      if (url.pathname.startsWith("/admin/")) assetUrl.searchParams.set("sensen_admin_asset", "20260826-2");
+      const assetRequest = new Request(assetUrl, request);
       const assetResponse = await env.ASSETS.fetch(assetRequest);
       if (assetResponse.status === 404) {
         return json(request, { error: "找不到 API 路徑。" }, 404);

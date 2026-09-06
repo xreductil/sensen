@@ -96,9 +96,9 @@ const TEA_PARTY_PATH = "/茶會點心-tea-party";
 const BOSTON_PIE_PATH = "/頂家彌月/波士頓派系列";
 const COUNTRY_CHEESE_PATH = "/頂家彌月/香村乳酪禮盒";
 const COUNTRY_CHEESE_GIFTS = [
-  ["country-cheese-l1.jpg", "L1", "6吋檸檬老奶奶x1、小檸檬x1、KT貓蛋糕x1、手工餅乾x1、草莓大理石x1"],
+  ["country-cheese-l1.png", "L1", "6吋檸檬老奶奶x1、小檸檬x1、KT貓蛋糕x1、手工餅乾x1、草莓大理石x1"],
   ["country-cheese-l2.jpg", "L2", "6吋比利時巧克力x1、紫羅蘭x1、油飯8兩x1、紅蛋x2"],
-  ["country-cheese-l3.jpg", "L3", "8吋烤布蕾x1、手工餅乾x1、熊大x1、小檸檬x1、油飯8兩x1、紅蛋x2"],
+  ["country-cheese-l3.png", "L3", "8吋烤布蕾x1、手工餅乾x1、熊大x1、小檸檬x1、油飯8兩x1、紅蛋x2"],
 ];
 const COUNTRY_CHEESE_STYLES = [
   ["cheese.jpg", "波士頓派禮盒"],
@@ -153,24 +153,24 @@ function longCakeContent() {
       <div class="long-cake-feature-copy">
         <h2 id="long-cake-feature-title">A1 紫羅蘭</h2>
         <p class="long-cake-feature-filling">內餡：大甲芋頭+布丁</p>
-        <p>嚴選大甲芋頭，綿密芋泥搭配芋頭塊與手作香草布丁。一口接一口，是頂家銷售NO.1的招牌蛋糕！</p>
+        <p>嚴選大甲芋頭，綿密芋泥搭配芋頭塊與手作香草布丁。<br>一口接一口，是頂家銷售NO.1的招牌蛋糕！</p>
       </div>
     </section>
     <section class="long-cake-series" aria-labelledby="long-cake-hot-title">
-      <div class="long-cake-heading"><p>TOP HOUSE CAKE</p><h2 id="long-cake-hot-title">熱銷蛋糕系列</h2></div>
+      <div class="long-cake-heading long-cake-heading-hot"><p>TOP HOUSE CAKE</p><h2 id="long-cake-hot-title">熱銷蛋糕系列</h2></div>
       <div class="long-cake-grid long-cake-grid-five">${cardList(LONG_CAKE_HOT_PRODUCTS)}</div>
     </section>
     <section class="long-cake-series long-cake-series-second" aria-labelledby="long-cake-marble-title">
-      <div class="long-cake-heading"><h2 id="long-cake-marble-title">熱銷蛋糕系列</h2></div>
+      <div class="long-cake-heading long-cake-heading-hot"><h2 id="long-cake-marble-title">熱銷蛋糕系列</h2></div>
       <div class="long-cake-grid long-cake-grid-five">${cardList(LONG_CAKE_MARBLE_PRODUCTS)}</div>
     </section>
     <section class="long-cake-napoleon" aria-labelledby="long-cake-napoleon-title">
-      <div class="long-cake-heading long-cake-heading-napoleon"><h2 id="long-cake-napoleon-title">拿破崙派</h2><p>MILLE-FEUILLE</p></div>
+      <div class="long-cake-heading long-cake-heading-hot long-cake-heading-napoleon"><h2 id="long-cake-napoleon-title">拿破崙派</h2><p>MILLE-FEUILLE</p></div>
       <div class="long-cake-grid long-cake-grid-two">${cardList(LONG_CAKE_NAPOLEON_PRODUCTS, "long-cake-napoleon-product")}</div>
     </section>
-    <section class="long-cake-dm" id="long-cake-dm">
-      <a class="long-cake-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
-      <a class="long-cake-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="long-cake-dm-book" aria-hidden="true"></span></a>
+    <section class="boston-dm" id="long-cake-dm">
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-title"><strong>彌月禮盒DM下載</strong><span>⟶</span></a>
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-icon" aria-label="查看彌月禮盒 DM"><span class="boston-dm-book" aria-hidden="true"></span></a>
       <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
     </section>
   </section>`;
@@ -245,9 +245,9 @@ function pairingContent() {
       <div class="pairing-product-grid">${productCards}</div>
     </section>
     <aside class="pairing-tip"><span class="pairing-tip-icon" aria-hidden="true"></span><p>另有素食油飯</p></aside>
-    <section class="pairing-dm" id="pairing-dm">
-      <a class="pairing-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
-      <a class="pairing-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="pairing-dm-book" aria-hidden="true"></span></a>
+    <section class="boston-dm" id="pairing-dm">
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-title"><strong>彌月禮盒DM下載</strong><span>⟶</span></a>
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-icon" aria-label="查看彌月禮盒 DM"><span class="boston-dm-book" aria-hidden="true"></span></a>
       <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
     </section>
   </section>`;
@@ -284,13 +284,12 @@ function roundPieContent() {
     </article>`).join("");
   return `<section class="round-pie-page">
     <section class="round-pie-hero"><h1>圓圓派</h1></section>
-    <section class="round-pie-products" aria-labelledby="round-pie-title">
-      <h2 id="round-pie-title" class="sr-only">圓圓派商品</h2>
+    <section class="round-pie-products">
       <div class="round-pie-grid">${cards}</div>
     </section>
-    <section class="round-pie-dm" id="round-pie-dm">
-      <a class="round-pie-dm-title" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer">彌月禮盒DM下載 <span aria-hidden="true">⟶</span></a>
-      <a class="round-pie-dm-icon" href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" aria-label="查看彌月禮盒 DM"><span class="round-pie-dm-book" aria-hidden="true"></span></a>
+    <section class="boston-dm" id="round-pie-dm">
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-title"><strong>彌月禮盒DM下載</strong><span>⟶</span></a>
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-icon" aria-label="查看彌月禮盒 DM"><span class="boston-dm-book" aria-hidden="true"></span></a>
       <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
     </section>
   </section>`;
@@ -300,7 +299,7 @@ function countryCheeseContent() {
   const card = ([image, label, description]) => "<article class=\"big-bear-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "鄉村乳酪禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
   const cards = COUNTRY_CHEESE_GIFTS.map(card).join("");
   const styleCards = COUNTRY_CHEESE_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
-  return "<section class=\"big-bear-page country-cheese-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>鄉村乳酪禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/assets/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section country-cheese-products\"><div class=\"big-bear-grid big-bear-grid-three\">" + cards + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"big-bear-dm\" id=\"country-cheese-dm\"><a class=\"big-bear-dm-link\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\">彌月禮盒DM下載 <span aria-hidden=\"true\">⟶</span></a><a class=\"big-bear-dm-icon\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" aria-label=\"查看彌月禮盒 DM\"><span aria-hidden=\"true\">▤</span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
+  return "<section class=\"big-bear-page country-cheese-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>鄉村乳酪禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/assets/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section country-cheese-products\"><div class=\"big-bear-grid big-bear-grid-three\">" + cards + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"boston-dm\" id=\"country-cheese-dm\"><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-title\"><strong>彌月禮盒DM下載</strong><span>⟶</span></a><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-icon\" aria-label=\"查看彌月禮盒 DM\"><span class=\"boston-dm-book\" aria-hidden=\"true\"></span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
 }
 
 
@@ -854,6 +853,7 @@ function pageTitleFor(page, localPath) {
 }
 
 function uniquePageTitle(title, localPath, duplicatedTitles) {
+  if (localPath === "/最新消息") return "最新消息 – 森森點心坊";
   if (!duplicatedTitles.has(title)) return title;
   const routeLabel = decodeURI(localPath).replace(/^\/+|\/+$/g, "").replace(/\//g, " › ") || "首頁";
   const cleanTitle = String(title).replace(/\s*[–|-]\s*森森點心坊\s*$/i, "").trim() || "森森點心坊";
@@ -1646,10 +1646,10 @@ const BIG_BEAR_GIFTS = [
 ];
 const BIG_BEAR_STYLES = [["cheese.jpg", "波士頓派禮盒"], ["single-piece.jpg", "單條禮盒"], ["little-bear.jpg", "小熊禮盒"], ["big-bear.jpg", "大熊禮盒"]];
 function bigBearContent() {
-  const card = ([image, label, description]) => "<article class=\"big-bear-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
+  const card = ([image, label, description]) => "<article class=\"big-bear-card" + (label === "C4" ? " big-bear-card-c4" : "") + "\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
   const cards = BIG_BEAR_GIFTS.map(card);
-  const styleCards = BIG_BEAR_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"><figcaption>" + escapeHtml(label) + "</figcaption></figure>").join("");
-  return "<section class=\"big-bear-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>大熊/小熊禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/assets/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section\"><h2>大熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-three\">" + cards.slice(0, 3).join("") + "</div></section><section class=\"big-bear-section big-bear-little-section\"><h2>小熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-four\">" + cards.slice(3).join("") + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"big-bear-dm\" id=\"big-bear-dm\"><a class=\"big-bear-dm-link\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\">彌月禮盒DM下載 <span aria-hidden=\"true\">⟶</span></a><a class=\"big-bear-dm-icon\" href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" aria-label=\"查看彌月禮盒 DM\"><span aria-hidden=\"true\">▤</span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
+  const styleCards = BIG_BEAR_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/assets/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
+  return "<section class=\"big-bear-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>大熊/小熊禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/assets/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section\"><h2>大熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-three\">" + cards.slice(0, 3).join("") + "</div></section><section class=\"big-bear-section big-bear-little-section\"><h2>小熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-four\">" + cards.slice(3).join("") + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"boston-dm\" id=\"big-bear-dm\"><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-title\"><strong>彌月禮盒DM下載</strong><span>⟶</span></a><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-icon\" aria-label=\"查看彌月禮盒 DM\"><span class=\"boston-dm-book\" aria-hidden=\"true\"></span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
 }
 
 
