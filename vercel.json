@@ -21,6 +21,10 @@
       "destination": "https://sensen.jinfeng8605.workers.dev/images/:path*"
     },
     {
+      "source": "/assets/images/:path*",
+      "destination": "https://sensen.jinfeng8605.workers.dev/images/:path*"
+    },
+    {
       "source": "/health",
       "destination": "https://sensen.jinfeng8605.workers.dev/health"
     }

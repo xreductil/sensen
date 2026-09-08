@@ -10,6 +10,7 @@
     "crawl": "node crawl.js",
     "download-images": "node scripts/download-images.js",
     "rename-images": "node scripts/rename-images.js",
+    "upload-assets": "npm --prefix sensen-api run upload-assets",
     "test": "node --check index.js && node --check crawl.js && node --check frontend/server.js && node --check scripts/dev.js && node --check scripts/build-site.js && node --check sensen-backend/server.js"
   }
 }

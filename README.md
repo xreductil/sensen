@@ -2,7 +2,7 @@
 
 森森點心坊的本機靜態整站版本。
 
-目前會從爬取結果、WordPress API 與 `WordPress.2026-08-09.xml`、`WordPress.2026-08-09 (2).xml` 匯出資料建立本地頁面。森森網站使用 BeBuilder，文章正文會整合 API 與 WordPress 匯出內容，再以渲染後爬取結果補足；圖片會下載到 `data/images/`，並由頁面使用本機圖片檔。
+目前會從爬取結果、WordPress API 與 `WordPress.2026-08-09.xml`、`WordPress.2026-08-09 (2).xml` 匯出資料建立本地頁面。森森網站使用 BeBuilder，文章正文會整合 API 與 WordPress 匯出內容，再以渲染後爬取結果補足；部署後頁面圖片統一經 Cloudflare Worker 的 `/images/*` 讀取 R2。
 
 ## 開啟方式
 
@@ -24,7 +24,7 @@ npm run backend
 
 前端服務提供 `site/` 與 `frontend/admin/` 的頁面，並將 `/api/*` 代理給後端；後端服務只提供 API 與 LINE 登入回呼，不再直接提供 HTML 管理介面。
 
-Vercel 部署前台時會執行 `npm run build`，並使用 `site/` 作為輸出目錄；設定已寫在 `vercel.json`。後端 API 仍需獨立部署，並將前端的 API 代理／網址指向後端服務。
+Vercel 部署前台時會執行 `npm run build`，並使用 `site/` 作為輸出目錄；設定已寫在 `vercel.json`。`/api/*` 與 `/images/*` 會代理至 Cloudflare Worker；Worker 使用 D1 提供資料 API，使用 R2 提供圖片。正式部署前先執行 `npm run upload-assets` 將 `data/images/` 與後台圖片上傳至 `sensen-images`，再部署 Worker。
 
 ## 重新產生整站
 
@@ -41,6 +41,16 @@ npm run download-images
 ```
 
 圖片來源對照表會寫入 `data/images/image-map.json`。
+
+上傳圖片至 R2：
+
+```bash
+npm run upload-assets
+```
+
+只檢查檔案數量與 R2 鍵名、不寫入遠端：`R2_DRY_RUN=1 npm run upload-assets`
+
+前台圖片會使用 `images/<檔名>`，後台資產會使用 `images/admin/<檔名>`；舊有 `/assets/images/*` 連結保留相容轉送，但實際內容仍由 R2 回應。
 
 圖片檔名會依原始網址及產品用途產生可讀的英文名稱；若要重新整理既有圖片名稱，可執行：
 

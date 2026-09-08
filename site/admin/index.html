@@ -8,9 +8,9 @@
   <meta name="description" content="後台總覽｜森森點心坊，僅供授權人員使用。">
   <link rel="canonical" href="https://www.sensen.com.tw/admin/">
   <meta name="robots" content="noindex, nofollow">
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.webp">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.webp">
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.webp">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/admin/apple-touch-icon.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/admin/favicon-32x32.webp">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/admin/favicon-16x16.webp">
   <link rel="manifest" href="./assets/site.webmanifest">
 
   <script type="module" src="./assets/js/main-CnSylLUz.js?v=sensen-20260814"></script>
@@ -59,12 +59,12 @@
         <!-- Dropdown -->
         <li class="ms-3 dropdown">
           <a href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-            <img src="./assets/images/avatar-1.jpg" alt="" class="avatar avatar-sm rounded-circle" />
+            <img src="/images/admin/avatar-1.jpg" alt="" class="avatar avatar-sm rounded-circle" />
           </a>
           <div class="dropdown-menu dropdown-menu-end p-0" style="min-width: 200px;">
             <div>
               <div class="d-flex gap-3 align-items-center border-dashed border-bottom px-3 py-3">
-                <img src="./assets/images/avatar-1.jpg" alt="" class="avatar avatar-md rounded-circle" />
+                <img src="/images/admin/avatar-1.jpg" alt="" class="avatar avatar-md rounded-circle" />
                 <div>
                   <h4 class="mb-0 small">森森管理員</h4>
                   <p class="mb-0  small">@sensen</p>
@@ -437,10 +437,10 @@
     const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
     const productImage = (value) => {
       const source = String(value || '').trim();
-      if (!source) return '/assets/images/icon-cake.png';
-      if (/^(?:https?:)?\/\//i.test(source) || source.startsWith('/assets/images/')) return source;
+      if (!source) return '/images/icon-cake.png';
+      if (/^(?:https?:)?\/\//i.test(source) || source.startsWith('/images/')) return source;
       const file = source.replace(/^\/?(?:assets\/)?images\//i, '').replace(/^\/+/, '');
-      return '/assets/images/' + file.split('/').map((part) => encodeURIComponent(part)).join('/');
+      return '/images/' + file.split('/').map((part) => encodeURIComponent(part)).join('/');
     };
     const loadSensenDashboard = async () => {
       try {

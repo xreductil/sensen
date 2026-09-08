@@ -15,7 +15,7 @@
     const image = String(value || '').trim();
     if (!image) return '';
     if (/^(https?:|data:|\/)/i.test(image)) return image;
-    return '/assets/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
+    return '/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
   };
 
   const formatDate = value => {

@@ -12,10 +12,10 @@
     '伴手禮': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/'
   };
   const categoryMeta = {
-    '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/assets/images/icon-cake.png' },
-    '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/assets/images/icon-cake.png' },
-    '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/assets/images/icon-cake2.png' },
-    '伴手禮': { eyebrow: 'SOUVENIR', icon: '/assets/images/icon-cupcake.png' }
+    '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/images/icon-cake.png' },
+    '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/images/icon-cake.png' },
+    '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/images/icon-cake2.png' },
+    '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.png' }
   };
   const categoryOrder = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
   const hotProductFallback = ['oreo-ice-cream', 'colorful-world', 'macaron-forest', 'caramel-party', 'passion-pear', 'berry-melody'];
@@ -48,10 +48,10 @@
     ]}
   ];
   const drinkMenuImages = {
-    '咖啡類': '/assets/images/coffee.jpg',
-    '氣泡飲類': '/assets/images/yogurt-drink.jpg',
-    '茶飲類': '/assets/images/tea-12-number.jpg',
-    '奶茶類': '/assets/images/coffee-2.jpg'
+    '咖啡類': '/images/coffee.jpg',
+    '氣泡飲類': '/images/yogurt-drink.jpg',
+    '茶飲類': '/images/tea-12-number.jpg',
+    '奶茶類': '/images/coffee-2.jpg'
   };
   const drinkEnglishByTitle = Object.fromEntries(drinkMenuSections.flatMap(section => section.items.map(item => [item[0], item[1]])));
   const birthdayProductOrder = [
@@ -80,7 +80,7 @@
     try { return JSON.parse(root.dataset.productPaths || '{}'); } catch (error) { return {}; }
   })();
   const detailPath = product => product.url || pathMap[normalizeTitle(product.title)] || '';
-  const imagePath = product => product.img || '/assets/images/icon-cake.png';
+  const imagePath = product => product.img || '/images/icon-cake.png';
   const available = product => product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
 
   const productLink = (product, className, body) => {
@@ -105,7 +105,7 @@
   const souvenirCard = product => storefrontProductCard(product, { articleClass: 'souvenir-card cake-product-card' });
 
   const heading = (category, icon = true) => {
-    const meta = categoryMeta[category] || { eyebrow: category, icon: '/assets/images/icon-cake.png' };
+    const meta = categoryMeta[category] || { eyebrow: category, icon: '/images/icon-cake.png' };
     return `<div class="product-intro-section-heading"><div><p>${escapeHtml(meta.eyebrow)}</p><h2>${icon ? `<img src="${escapeHtml(meta.icon)}" alt="" aria-hidden="true">` : ''}${escapeHtml(category)}</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div>`;
   };
 
@@ -136,7 +136,7 @@
     return `<section class="product-intro-section product-intro-featured-section" data-storefront-section><div class="product-intro-section-heading"><div><p>${escapeHtml(eyebrow)}</p><h2><img src="${escapeHtml(icon)}" alt="" aria-hidden="true">${escapeHtml(title)}</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div><div class="product-intro-carousel"><div class="product-intro-track" data-storefront-track tabindex="0">${products.map((product, index) => productIntroCard(product, typeof badge === 'function' ? badge(product, index) : badge)).join('')}</div></div></section>`;
   };
 
-  const renderOverviewSection = (category, products) => `<section class="product-intro-section" data-storefront-section><div class="product-intro-section-heading"><div><p>${escapeHtml((categoryMeta[category] || {}).eyebrow || category)}</p><h2><img src="${escapeHtml((categoryMeta[category] || {}).icon || '/assets/images/icon-cake.png')}" alt="" aria-hidden="true">${escapeHtml(category)}</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div><div class="product-intro-carousel"><div class="product-intro-track" data-storefront-track tabindex="0">${products.map(productIntroCard).join('')}</div></div><a class="product-intro-load-more" href="${escapeHtml(categoryRoutes[category] || '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/')}">查看全部商品</a></section>`;
+  const renderOverviewSection = (category, products) => `<section class="product-intro-section" data-storefront-section><div class="product-intro-section-heading"><div><p>${escapeHtml((categoryMeta[category] || {}).eyebrow || category)}</p><h2><img src="${escapeHtml((categoryMeta[category] || {}).icon || '/images/icon-cake.png')}" alt="" aria-hidden="true">${escapeHtml(category)}</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div><div class="product-intro-carousel"><div class="product-intro-track" data-storefront-track tabindex="0">${products.map(productIntroCard).join('')}</div></div><a class="product-intro-load-more" href="${escapeHtml(categoryRoutes[category] || '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/')}">查看全部商品</a></section>`;
 
   const drinkMenuFallbackProducts = drinkMenuSections.flatMap(section => section.items.map(item => ({ title: item[0], english: item[1], drinkCategory: section.title, temperature: item[2], priceLabel: item[3], img: drinkMenuImages[section.title] })));
   const drinkMenuCard = product => {
@@ -146,14 +146,14 @@
     const sizePrices = sizes.length ? sizes : [['單杯', Number(product.priceValue || 0)]];
     const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length ? variants.temperatures : String(product.temperature || '冷').split('／');
     const sugars = Array.isArray(variants.sugars) && variants.sugars.length ? variants.sugars : ['正常甜', '少糖', '半糖', '微糖', '無糖'];
-    const image = product.img || drinkMenuImages[category] || '/assets/images/coffee.jpg';
+    const image = product.img || drinkMenuImages[category] || '/images/coffee.jpg';
     const title = product.title || '飲品';
     const english = product.english || product.enTitle || drinkEnglishByTitle[title] || '';
     return `<article class="product-intro-card drink-menu-card cake-product-card" data-drink-menu-item data-drink-product-id="${escapeHtml(product.id || '')}" data-drink-name="${escapeHtml(title)}" data-drink-english="${escapeHtml(english)}" data-drink-category="${escapeHtml(category)}" data-drink-temperatures="${escapeHtml(temperatures.join('|'))}" data-drink-sugars="${escapeHtml(sugars.join('|'))}" data-drink-size-prices="${escapeHtml(sizePrices.map(([size, value]) => `${size}=${Number(value)}`).join('|'))}" data-drink-description="${escapeHtml(product.desc || '')}" role="button" tabindex="0"><div class="cake-product-image drink-menu-card-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}飲品示意圖" loading="lazy"><span class="drink-menu-card-category">${escapeHtml(category)}</span></div><div class="cake-product-meta"><div class="cake-product-title-link"><span class="cake-product-title">${escapeHtml(title)}</span><span class="drink-menu-card-english">${escapeHtml(english)}</span></div></div></article>`;
   };
   const renderMenuSection = (products = []) => {
     const drinks = products.length ? products : drinkMenuFallbackProducts;
-    return `<section class="product-intro-section" data-storefront-section data-storefront-menu-section><div class="product-intro-section-heading"><div><p>DRINK MENU</p><h2><img src="/assets/images/icon-coffee.png" alt="" aria-hidden="true">飲品 MENU</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div><div class="product-intro-carousel"><div class="product-intro-track" data-storefront-track tabindex="0">${drinks.map(drinkMenuCard).join('')}</div></div><a class="product-intro-load-more" href="/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/">查看完整飲品 MENU</a></section>`;
+    return `<section class="product-intro-section" data-storefront-section data-storefront-menu-section><div class="product-intro-section-heading"><div><p>DRINK MENU</p><h2><img src="/images/icon-coffee.png" alt="" aria-hidden="true">飲品 MENU</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div><div class="product-intro-carousel"><div class="product-intro-track" data-storefront-track tabindex="0">${drinks.map(drinkMenuCard).join('')}</div></div><a class="product-intro-load-more" href="/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/">查看完整飲品 MENU</a></section>`;
   };
 
   const renderCakes = products => {
@@ -162,13 +162,13 @@
       const categoryProducts = products.filter(product => product.cat === category);
       const visible = category === '生日蛋糕' ? categoryProducts.slice(0, 10) : categoryProducts;
       const extra = category === '生日蛋糕' ? categoryProducts.slice(10) : [];
-      return `<section class="cake-category ${index === 0 ? 'is-first' : ''}"><div class="cake-category-heading">${index === 0 ? `<img class="cake-section-icon" src="${escapeHtml((categoryMeta[category] || {}).icon || '/assets/images/icon-cake.png')}" alt="" aria-hidden="true">` : ''}<p>${escapeHtml((categoryMeta[category] || {}).eyebrow || category)}</p><h2>${escapeHtml(category)}</h2></div><div class="cake-product-grid">${visible.map(cakeCard).join('')}</div>${extra.length ? `<div class="cake-product-grid cake-product-grid-more" data-cake-load-more-items hidden>${extra.map(cakeCard).join('')}</div><div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>` : ''}</section>`;
+      return `<section class="cake-category ${index === 0 ? 'is-first' : ''}"><div class="cake-category-heading">${index === 0 ? `<img class="cake-section-icon" src="${escapeHtml((categoryMeta[category] || {}).icon || '/images/icon-cake.png')}" alt="" aria-hidden="true">` : ''}<p>${escapeHtml((categoryMeta[category] || {}).eyebrow || category)}</p><h2>${escapeHtml(category)}</h2></div><div class="cake-product-grid">${visible.map(cakeCard).join('')}</div>${extra.length ? `<div class="cake-product-grid cake-product-grid-more" data-cake-load-more-items hidden>${extra.map(cakeCard).join('')}</div><div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>` : ''}</section>`;
     }).join('') || '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>';
   };
 
   const renderSouvenirs = products => {
     const items = products.filter(product => product.cat === '伴手禮');
-    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/assets/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
+    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
   };
 
   const bindInteractions = () => {
@@ -208,8 +208,8 @@
         const newProducts = selectFeaturedProducts(products, 'newArrivalRank', newProductFallback);
         const drinkProducts = products.filter(product => product.cat === '飲品 MENU');
         const groups = categoryOrder.filter(category => products.some(product => product.cat === category)).map(category => renderOverviewSection(category, products.filter(product => product.cat === category)));
-        content.innerHTML = renderFeaturedSection(hotProducts, { eyebrow: 'BEST SELLERS', title: '熱銷排行榜', icon: '/assets/images/icon-cake.png', badge: (_, index) => `TOP ${index + 1}` })
-          + renderFeaturedSection(newProducts, { eyebrow: 'NEW ARRIVALS', title: '新品上市', icon: '/assets/images/icon-wheat.png', badge: 'NEW' })
+        content.innerHTML = renderFeaturedSection(hotProducts, { eyebrow: 'BEST SELLERS', title: '熱銷排行榜', icon: '/images/icon-cake.png', badge: (_, index) => `TOP ${index + 1}` })
+          + renderFeaturedSection(newProducts, { eyebrow: 'NEW ARRIVALS', title: '新品上市', icon: '/images/icon-wheat.png', badge: 'NEW' })
           + groups.join('') + renderMenuSection(drinkProducts);
       } else if (view === 'cakes') {
         renderCakes(products);

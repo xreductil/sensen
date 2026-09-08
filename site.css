@@ -16,6 +16,73 @@
   --font-main: "Microsoft JhengHei", "微軟正黑體", "Noto Sans TC", system-ui, sans-serif;
 }
 
+/* Empty category pages waiting for their first products. */
+.catalog-empty-state {
+  display: grid;
+  width: min(1080px, calc(100% - 56px));
+  min-height: 300px;
+  margin: 0 auto 108px;
+  padding: 72px 28px;
+  place-content: center;
+  justify-items: center;
+  box-sizing: border-box;
+  border: 1px solid #eee8e4;
+  background: linear-gradient(135deg, #fffaf4, #fff);
+  text-align: center;
+}
+.catalog-empty-eyebrow {
+  margin: 0 0 12px;
+  color: #b88949;
+  font-size: clamp(.9rem, 1.2vw, 1.1rem);
+  font-weight: 700;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.catalog-empty-state h2 {
+  margin: 0 0 18px;
+  color: #17321f;
+  font-size: clamp(2rem, 3.6vw, 3.5rem);
+  letter-spacing: .12em;
+}
+.catalog-empty-state > p:not(.catalog-empty-eyebrow) {
+  margin: 0;
+  color: #6d6560;
+  font-size: clamp(1rem, 1.35vw, 1.25rem);
+  line-height: 1.8;
+}
+.catalog-empty-link {
+  display: inline-flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: center;
+  margin-top: 30px;
+  padding: 10px 24px;
+  border-radius: 999px;
+  color: #fff;
+  background: #a65d42;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background .2s ease, transform .2s ease;
+}
+.catalog-empty-link:hover,
+.catalog-empty-link:focus-visible {
+  color: #fff;
+  background: #854833;
+  transform: translateY(-2px);
+}
+.tea-party-empty-state { margin-top: 0; }
+.tea-party-empty-state + .catering-inquiry { margin-top: 0; }
+
+@media (max-width: 620px) {
+  .catalog-empty-state {
+    width: calc(100% - 28px);
+    min-height: 250px;
+    margin-bottom: 72px;
+    padding: 54px 20px;
+  }
+  .catalog-empty-state h2 { letter-spacing: .06em; }
+}
+
 /* 404 page: full-bleed bakery background with a centered translucent panel. */
 body:has(.not-found-page) { background: #f2ede7; }
 body:has(.not-found-page) .page-main { max-width: none; padding: 0; }
@@ -24,7 +91,7 @@ body:has(.not-found-page) .page-main { max-width: none; padding: 0; }
   display: grid;
   place-items: center;
   padding: clamp(52px, 8vh, 112px) 24px;
-  background-image: linear-gradient(rgba(255, 252, 247, .70), rgba(255, 252, 247, .78)), url("/assets/images/full-bg-2.jpg");
+  background-image: linear-gradient(rgba(255, 252, 247, .70), rgba(255, 252, 247, .78)), url("/images/full-bg-2.jpg");
   background-position: center;
   background-size: cover;
 }
@@ -732,7 +799,7 @@ a { color: inherit; text-decoration: none; }
 .catering-intro::before {
   position: absolute;
   inset: 0;
-  background: url("/assets/images/whitewall-bg.jpg") center / cover no-repeat;
+  background: url("/images/whitewall-bg.jpg") center / cover no-repeat;
   opacity: .22;
   content: "";
 }
@@ -776,7 +843,7 @@ a { color: inherit; text-decoration: none; }
 .catering-stores {
   min-height: 570px;
   padding: 112px max(28px, calc((100% - 1740px) / 2));
-  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/assets/images/home-bg3.jpg") center 10% / cover no-repeat;
+  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/images/home-bg3.jpg") center 10% / cover no-repeat;
 }
 .catering-stores-panel {
   display: grid;
@@ -899,7 +966,7 @@ a { color: inherit; text-decoration: none; }
 
 .home-intro { position: relative; isolation: isolate; display: grid; grid-template-columns: minmax(400px, .95fr) minmax(0, 2.05fr); gap: 24px; align-items: stretch; padding: 78px max(20px, calc((100% - 1740px) / 2)); background: transparent; }
 .home-intro::before { position: absolute; z-index: 0; inset: 0; background: #F1E4C8; content: ""; }
-.home-intro::after { position: absolute; z-index: 0; inset: 0; background-image: url("/assets/images/bread-bg-2.png"); background-position: center center; background-size: 35% auto; background-repeat: repeat; content: ""; pointer-events: none; }
+.home-intro::after { position: absolute; z-index: 0; inset: 0; background-image: url("/images/bread-bg-2.png"); background-position: center center; background-size: 35% auto; background-repeat: repeat; content: ""; pointer-events: none; }
 .home-intro > * { position: relative; z-index: 1; }
 .home-intro > div:first-child { padding: 24px 16px; color: var(--brown-2); }
 .home-intro h2 { margin: 0; font-size: clamp(44px, 3.2vw, 50px); }
@@ -932,8 +999,8 @@ a { color: inherit; text-decoration: none; }
 .home-intro .quick-links a:focus-visible .card-arrow { background: #fff; transform: translateX(7px); }
 
 .home-taste { position: relative; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 0; align-items: stretch; width: min(1738px, calc(100% - 80px)); min-height: 598px; margin: 58px auto; background: #fff; box-shadow: 0 16px 45px rgba(105, 59, 60, .12); }
-.home-taste::before { position: absolute; z-index: -1; top: -58px; bottom: -58px; left: 50%; width: 100vw; background: url("/assets/images/baby-cake-apply-bg.jpg") center top / cover no-repeat; content: ""; transform: translateX(-50%); }
-.home-taste > .image-slot { position: relative; min-height: 598px; margin: 0; overflow: hidden; border: 0; background-color: #f6bcc6; background-image: linear-gradient(rgba(233, 126, 144, .08), rgba(233, 126, 144, .08)), url("/assets/images/full-month-taste-clean.png"); background-position: center, center center; background-repeat: no-repeat; background-size: cover, cover; }
+.home-taste::before { position: absolute; z-index: -1; top: -58px; bottom: -58px; left: 50%; width: 100vw; background: url("/images/baby-cake-apply-bg.jpg") center top / cover no-repeat; content: ""; transform: translateX(-50%); }
+.home-taste > .image-slot { position: relative; min-height: 598px; margin: 0; overflow: hidden; border: 0; background-color: #f6bcc6; background-image: linear-gradient(rgba(233, 126, 144, .08), rgba(233, 126, 144, .08)), url("/images/full-month-taste-clean.png"); background-position: center, center center; background-repeat: no-repeat; background-size: cover, cover; }
 .home-taste > .image-slot::before { display: none; }
 .home-taste > .image-slot::after { position: absolute; top: 50%; left: 50%; z-index: 2; display: grid; width: min(54%, 370px); min-height: 150px; padding: 24px 20px; place-content: center; color: #fff; background: rgba(244, 120, 139, .88); content: "TOP HOUSE\A &\A SENSEN BAKERY"; font: 400 clamp(23px, 2.2vw, 39px)/1.25 var(--font-main); letter-spacing: .03em; text-align: center; white-space: pre; transform: translate(-50%, -50%); }
 .home-taste > .image-slot span { display: none; }
@@ -976,7 +1043,7 @@ a { color: inherit; text-decoration: none; }
   bottom: -28px;
   left: 50%;
   width: 100vw;
-  background: #ededed url("/assets/images/whitewall-bg.jpg") center / cover no-repeat;
+  background: #ededed url("/images/whitewall-bg.jpg") center / cover no-repeat;
   content: "";
   transform: translateX(-50%);
 }
@@ -1083,7 +1150,7 @@ a { color: inherit; text-decoration: none; }
   width: calc(50vw + 14px);
   background:
     linear-gradient(rgba(255, 255, 255, .08), rgba(255, 255, 255, .08)),
-    url("/assets/images/home-bg2.jpg") center / cover no-repeat;
+    url("/images/home-bg2.jpg") center / cover no-repeat;
   content: "";
 }
 .catering-copy {
@@ -1242,7 +1309,7 @@ a { color: inherit; text-decoration: none; }
   width: 100vw;
   background:
     linear-gradient(rgba(0, 0, 0, .08), rgba(0, 0, 0, .08)),
-    url("/assets/images/home-bg3.jpg") center / cover no-repeat;
+    url("/images/home-bg3.jpg") center / cover no-repeat;
   content: "";
   transform: translateX(-50%);
 }
@@ -1840,7 +1907,7 @@ a { color: inherit; text-decoration: none; }
   align-items: center;
   padding: clamp(26px, 2.2vw, 38px) max(40px, calc((100vw - 1230px) / 2));
   background-color: #eee8de;
-  background-image: url("/assets/images/bread-bg-2.png");
+  background-image: url("/images/bread-bg-2.png");
   background-position: center;
   background-size: 520px auto;
   color: #123120;
@@ -2042,7 +2109,7 @@ a { color: inherit; text-decoration: none; }
   margin-top: clamp(28px, 3.2vw, 58px);
   padding: clamp(74px, 7vw, 112px) 0 clamp(78px, 7vw, 116px);
   background-color: #eee8de;
-  background-image: url("/assets/images/bread-bg-2.png");
+  background-image: url("/images/bread-bg-2.png");
   background-position: center;
   background-size: 520px auto;
   background-repeat: repeat;
@@ -2097,7 +2164,7 @@ a { color: inherit; text-decoration: none; }
   bottom: 0;
   left: 0;
   width: 55%;
-  background: url("/assets/images/about-bg2.jpg") left top / auto 310px no-repeat;
+  background: url("/images/about-bg2.jpg") left top / auto 310px no-repeat;
   content: "";
   pointer-events: none;
 }
@@ -2989,7 +3056,7 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 
 .catering-intro::before {
   z-index: 0;
-  background: url("/assets/images/buffet-bg.jpg") center top / cover no-repeat;
+  background: url("/images/buffet-bg.jpg") center top / cover no-repeat;
   opacity: 1;
 }
 
@@ -3948,7 +4015,7 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
   overflow: hidden;
   color: #fff;
   background-color: #ad9894;
-  background-image: linear-gradient(rgba(73, 49, 42, .20), rgba(73, 49, 42, .20)), url("/assets/images/contact-bg.jpg");
+  background-image: linear-gradient(rgba(73, 49, 42, .20), rgba(73, 49, 42, .20)), url("/images/contact-bg.jpg");
   background-position: center top;
   background-size: 100% 100%;
   background-repeat: no-repeat;
@@ -4581,7 +4648,7 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   overflow: hidden;
   padding: 70px 24px 180px;
   box-sizing: border-box;
-  background: url("/assets/images/party-bg.jpg") center / cover no-repeat;
+  background: url("/images/party-bg.jpg") center / cover no-repeat;
   text-align: center;
 }
 .tea-party-hero::after {
@@ -4671,7 +4738,7 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
 .tea-party-category {
   padding: 104px max(28px, calc((100% - 1700px) / 2)) 80px;
   background-color: #fff;
-  background-image: url("/assets/images/bread-bg-2.png");
+  background-image: url("/images/bread-bg-2.png");
   background-position: center;
   background-size: 520px auto;
   background-repeat: repeat;
@@ -4780,7 +4847,7 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
 .tea-party-stores {
   min-height: 0;
   padding: 78px 28px 90px;
-  background: linear-gradient(rgba(47, 36, 32, .58), rgba(47, 36, 32, .58)), url("/assets/images/home-bg3.jpg") center / cover no-repeat;
+  background: linear-gradient(rgba(47, 36, 32, .58), rgba(47, 36, 32, .58)), url("/images/home-bg3.jpg") center / cover no-repeat;
 }
 .tea-party-stores-panel {
   display: grid;
@@ -4990,7 +5057,7 @@ body:has(.taste-apply-page) { background: #f9e6e7; color: #5d4a49; }
 body:has(.taste-apply-page) .page-main { overflow: hidden; }
 body:has(.taste-apply-page) .menu-item:nth-child(5) > a { color: #ae624b; }
 body:has(.taste-apply-page) .menu-item:nth-child(5) > a::after { background: #ae624b; }
-.taste-apply-page { --taste-ink: #584746; --taste-gold: #ca953f; background: linear-gradient(rgba(207, 89, 112, .2), rgba(207, 89, 112, .2)), url("/assets/images/baby-cake-apply-bg2.jpg") center top / cover fixed no-repeat; }
+.taste-apply-page { --taste-ink: #584746; --taste-gold: #ca953f; background: linear-gradient(rgba(207, 89, 112, .2), rgba(207, 89, 112, .2)), url("/images/baby-cake-apply-bg2.jpg") center top / cover fixed no-repeat; }
 .taste-apply-hero { position: relative; min-height: 1460px; padding: 122px 24px 150px; box-sizing: border-box; background: transparent; }
 .taste-apply-hero-copy { position: relative; z-index: 1; max-width: 1180px; margin: 0 auto; color: #fff; text-align: center; }
 .taste-apply-hero-copy h1 { margin: 0; font-size: clamp(2.25rem, 4vw, 3.7rem); font-weight: 700; letter-spacing: .06em; text-shadow: 0 2px 8px rgba(84, 33, 40, .14); }
@@ -5039,7 +5106,7 @@ body:has(.faq-page) .menu-item:nth-child(6) > a::after { background: #ae624b; }
 .faq-groups { width: 100%; }
 .faq-group { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 38px; width: min(1700px, calc(100% - 120px)); margin: 0 auto; padding: 0 0 78px; box-sizing: border-box; }
 .faq-group + .faq-group { padding-top: 78px; border-top: 1px solid #f3f0ed; }
-.faq-group-pattern { width: 100%; max-width: none; padding: 86px max(60px, calc((100% - 1700px) / 2)) 88px; background: #f3e9dd url("/assets/images/bread-bg-2.png") center / 420px auto repeat; }
+.faq-group-pattern { width: 100%; max-width: none; padding: 86px max(60px, calc((100% - 1700px) / 2)) 88px; background: #f3e9dd url("/images/bread-bg-2.png") center / 420px auto repeat; }
 .faq-group-heading { position: relative; padding: 4px 42px 0 28px; border-right: 0; }
 .faq-group-heading::after { position: absolute; top: 0; right: 24px; bottom: 0; width: 1px; background: #e9e5e1; content: ""; }
 .faq-group-heading h2 { margin: 0; color: #7b390c; font-size: clamp(1.6rem, 2.4vw, 2.4rem); line-height: 1.35; letter-spacing: .03em; }
@@ -5077,7 +5144,7 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
 .store-info-page { --store-brown: #7b390c; --store-gold: #e9cda0; background: #f2f3f1; color: #4d4c4c; }
 .store-info-wheat { position: relative; z-index: 2; width: 96px; height: 94px; margin: -26px auto 72px; }
 .store-info-wheat img { display: block; width: 100%; height: 100%; object-fit: contain; }
-.store-info-stores { padding: 48px 32px 92px; background: url("/assets/images/full-bg.jpg") center / cover fixed; }
+.store-info-stores { padding: 48px 32px 92px; background: url("/images/full-bg.jpg") center / cover fixed; }
 .store-info-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 56px; width: min(1700px, 100%); margin: 0 auto; align-items: start; }
 .store-info-card { overflow: hidden; background: #fff; box-shadow: 0 8px 24px rgba(60, 52, 46, .12); }
 .store-info-card:nth-child(2), .store-info-card:nth-child(4) { margin-top: 58px; }
@@ -5097,7 +5164,7 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
 .store-info-map { display: inline-flex; align-items: center; gap: 14px; margin-top: 26px; padding: 16px 28px; color: #704820; background: var(--store-gold); font-size: 1.05rem; text-decoration: none; transition: filter .2s ease, transform .2s ease; }
 .store-info-map span { font-size: 1.5rem; line-height: 1; }
 .store-info-map:hover { filter: brightness(.96); transform: translateY(-2px); }
-.store-info-coffee { min-height: 620px; display: grid; place-items: center; padding: 80px 24px; box-sizing: border-box; background: linear-gradient(rgba(48, 39, 35, .38), rgba(48, 39, 35, .38)), url("/assets/images/coffee.jpg") center / cover fixed; }
+.store-info-coffee { min-height: 620px; display: grid; place-items: center; padding: 80px 24px; box-sizing: border-box; background: linear-gradient(rgba(48, 39, 35, .38), rgba(48, 39, 35, .38)), url("/images/coffee.jpg") center / cover fixed; }
 .store-info-coffee-card { display: grid; justify-items: center; gap: 26px; width: min(800px, 100%); padding: 58px 30px 50px; box-sizing: border-box; color: #21372a; background: rgba(255, 255, 255, .78); text-decoration: none; transition: background .2s ease, transform .2s ease; }
 .store-info-coffee-card:hover { background: rgba(255, 255, 255, .88); transform: translateY(-3px); }
 .store-info-coffee-card img { width: 76px; height: 76px; object-fit: contain; }
@@ -5109,7 +5176,7 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
 
 /* 大熊／小熊禮盒專用版型 */
 .big-bear-page { overflow: hidden; color: #4b423f; background: #fff; }
-.big-bear-hero { min-height: 242px; display: grid; place-items: center; background: url("/assets/images/headtitle-bg8.jpg") center top / cover no-repeat; }
+.big-bear-hero { min-height: 242px; display: grid; place-items: center; background: url("/images/headtitle-bg8.jpg") center top / cover no-repeat; }
 .big-bear-hero-title h1 { margin: 0; color: #fff; font-size: clamp(2.2rem, 4vw, 4.1rem); font-weight: 700; letter-spacing: .08em; text-shadow: 0 2px 10px rgba(85, 30, 35, .25); }
 .big-bear-baby { position: relative; z-index: 2; width: 112px; height: 112px; margin: -56px auto 30px; }
 .big-bear-baby img { display: block; width: 100%; height: 100%; object-fit: contain; }
@@ -5184,7 +5251,7 @@ body:has(.store-info-page) .menu-item:nth-child(7) > a::after { background: #ae6
 body:has(.country-cheese-page) .menu-item:nth-child(5) > a { color: #ae624b; }
 body:has(.country-cheese-page) .menu-item:nth-child(5) > a::after { background: #ae624b; }
 .country-cheese-page .big-bear-hero {
-  background: url("/assets/images/headtitle-bg8.jpg") center top / cover no-repeat;
+  background: url("/images/headtitle-bg8.jpg") center top / cover no-repeat;
 }
 .country-cheese-page .country-cheese-products {
   position: relative;
@@ -5211,7 +5278,7 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
   min-height: 242px;
   display: grid;
   place-items: center;
-  background: url("/assets/images/headtitle-bg9.jpg") center / cover no-repeat;
+  background: url("/images/headtitle-bg9.jpg") center / cover no-repeat;
 }
 .long-cake-hero-title h1 {
   margin: 0;
@@ -5346,7 +5413,7 @@ body:has(.long-cake-page) .menu-item:nth-child(5) > a::after { background: #ae62
   max-width: none;
   padding: 42px max(40px, calc((100% - 1500px) / 2)) 56px;
   box-sizing: border-box;
-  background: url("/assets/images/tileable_wood_texture.png") center / 420px repeat;
+  background: url("/images/tileable_wood_texture.png") center / 420px repeat;
 }
 .long-cake-napoleon .long-cake-heading { margin-bottom: 34px; }
 .long-cake-heading-napoleon h2 {
@@ -5470,7 +5537,7 @@ body:has(.round-pie-page) .menu-item:nth-child(5) > a::after { background: #ae62
   min-height: 242px;
   display: grid;
   place-items: center;
-  background: url("/assets/images/長條.jpg") center top / cover no-repeat;
+  background: url("/images/長條.jpg") center top / cover no-repeat;
 }
 .round-pie-hero h1 {
   margin: 0;
@@ -5599,7 +5666,7 @@ body:has(.pairing-page) .menu-item:nth-child(5) > a::after {
   display: grid;
   min-height: 340px;
   place-items: center;
-  background: url("/assets/images/headtitle-bg8.jpg") center / cover no-repeat;
+  background: url("/images/headtitle-bg8.jpg") center / cover no-repeat;
 }
 
 .pairing-hero h1 {
@@ -5914,7 +5981,7 @@ body:has(.thankyou-page) .menu-item:nth-child(5) > a::after {
   display: grid;
   min-height: 340px;
   place-items: center;
-  background: url("/assets/images/headtitle-bg8.jpg") center / cover no-repeat;
+  background: url("/images/headtitle-bg8.jpg") center / cover no-repeat;
 }
 
 .thankyou-hero h1 {
@@ -6258,7 +6325,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .product-detail-hero .hero-banner-title { min-height: 520px; }
 .product-detail-hero .hero-banner > .image-slot {
   border: 0;
-  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/assets/images/headtitle-bg3.jpg") center 10% / cover no-repeat;
+  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/images/headtitle-bg3.jpg") center 10% / cover no-repeat;
 }
 .product-detail-hero .hero-banner > .image-slot::before,
 .product-detail-hero .hero-banner > .image-slot img,
@@ -6332,7 +6399,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .page-main:has(.bean-tart-product-page) { background: #fff; }
 .page-main:has(.bean-tart-product-page) .product-detail-hero .hero-banner > .image-slot,
 .bean-tart-hero .hero-banner > .image-slot {
-  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/assets/images/headtitle-bg2.jpg") center 10% / cover no-repeat;
+  background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/images/headtitle-bg2.jpg") center 10% / cover no-repeat;
 }
 .bean-tart-product-page { width: min(1220px, calc(100% - 80px)); margin: 0 auto; }
 .bean-tart-feature {

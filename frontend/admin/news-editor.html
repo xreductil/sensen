@@ -5,9 +5,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>最新消息管理｜森森點心坊</title>
-  <link rel="apple-touch-icon" sizes="180x180" href="./assets/apple-touch-icon.webp">
-  <link rel="icon" type="image/png" sizes="32x32" href="./assets/favicon-32x32.webp">
-  <link rel="icon" type="image/png" sizes="16x16" href="./assets/favicon-16x16.webp">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/admin/apple-touch-icon.webp">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/admin/favicon-32x32.webp">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/admin/favicon-16x16.webp">
   <link rel="manifest" href="./assets/site.webmanifest">
   <script type="module" src="./assets/js/main-CnSylLUz.js?v=sensen-20260814"></script>
   <link rel="stylesheet" href="./assets/css/main-CM9hUMvt.css">
@@ -21,7 +21,7 @@
   <nav id="topbar" class="navbar bg-white border-bottom fixed-top topbar px-3">
     <button id="toggleBtn" class="d-none d-lg-inline-flex btn btn-light btn-icon btn-sm" type="button" aria-label="收合側欄"><i class="ti ti-layout-sidebar-left-expand"></i></button>
     <button id="mobileBtn" class="btn btn-light btn-icon btn-sm d-lg-none me-2" type="button" aria-label="開啟側欄"><i class="ti ti-layout-sidebar-left-expand"></i></button>
-    <div class="ms-auto d-flex align-items-center gap-3"><span class="text-secondary small d-none d-sm-inline">SENSEN BAKERY · ADMIN</span><img src="./assets/images/avatar-1.jpg" alt="管理員" class="avatar avatar-sm rounded-circle"></div>
+    <div class="ms-auto d-flex align-items-center gap-3"><span class="text-secondary small d-none d-sm-inline">SENSEN BAKERY · ADMIN</span><img src="/images/admin/avatar-1.jpg" alt="管理員" class="avatar avatar-sm rounded-circle"></div>
   </nav>
 
   <aside id="sidebar" class="sidebar">
@@ -95,7 +95,7 @@
               <div class="mb-3"><label class="form-label" for="news-status">狀態</label><select id="news-status" class="form-select" name="status" form="news-form"><option value="draft">草稿</option><option value="published">已發布</option></select></div>
               <div class="mb-3"><label class="form-label" for="news-category">分類</label><select id="news-category" class="form-select" name="category" form="news-form"><option value="latest-news">最新消息</option><option value="season-only">季節限定</option><option value="new-arrival">新品上市</option><option value="sensen-coffee">森森飲品</option></select></div>
               <div class="mb-3"><label class="form-label" for="news-publish-at">發布日期</label><input id="news-publish-at" class="form-control" name="publishAt" type="datetime-local" form="news-form"></div>
-              <div class="mb-3"><label class="form-label" for="news-image">封面圖片網址</label><input id="news-image" class="form-control" name="image" type="url" placeholder="https://… 或 assets/images/…" form="news-form"></div>
+              <div class="mb-3"><label class="form-label" for="news-image">封面圖片網址</label><input id="news-image" class="form-control" name="image" type="url" placeholder="https://… 或 /images/news/…" form="news-form"></div>
               <div class="news-preview" data-preview><div class="news-preview-media" data-preview-media>尚未設定封面圖片</div><div class="news-preview-copy"><h3 data-preview-title>文章標題預覽</h3><p data-preview-excerpt>內容摘要會顯示在這裡。</p></div></div>
             </div>
           </aside>

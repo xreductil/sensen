@@ -37,7 +37,7 @@ function main() {
   const cssFile = path.join(ROOT, "site.css");
   if (fs.existsSync(cssFile)) {
     let css = fs.readFileSync(cssFile, "utf8");
-    for (const item of temp) css = css.split(`/assets/images/${item.oldName}`).join(`/assets/images/${item.newName}`);
+    for (const item of temp) css = css.split(`/images/${item.oldName}`).join(`/images/${item.newName}`);
     fs.writeFileSync(cssFile, css);
   }
   console.log(`Renamed ${temp.length} image files. Map: ${path.relative(ROOT, MAP_FILE)}`);

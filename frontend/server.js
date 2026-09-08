@@ -60,6 +60,17 @@ function fileForRoute(urlPath) {
   const siteFile = candidates
     .map(candidate => safeFilePath(baseRoot, path.relative(baseRoot, candidate)))
     .find(candidate => candidate && fs.existsSync(candidate) && fs.statSync(candidate).isFile());
+  if (cleanPath.startsWith('/images/')) {
+    const requestedImage = cleanPath.slice('/images/'.length);
+    const imageKey = requestedImage.startsWith('admin/') ? requestedImage.slice('admin/'.length) : requestedImage;
+    const imageRoots = requestedImage.startsWith('admin/')
+      ? [path.join(__dirname, 'admin', 'assets'), path.join(__dirname, 'admin', 'assets', 'images')]
+      : [IMAGE_CACHE_ROOT];
+    for (const imageRoot of imageRoots) {
+      const cachedImage = safeFilePath(imageRoot, imageKey);
+      if (cachedImage && fs.existsSync(cachedImage) && fs.statSync(cachedImage).isFile()) return cachedImage;
+    }
+  }
   // Git LFS pointer files can be present in a local checkout when git-lfs is not
   // installed. Serve the tracked image cache so the local preview still renders.
   if (!isAdmin && cleanPath.startsWith('/assets/images/')) {
