@@ -28,8 +28,11 @@ const sqlBoolean = (value) => value ? '1' : '0';
 const normalizeImageKey = (value) => {
   const image = String(value || '').trim();
   if (!image) return null;
-  const match = image.match(/(?:https?:\/\/[^/]+)?\/?(?:assets\/images\/)?([^?#]+)$/i);
-  return match ? 'images/' + match[1] : image.replace(/^\//, '');
+  const normalized = image
+    .replace(/^https?:\/\/[^/]+/i, '')
+    .replace(/^\/?(?:assets\/)?images\//i, '')
+    .replace(/^\/+/, '');
+  return normalized ? 'images/' + normalized : null;
 };
 
 const slugify = (value) => String(value || '')

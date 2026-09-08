@@ -157,10 +157,10 @@ const shippingLabel = (method: string | null | undefined) => ({
 }[String(method || "pickup")] || "門市自取");
 
 const archivedNewsImages: Record<string, string> = {
-  "/wp-content/uploads/2025/07/1-scaled.jpg": "/assets/images/photo-1-8.jpg",
-  "/wp-content/uploads/2025/07/2-1528x1080.jpg": "/assets/images/photo-2-3.jpg",
-  "/wp-content/uploads/2025/07/3-1528x1080.jpg": "/assets/images/photo-3-3.jpg",
-  "/wp-content/uploads/2025/07/4-1528x1080.jpg": "/assets/images/photo-4-2.jpg",
+  "/wp-content/uploads/2025/07/1-scaled.jpg": "/images/photo-1-8.jpg",
+  "/wp-content/uploads/2025/07/2-1528x1080.jpg": "/images/photo-2-3.jpg",
+  "/wp-content/uploads/2025/07/3-1528x1080.jpg": "/images/photo-3-3.jpg",
+  "/wp-content/uploads/2025/07/4-1528x1080.jpg": "/images/photo-4-2.jpg",
 };
 
 const publicNewsImageUrl = (value: unknown) => {
@@ -173,8 +173,10 @@ const publicNewsImageUrl = (value: unknown) => {
       return `/images/legacy-news?url=${encodeURIComponent(source.href)}`;
     }
   } catch {
-    // Relative image paths are returned unchanged.
+    // Relative image paths are normalized below.
   }
+  const localKey = image.replace(/^\/?(?:assets\/)?images\//i, "").replace(/^\/+/, "");
+  if (localKey !== image && localKey) return `/images/${localKey}`;
   return image;
 };
 
@@ -448,7 +450,7 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     priceValue,
     quantity: Math.max(0, Number(row.stock || 0)),
     day: String(metadata.day || 5),
-    img: imageKey ? `/assets/images/${imageKey}` : "",
+    img: imageKey ? `/images/${imageKey}` : "",
     desc: row.description || String(metadata.desc || ""),
     published: row.is_active === 1,
   };
@@ -456,7 +458,7 @@ const productFromRow = (row: ProductRow): StoreProduct => {
 
 const imagePathFromKey = (value: unknown) => {
   const key = String(value || "").trim().replace(/^\/?(?:assets\/)?images\//i, "");
-  return key ? `/assets/images/${key}` : "";
+  return key ? `/images/${key}` : "";
 };
 
 const adminOrderItemFromRow = (item: Record<string, unknown>) => ({
@@ -512,7 +514,12 @@ const cartSummary = async (env: Env, guestId: string) => {
 
 const imageResponse = async (request: Request, env: Env) => {
   const url = new URL(request.url);
-  const requestedKey = url.pathname.slice("/images/".length);
+  let requestedKey: string;
+  try {
+    requestedKey = decodeURIComponent(url.pathname.slice("/images/".length));
+  } catch {
+    return json(request, { error: "圖片路徑無效。" }, 400);
+  }
   if (!requestedKey || requestedKey.split("/").includes("..")) {
     return json(request, { error: "圖片路徑無效。" }, 400);
   }
@@ -531,21 +538,22 @@ const imageResponse = async (request: Request, env: Env) => {
     }
 
     const archived = archivedNewsImages[source.pathname];
-    if (archived && env.ASSETS) {
-      return env.ASSETS.fetch(new Request(new URL(archived, request.url), { method: request.method }));
+    if (archived) {
+      requestedKey = archived.replace(/^\/?(?:assets\/)?images\//i, "").replace(/^\/+/, "");
+    } else {
+      const upstream = await fetch(source.href, { headers: { Accept: "image/*" } });
+      const contentType = upstream.headers.get("content-type") || "";
+      if (!upstream.ok || !contentType.startsWith("image/")) {
+        return json(request, { error: "無法載入舊站圖片。" }, 404);
+      }
+      const headers = new Headers({
+        "content-type": contentType,
+        "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
+      });
+      const contentLength = upstream.headers.get("content-length");
+      if (contentLength) headers.set("content-length", contentLength);
+      return new Response(upstream.body, { headers });
     }
-    const upstream = await fetch(source.href, { headers: { Accept: "image/*" } });
-    const contentType = upstream.headers.get("content-type") || "";
-    if (!upstream.ok || !contentType.startsWith("image/")) {
-      return json(request, { error: "無法載入舊站圖片。" }, 404);
-    }
-    const headers = new Headers({
-      "content-type": contentType,
-      "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
-    });
-    const contentLength = upstream.headers.get("content-length");
-    if (contentLength) headers.set("content-length", contentLength);
-    return new Response(upstream.body, { headers });
   }
 
   const object = await env.BUCKET.get("images/" + requestedKey);
@@ -580,6 +588,13 @@ export default {
       }
       if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/隱私權條件") {
         return Response.redirect(`${url.origin}/${encodeURIComponent("隱私權條款")}/`, 301);
+      }
+
+      // Keep old asset URLs working while ensuring the image bytes come from R2.
+      if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.startsWith("/assets/images/")) {
+        const r2Url = new URL(request.url);
+        r2Url.pathname = `/images/${decodedPathname.slice("/assets/images/".length)}`;
+        return imageResponse(new Request(r2Url, request), env);
       }
 
       if ((request.method === "GET" || request.method === "HEAD") && /^\/latest-news\/article\/?$/.test(url.pathname) && url.searchParams.get("id")) {

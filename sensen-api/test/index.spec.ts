@@ -41,6 +41,22 @@ describe("sensen-api Worker", () => {
     expect(await response.json()).toEqual({ error: "不允許代理此圖片來源。" });
   });
 
+  it("serves canonical and legacy image paths from R2", async () => {
+    await env.BUCKET.put("images/test-r2.png", new Uint8Array([1, 2, 3]), {
+      httpMetadata: { contentType: "image/png" },
+    });
+    await env.BUCKET.put("images/測試.png", new Uint8Array([4, 5, 6]), {
+      httpMetadata: { contentType: "image/png" },
+    });
+
+    for (const pathname of ["/images/test-r2.png", "/assets/images/test-r2.png", `/images/${encodeURIComponent("測試.png")}`]) {
+      const response = await SELF.fetch(`https://example.com${pathname}`);
+      expect(response.status).toBe(200);
+      expect(response.headers.get("content-type")).toContain("image/png");
+      expect([...new Uint8Array(await response.arrayBuffer())]).toEqual(pathname.includes("測試") || pathname.includes("%") ? [4, 5, 6] : [1, 2, 3]);
+    }
+  });
+
   it("server-renders published news metadata and content", async () => {
     const id = `seo-news-${crypto.randomUUID()}`;
     await env.DB.prepare(`
