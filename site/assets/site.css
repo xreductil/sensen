@@ -2309,6 +2309,8 @@ body:has(.menu.is-open)::after {
   .mobile-nav-action:hover::after, .mobile-nav-action:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
   .mobile-nav-action .cart-count { position: absolute; top: -4px; right: -4px; min-width: 16px; height: 16px; padding: 0 4px; border-radius: 999px; color: #fff; background: var(--gold); font-size: 10px; line-height: 16px; text-align: center; }
   .submenu { position: static; display: none !important; min-width: 0; padding: 4px 0 4px 14px; border: 0; box-shadow: none; opacity: 1; transform: none; }
+  .menu-item.is-submenu-open > .submenu { display: grid !important; }
+  .menu-item.is-submenu-open > a .menu-arrow::after { content: "−"; }
   .menu-toggle[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
   .menu-toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
   .menu-toggle[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }

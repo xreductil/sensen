@@ -1229,7 +1229,8 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
         return `<a href="${escapeAttr(childHref)}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(childLabel)}</a>`;
       }).join("")}</div>`
       : "";
-    return `<div class="menu-item"><a href="${href}">${label}${children.length ? " <span class=\"menu-arrow\">⌄</span>" : ""}</a>${childMenu}</div>`;
+    const parentAttrs = children.length ? ' aria-haspopup="true" aria-expanded="false"' : "";
+    return `<div class="menu-item"><a href="${href}"${parentAttrs}>${label}${children.length ? " <span class=\"menu-arrow\">⌄</span>" : ""}</a>${childMenu}</div>`;
   }).join("");
   const heroImage = hasBrandedHero
     ? imageSlotHtml({ source: heroSource, label: "頁首背景圖片" })
@@ -1338,7 +1339,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:url" content="${escapeAttr(canonical)}">
-  <link rel="stylesheet" href="/assets/site.css?v=20260906-404">
+  <link rel="stylesheet" href="/assets/site.css?v=20260908-mobile-nav">
   ${checkoutStyle}
 </head>
 <body>
@@ -1367,14 +1368,33 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     const toggle = document.querySelector(".menu-toggle");
     const menu = document.querySelector("#site-menu");
     if (!toggle || !menu) return;
+    const resetSubmenus = () => {
+      menu.querySelectorAll(".menu-item.is-submenu-open").forEach(item => item.classList.remove("is-submenu-open"));
+      menu.querySelectorAll(".menu-item > a[aria-expanded]").forEach(link => link.setAttribute("aria-expanded", "false"));
+    };
     const setMenuState = isOpen => {
       toggle.setAttribute("aria-expanded", String(isOpen));
       toggle.setAttribute("aria-label", isOpen ? "關閉主選單" : "開啟主選單");
       menu.classList.toggle("is-open", isOpen);
+      if (!isOpen) resetSubmenus();
     };
     toggle.addEventListener("click", () => setMenuState(!menu.classList.contains("is-open")));
     menu.addEventListener("click", (event) => {
-      if (event.target.closest("a")) {
+      const link = event.target.closest("a");
+      const menuItem = link && link.closest(".menu-item");
+      const hasSubmenu = menuItem && menuItem.querySelector(".submenu");
+      if (link && hasSubmenu && window.matchMedia("(max-width: 880px)").matches && !menuItem.classList.contains("is-submenu-open")) {
+        event.preventDefault();
+        menu.querySelectorAll(".menu-item.is-submenu-open").forEach(item => {
+          item.classList.remove("is-submenu-open");
+          const parentLink = item.querySelector(".menu-item > a[aria-expanded]");
+          if (parentLink) parentLink.setAttribute("aria-expanded", "false");
+        });
+        menuItem.classList.add("is-submenu-open");
+        link.setAttribute("aria-expanded", "true");
+        return;
+      }
+      if (link) {
         setMenuState(false);
       }
     });
