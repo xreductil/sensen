@@ -3025,6 +3025,9 @@ function syncProductDetailSnapshot() {
       updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
       updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1><p[^>]*>[\s\S]*?<\/p><\/div>/, '$1 data-product-hero-title>商品資料載入中…</h1><p data-product-hero-category>▱ 產品介紹</p></div>');
     }
+    if (html.includes("data-storefront-catalog")) {
+      updated = updated.replace(/data-product-paths="[^"]*"/, `data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"`);
+    }
     updated = updated
       .replace(/\/assets\/product-detail-purchase\.js(?:\?[^"']*)?/g, PRODUCT_DETAIL_SCRIPT_URL)
       .replace(/<dt>蛋糕吋數<\/dt>/g, "<dt>商品尺寸</dt>");

@@ -108,7 +108,12 @@
     })
     .map(({ product }) => product);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
-  const normalizeTitle = value => String(value || '').replace(/<br\s*\/?\s*>/gi, '').replace(/\s+/g, '').replace(/[（(]季節限定[）)]/g, '（季節限定）');
+  const normalizeTitle = value => String(value || '')
+    .replace(/<br\s*\/?\s*>/gi, '')
+    .replace(/\s+/g, '')
+    .replace(/[（(]季節限定[）)]/g, '（季節限定）')
+    // The API may include the package count while the legacy route map does not.
+    .replace(/[（(]\d+入[）)]$/g, '');
   const money = value => {
     const amount = Number(value || 0);
     return amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
