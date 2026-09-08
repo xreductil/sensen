@@ -29,8 +29,10 @@
         return '/images/legacy-news?url=' + encodeURIComponent(source.href);
       }
     } catch {}
+    const localAsset = image.match(/^\/?assets\/images\/([^?#]+)$/i);
+    if (localAsset) return '/images/' + localAsset[1];
     if (/^(https?:|data:|\/)/i.test(image)) return image;
-    return '/assets/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
+    return '/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
   };
 
   const formatDate = value => {
