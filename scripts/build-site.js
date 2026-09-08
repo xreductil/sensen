@@ -1339,7 +1339,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:url" content="${escapeAttr(canonical)}">
-  <link rel="stylesheet" href="/assets/site.css?v=20260908-mobile-nav-2">
+  <link rel="stylesheet" href="/assets/site.css?v=20260908-mobile-nav-3">
   ${checkoutStyle}
 </head>
 <body>
