@@ -18,7 +18,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260909-fields-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260909-fields-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
   ["https://www.sensen.com.tw/latest-news/歐包系列/", "latest-detail-2.md"],
@@ -1269,7 +1269,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     : escapeHtml(heroTitle);
   const hero = isHome || !showHero ? "" : (isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct)
     ? `<section class="page-hero product-detail-hero${isBeanTartProduct ? " bean-tart-hero" : ""}">
-      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1>${escapeHtml(heroTitle)}</h1><p>▱ ${escapeHtml(heroCategoryLabel)}</p></div></div>
+      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1 data-product-hero-title>商品資料載入中…</h1><p data-product-hero-category>▱ 產品介紹</p></div></div>
     </section>`
     : `<section class="page-hero${hasBrandedHero ? " about-hero" : ""}">
       <div class="hero-banner">${heroImage}<div class="hero-banner-title"><p>${escapeHtml(pathLabel)}</p><h1>${heroTitleHtml}</h1></div></div>
@@ -1904,6 +1904,89 @@ const SOUVENIR_PRODUCTS = [
   ["日式大福禮盒", "/product-item/日式大福禮盒", "daifuku-3.jpg", 10],
 ];
 
+const STOREFRONT_PRODUCT_ID_PATHS = {
+  "emerald-lysk": "/product-item/綠寶石萊思克季節限定-1870",
+  "strawberry-lysk": "/product-item/草莓萊思克季節限定-1868",
+  "caramel-party": "/product-item/焦糖派對-732",
+  "gulava": "/product-item/古拉瓦",
+  "passion-pear": "/product-item/百香洋梨-728",
+  "colorful-world": "/product-item/繽紛世界",
+  "mocha": "/product-item/摩卡",
+  "hazelnut-crunch": "/product-item/榛果脆心巧思",
+  "black-forest": "/product-item/黑森林",
+  "souffle": "/product-item/雪芙蕾",
+  "macaron-forest": "/product-item/馬卡龍森林",
+  "strawberry-shudo": "/product-item/草莓修多季節限定",
+  "rose-bouquet": "/product-item/玫瑰花束-210",
+  "bodhi-cake": "/product-item/波笛-209",
+  "puff-kingdom": "/product-item/泡芙王國",
+  "uji-hayakaze": "/product-item/宇治禾風-205",
+  "blueberry-lysk": "/product-item/藍莓萊思克-204",
+  "angel-cake": "/product-item/天使",
+  "spiderman": "/product-item/蜘蛛人-1157",
+  "polar-bear": "/product-item/北極熊",
+  "hibachi-shiba": "/product-item/喜八柴柴-259",
+  "rilakkuma": "/product-item/拉拉熊",
+  "pikachu": "/product-item/皮卡丘",
+  "cute-rabbit": "/product-item/可愛兔",
+  "oreo-ice-cream": "/product-item/oreo冰淇淋蛋糕-1878",
+  "yellow-duck-ice-cream": "/product-item/黃色小鴨-1876",
+  "black-knight-ice-cream": "/product-item/黑爵士-207",
+  "berry-melody": "/product-item/莓麗朵-245",
+  "souvenir-bean-tower": "/product-item/豆塔禮盒",
+  "souvenir-pork-floss": "/product-item/森森肉鬆餅",
+  "souvenir-palmier": "/product-item/法式蝴蝶酥-1657",
+  "souvenir-almond-layer": "/product-item/鈕扣牛軋餅",
+  "souvenir-butter-cake": "/product-item/太陽餅禮盒",
+  "souvenir-egg-roll": "/product-item/手工蛋捲",
+  "souvenir-button-nougat": "/product-item/鈕扣餅乾",
+  "souvenir-dacquoise": "/product-item/鳳梨酥禮盒",
+  "souvenir-pineapple-cake": "/product-item/土鳳梨酥禮盒",
+  "souvenir-daifuku": "/product-item/日式大福禮盒",
+};
+
+function productIdForDetailPath(localPath) {
+  const match = Object.entries(STOREFRONT_PRODUCT_ID_PATHS).find(([, productPath]) => productPath === localPath);
+  return match?.[0] || "";
+}
+
+function productDetailDataAttributes(localPath) {
+  return `data-product-id="${escapeAttr(productIdForDetailPath(localPath))}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"`;
+}
+
+function productDetailShell({ localPath, kind = "cake" }) {
+  const souvenir = kind === "souvenir";
+  const pageClass = souvenir ? "bean-tart-product-page souvenir-product-page" : kind === "emerald" ? "" : "cake-product-page";
+  const titleId = souvenir ? "souvenir-product-title" : kind === "emerald" ? "emerald-product-title" : "cake-product-title";
+  const specsClass = souvenir ? "bean-tart-specs" : "emerald-product-specs";
+  const copyClass = souvenir ? "emerald-product-copy bean-tart-copy" : "emerald-product-copy";
+  const gallery = souvenir
+    ? `<div class="bean-tart-gallery" data-product-gallery><p class="product-detail-loading">商品圖片載入中…</p></div>`
+    : `<figure class="emerald-product-image"><img data-product-main-image alt="" hidden></figure>`;
+  const descriptionClass = souvenir ? "bean-tart-intro" : "emerald-product-description";
+  const sizeLabel = souvenir ? "規格" : "商品尺寸";
+  return `<section class="emerald-product-page ${pageClass}" ${productDetailDataAttributes(localPath)}>
+    <section class="emerald-product-feature${souvenir ? " bean-tart-feature" : ""}" aria-labelledby="${titleId}">
+      ${gallery}
+      <div class="${copyClass}">
+        <h2 id="${titleId}" data-product-title>商品資料載入中…</h2>
+        <div class="${descriptionClass}" data-product-description><span>產品說明</span><p data-product-description-value>商品資料載入中…</p></div>
+        ${souvenir ? "" : '<p class="emerald-product-emphasis" data-product-emphasis hidden></p>'}
+        <hr${souvenir ? "" : ' class="product-detail-spec-divider" hidden'}>
+        <dl class="${specsClass}" data-product-specs>
+          <div><dt>${sizeLabel}</dt><dd data-product-size>—</dd></div>
+          <div><dt>保存方式</dt><dd data-product-storage>—</dd></div>
+          <div><dt>其他</dt><dd data-product-other>—</dd></div>
+        </dl>
+        ${souvenir ? "" : '<p class="emerald-product-note" data-product-note hidden></p>'}
+        <div class="${souvenir ? "bean-tart-badge" : "emerald-product-badge"}" data-product-dietary hidden><img data-product-dietary-image alt=""></div>
+      </div>
+    </section>
+    <div class="emerald-share" data-product-share><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="0 個喜歡">♡ <span data-product-likes>0</span></div></div>
+    <section class="emerald-related${souvenir ? " souvenir-related" : ""}" data-product-related aria-labelledby="${souvenir ? "souvenir-related-title" : "cake-related-title"}"><h2 id="${souvenir ? "souvenir-related-title" : "cake-related-title"}">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track><p class="product-detail-loading">相關商品載入中…</p></div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
+  </section>`;
+}
+
 const SOUVENIR_PRODUCT_PATHS = new Set(SOUVENIR_PRODUCTS.map(([, href]) => href));
 const SOUVENIR_PRODUCT_DATA = new Map(SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => [href, { title, image, likes }]));
 // Keep a compatibility route for the misspelled URL that has been shared previously.
@@ -2193,7 +2276,7 @@ function storeInfoContent() {
   '</section>';
 }
 function storefrontProductPathMap() {
-  const map = {};
+  const map = { ...STOREFRONT_PRODUCT_ID_PATHS };
   const normalize = value => String(value || "").replace(/<br\s*\/?\s*>/gi, "").replace(/\s+/g, "").replace(/[（(]季節限定[）)]/g, "（季節限定）");
   CAKE_SECTIONS.forEach(section => [...section.products, ...(section.loadMoreProducts || [])].forEach(([title, likes, image, href]) => { map[normalize(title)] = href; }));
   SOUVENIR_PRODUCTS.forEach(([title, href]) => { map[normalize(title)] = href; });
@@ -2273,6 +2356,7 @@ function souvenirRelatedCarousel(currentPath, headingId) {
 
 function souvenirProductContent(page) {
   const localPath = localPathFromUrl(page.url);
+  return productDetailShell({ localPath, kind: "souvenir" });
   const product = SOUVENIR_PRODUCT_DATA.get(localPath) || {};
   const markdown = String(markdownFromPage(page) || "").replace(/\r/g, "");
   const lines = markdown.split("\n").map((line) => line.trim());
@@ -2339,6 +2423,7 @@ function souvenirProductContent(page) {
 }
 
 function emeraldLyskContent() {
+  return productDetailShell({ localPath: EMERALD_LYSK_PATH, kind: "emerald" });
   return `<section class="emerald-product-page">
     <section class="emerald-product-feature" aria-labelledby="emerald-product-title">
       <figure class="emerald-product-image"><img src="/images/cake-2024-11.png" alt="綠寶石萊思克(季節限定)"></figure>
@@ -2362,6 +2447,7 @@ function emeraldLyskContent() {
 
 function birthdayCakeProductContent(page) {
   const localPath = localPathFromUrl(page.url);
+  return productDetailShell({ localPath, kind: "cake" });
   const product = CAKE_PRODUCT_DATA.get(localPath) || {};
   const markdown = String(markdownFromPage(page) || "").replace(/\r/g, "");
   const lines = markdown.split("\n").map((line) => line.trim());
@@ -2422,6 +2508,7 @@ function birthdayCakeProductContent(page) {
 }
 
 function beanTartProductContent() {
+  return productDetailShell({ localPath: BEAN_TART_PATH, kind: "souvenir" });
   return `<section class="emerald-product-page bean-tart-product-page">
     <section class="emerald-product-feature bean-tart-feature" aria-labelledby="bean-tart-title">
       <div class="bean-tart-gallery">
@@ -2906,6 +2993,22 @@ function syncAdminFrontendSnapshot() {
 
 function syncProductDetailSnapshot() {
   fs.copyFileSync(path.join(__dirname, "product-detail-purchase.js"), path.join(OUT_DIR, "assets", "product-detail-purchase.js"));
+  const replaceProductSection = (html, replacement) => {
+    const start = html.indexOf('<section class="emerald-product-page');
+    if (start < 0) return html;
+    const tokens = /<section\b|<\/section>/g;
+    tokens.lastIndex = start;
+    let depth = 0;
+    let match;
+    while ((match = tokens.exec(html))) {
+      depth += match[0] === "</section>" ? -1 : 1;
+      if (depth === 0) {
+        const end = match.index + match[0].length;
+        return `${html.slice(0, start)}${replacement}${html.slice(end)}`;
+      }
+    }
+    return html;
+  };
   const htmlFiles = [];
   const walk = directory => {
     if (!fs.existsSync(directory)) return;
@@ -2918,7 +3021,16 @@ function syncProductDetailSnapshot() {
   walk(OUT_DIR);
   for (const filePath of htmlFiles) {
     const html = fs.readFileSync(filePath, "utf8");
-    const updated = html
+    const relative = path.relative(OUT_DIR, filePath).split(path.sep);
+    const localPath = relative.length > 1 ? `/${relative.slice(0, -1).join("/")}` : "/";
+    const isProductPage = localPath.startsWith("/product-item/") && productIdForDetailPath(localPath);
+    let updated = html;
+    if (isProductPage) {
+      const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : "cake";
+      updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
+      updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1><p[^>]*>[\s\S]*?<\/p><\/div>/, '$1 data-product-hero-title>商品資料載入中…</h1><p data-product-hero-category>▱ 產品介紹</p></div>');
+    }
+    updated = updated
       .replace(/\/assets\/product-detail-purchase\.js(?:\?[^"']*)?/g, PRODUCT_DETAIL_SCRIPT_URL)
       .replace(/<dt>蛋糕吋數<\/dt>/g, "<dt>商品尺寸</dt>");
     if (updated !== html) fs.writeFileSync(filePath, updated);

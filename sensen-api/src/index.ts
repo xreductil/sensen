@@ -13,6 +13,8 @@ type ProductRow = {
   is_active: number;
   category: string | null;
   metadata_json: string | null;
+  created_at: string | null;
+  gallery_json: string | null;
 };
 
 type StoreProduct = {
@@ -24,10 +26,18 @@ type StoreProduct = {
   quantity: number;
   day: string;
   img: string;
+  images: string[];
   desc: string;
   size: string;
   storage: string;
   other: string;
+  emphasis: string;
+  note: string;
+  variants: Record<string, unknown>;
+  createdAt: string;
+  likes: number;
+  dietary: string;
+  dietaryImage: string;
   published: boolean;
 };
 
@@ -446,6 +456,16 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   const priceValue = Number(row.price || 0);
   const imageKey = String(row.image_key || "").replace(/^images\//, "");
   const description = row.description || String(metadata.desc || metadata.description || "");
+  const galleryKeys = parseJson<unknown[]>(row.gallery_json, [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  const images = [...new Set([
+    imageKey ? `/images/${imageKey}` : "",
+    ...galleryKeys.map((value) => imagePathFromKey(value)),
+  ].filter(Boolean))];
+  const variants = metadata.variants && typeof metadata.variants === "object" && !Array.isArray(metadata.variants)
+    ? metadata.variants as Record<string, unknown>
+    : {};
   return {
     id: row.slug,
     title: row.title,
@@ -454,11 +474,19 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     priceValue,
     quantity: Math.max(0, Number(row.stock || 0)),
     day: String(metadata.day || 5),
-    img: imageKey ? `/images/${imageKey}` : "",
+    img: images[0] || "",
+    images,
     desc: description,
     size: String(metadata.size || metadata.productSize || metadata.spec || ""),
     storage: String(metadata.storage || metadata.storageMethod || ""),
     other: String(metadata.other || metadata.otherNotes || ""),
+    emphasis: String(metadata.emphasis || ""),
+    note: String(metadata.note || ""),
+    variants,
+    createdAt: String(row.created_at || ""),
+    likes: Math.max(0, Number(metadata.likes || 0)),
+    dietary: String(metadata.dietary || metadata.dietaryLabel || ""),
+    dietaryImage: imagePathFromKey(metadata.dietaryImage || metadata.badgeImage || ""),
     published: row.is_active === 1,
   };
 };
@@ -486,7 +514,14 @@ const productSelect = `
     p.image_key,
     p.is_active,
     c.name AS category,
-    p.metadata_json
+    p.metadata_json,
+    p.created_at,
+    (SELECT json_group_array(image_key) FROM (
+      SELECT image_key
+      FROM product_images
+      WHERE product_id = p.id
+      ORDER BY sort_order ASC, id ASC
+    )) AS gallery_json
   FROM products p
 `;
 
