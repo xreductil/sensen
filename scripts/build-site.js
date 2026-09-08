@@ -244,6 +244,7 @@ const HOME_SLIDES = [
 const BIRTHDAY_CAKE_PATH = "/產品介紹/生日蛋糕-下方有dm供下載-264";
 const CATERING_PATH = "/精緻外燴-355";
 const TEA_PARTY_PATH = "/茶會點心-tea-party";
+const ONLINE_TEA_PARTY_PATH = "/產品介紹/點心餐盒";
 const BOSTON_PIE_PATH = "/頂家彌月/波士頓派系列";
 const COUNTRY_CHEESE_PATH = "/頂家彌月/香村乳酪禮盒";
 const COUNTRY_CHEESE_GIFTS = [
@@ -269,19 +270,79 @@ const ROUND_PIE_PRODUCTS = [
 ];
 
 const LONG_CAKE_PATH = "/頂家彌月/彌月長條蛋糕";
+const ONLINE_LONG_CAKE_PATH = "/產品介紹/長條蛋糕";
 const PAIRING_PATH = "/頂家彌月/搭配單品";
 const THANK_YOU_CARD_PATH = "/頂家彌月/彌月謝卡";
 
+const LONG_CAKE_HOT_PRODUCTS = [
+  ["日式千層", "japanese-layer-cake.png"],
+  ["桂花烏龍甜心", "osmanthus-oolong-cake.png"],
+  ["摩卡巧克力", "a5.png"],
+  ["伯爵甜心捲", "a6.png"],
+  ["左岸咖啡捲", "a7.png"],
+];
+const LONG_CAKE_MARBLE_PRODUCTS = [
+  ["草莓大理石", "strawberry-marble.png"],
+  ["藍莓天使", "blueberry-angel.png"],
+  ["經典巧克力", "classic-chocolate.png"],
+  ["檸檬之戀", "lemon-love.png"],
+  ["蜂蜜蛋糕", "a14.jpg"],
+];
+const LONG_CAKE_NAPOLEON_PRODUCTS = [
+  ["香草拿破崙派", "f1-1.png"],
+  ["巧克力拿破崙派", "f2.png"],
+];
+
 function longCakeContent() {
+  const cardList = (items, className = "") => items.map(([title, image]) => `
+    <article class="long-cake-product ${className}">
+      <img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
+      <h3>${escapeHtml(title)}</h3>
+    </article>`).join("");
   return `<section class="long-cake-page">
-    <section class="long-cake-hero"><div class="long-cake-hero-title"><h1>長條蛋糕(冷凍)</h1></div></section>
+    <section class="long-cake-hero"><div class="long-cake-hero-title"><h1>彌月長條蛋糕</h1></div></section>
     <div class="long-cake-baby"><img src="/images/icon-baby.png" alt="" aria-hidden="true"></div>
-    <section class="catalog-empty-state" aria-labelledby="long-cake-empty-title">
-      <p class="catalog-empty-eyebrow">TOP HOUSE CAKE</p>
-      <h2 id="long-cake-empty-title">商品頁面準備中</h2>
-      <p>長條蛋糕(冷凍)的商品資料正在整理中，敬請期待。</p>
-      <a class="catalog-empty-link" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/">返回頂家彌月</a>
+    <section class="long-cake-feature" aria-labelledby="long-cake-feature-title">
+      <div class="long-cake-feature-image"><img src="/images/a2-2.jpg" alt="A1 紫羅蘭長條蛋糕" loading="lazy"></div>
+      <div class="long-cake-feature-copy">
+        <h2 id="long-cake-feature-title">A1 紫羅蘭</h2>
+        <p class="long-cake-feature-filling">內餡：大甲芋頭+布丁</p>
+        <p>嚴選大甲芋頭，綿密芋泥搭配芋頭塊與手作香草布丁。<br>一口接一口，是頂家銷售NO.1的招牌蛋糕！</p>
+      </div>
     </section>
+    <section class="long-cake-series" aria-labelledby="long-cake-hot-title">
+      <div class="long-cake-heading long-cake-heading-hot"><p>TOP HOUSE CAKE</p><h2 id="long-cake-hot-title">熱銷蛋糕系列</h2></div>
+      <div class="long-cake-grid long-cake-grid-five">${cardList(LONG_CAKE_HOT_PRODUCTS)}</div>
+    </section>
+    <section class="long-cake-series long-cake-series-second" aria-labelledby="long-cake-marble-title">
+      <div class="long-cake-heading long-cake-heading-hot"><h2 id="long-cake-marble-title">熱銷蛋糕系列</h2></div>
+      <div class="long-cake-grid long-cake-grid-five">${cardList(LONG_CAKE_MARBLE_PRODUCTS)}</div>
+    </section>
+    <section class="long-cake-napoleon" aria-labelledby="long-cake-napoleon-title">
+      <div class="long-cake-heading long-cake-heading-hot long-cake-heading-napoleon"><h2 id="long-cake-napoleon-title">拿破崙派</h2><p>MILLE-FEUILLE</p></div>
+      <div class="long-cake-grid long-cake-grid-two">${cardList(LONG_CAKE_NAPOLEON_PRODUCTS, "long-cake-napoleon-product")}</div>
+    </section>
+    <section class="boston-dm" id="long-cake-dm">
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-title"><strong>彌月禮盒DM下載</strong><span>⟶</span></a>
+      <a href="https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view" target="_blank" rel="noreferrer" class="boston-dm-icon" aria-label="查看彌月禮盒 DM"><span class="boston-dm-book" aria-hidden="true"></span></a>
+      <p>完整商品資訊及價格，請參閱彌月商品目錄!</p>
+    </section>
+  </section>`;
+}
+
+function onlineLongCakeContent() {
+  return `<section class="catalog-empty-state online-catalog-empty" aria-labelledby="online-long-cake-empty-title">
+    <p class="catalog-empty-eyebrow">LONG CAKE</p>
+    <h2 id="online-long-cake-empty-title">商品頁面準備中</h2>
+    <p>長條蛋糕商品資料正在整理中，敬請期待。</p>
+  </section>`;
+}
+
+function onlineTeaPartyContent() {
+  return `<section class="catalog-empty-state online-catalog-empty" aria-labelledby="online-tea-party-empty-title">
+    <p class="catalog-empty-eyebrow">TEA PARTY BOX</p>
+    <h2 id="online-tea-party-empty-title">商品頁面準備中</h2>
+    <p>點心餐盒商品資料正在整理中，敬請期待。</p>
   </section>`;
 }
 
@@ -591,6 +652,8 @@ const BRANDED_HERO_PATHS = new Set([
   "/關於森森",
   "/最新消息",
   "/產品介紹",
+  ONLINE_LONG_CAKE_PATH,
+  ONLINE_TEA_PARTY_PATH,
   "/產品介紹/生日蛋糕-下方有dm供下載-264",
   FROZEN_BREAD_PATH,
   "/精緻外燴-355",
@@ -607,8 +670,8 @@ const NAV_CHILDREN = new Map([
   ["線上商城", [
     ["生日蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
     ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/"],
-    ["長條蛋糕(冷凍)", `${encodeURI(LONG_CAKE_PATH)}/`],
-    ["點心餐盒", `${encodeURI(TEA_PARTY_PATH)}/`],
+    ["長條蛋糕", `${encodeURI(ONLINE_LONG_CAKE_PATH)}/`],
+    ["點心餐盒", `${encodeURI(ONLINE_TEA_PARTY_PATH)}/`],
     ["歐式麵包(冷凍)", `${encodeURI(FROZEN_BREAD_PATH)}/`],
   ]],
   ["酒會/茶會", [
@@ -628,6 +691,8 @@ const NAV_CHILDREN = new Map([
 ]);
 
 const STORE_MODULE_PAGES = [
+  { url: `https://www.sensen.com.tw${ONLINE_LONG_CAKE_PATH}/`, title: "長條蛋糕" },
+  { url: `https://www.sensen.com.tw${ONLINE_TEA_PARTY_PATH}/`, title: "點心餐盒" },
   { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "歐式麵包(冷凍)" },
   { url: "https://www.sensen.com.tw/customer/admin/", title: "會員登入" },
   { url: "https://www.sensen.com.tw/customer/admin/backup/", title: "會員後台" },
@@ -960,8 +1025,10 @@ function pageTitleFor(page, localPath) {
   if (localPath === "/404-error") return "找不到頁面 – 森森點心坊";
   if (localPath === PRODUCT_INTRO_PATH) return "線上商城 – 森森點心坊";
   if (localPath === BIRTHDAY_CAKE_PATH) return BIRTHDAY_CAKE_PAGE_TITLE;
-  if (localPath === LONG_CAKE_PATH) return "長條蛋糕(冷凍) – 森森點心坊";
-  if (localPath === TEA_PARTY_PATH) return "點心餐盒 – 森森點心坊";
+  if (localPath === LONG_CAKE_PATH) return "彌月長條蛋糕 – 森森點心坊";
+  if (localPath === ONLINE_LONG_CAKE_PATH) return "長條蛋糕 – 森森點心坊";
+  if (localPath === ONLINE_TEA_PARTY_PATH) return "點心餐盒 – 森森點心坊";
+  if (localPath === TEA_PARTY_PATH) return "酒會與茶會點心 – 森森點心坊";
   return titleFromPage(page);
 }
 
@@ -2042,12 +2109,21 @@ function contactPageContent() {
 }
 
 
+const TEA_PARTY_SECTIONS = [
+  ["SALTY BREAD", "麵包鹹餐(葷)", ["sandwich.jpg", "party-salty-bread-7.jpg", "party-salty-bread-2.jpg", "party-salty-bread-1.jpg", "party-salty-bread-10.jpg", "party-salty-bread-9.jpg", "party-salty-bread-12.jpg", "cheese-3.jpg", "party-salty-bread-3.jpg", "taro-2.jpg", "lemon-lemon-chicken-burger.jpg", "chicken-burger.jpg", "party-salty-bread-8.jpg", "party-salty-bread-5.jpg", "party-sweet-bread-1.jpg", "pork-floss-pastry.png", "parmesan-sausage.png"]],
+  ["SWEET BREAD", "麵包甜餐(素)", ["fruit-sandwich.jpg", "party-sweet-bread-5.jpg", "taro-sandwich.jpg", "party-sweet-bread-4.jpg", "flat-croissant.jpg", "italian-mini-bun.jpg", "truffle-milk-bun.png", "custard.jpg", "wine-longan.png", "pine-truffle.jpg", "taro-custard.jpg"]],
+  ["DESSERTS AND CAKES", "西點蛋糕(素)", ["party-cake-16.jpg", "party-cake-19.jpg", "party-cake-20.jpg", "party-cake-21.jpg", "party-cake-1.jpg", "party-cake-2.jpg", "party-cake-3.jpg", "party-cake-4.jpg", "party-cake-5.jpg", "party-cake-6.jpg", "party-cake-9.jpg", "party-cake-10.jpg", "party-cake-11.jpg", "party-cake-13.jpg", "party-cake-14.jpg", "taro-daifuku.jpg", "taro-fragrant-puff-puff.jpg", "mixed-mixed-cookies.jpg", "fruit-puff.jpg", "purple-taro-orchid-cake.jpg", "day-layer-cake.jpg", "lemon-grandma.png", "hawaiian.png", "peanut-mochi.png", "belgian-chocolate.jpg", "cheese-custard.jpg", "palmiers-3.jpg", "brown-sugar-jelly.jpg"]],
+  ["FRIED FOOD & OTHER", "炸物小點類(葷)", ["buffet-snacks-3.jpg", "buffet-snacks-1.jpg", "buffet-snacks-2.jpg"]],
+  ["FRESH FRUITS", "水果(素)", ["party-salty-fruit.jpg"]],
+];
+
 function teaPartyContent() {
+  const sectionHtml = TEA_PARTY_SECTIONS.map(([eyebrow, title, images]) => '<section class="tea-party-category"><div class="tea-party-category-heading"><p>' + escapeHtml(eyebrow) + '</p><h2>' + escapeHtml(title) + '</h2></div><div class="tea-party-product-grid">' + images.map((image) => '<div class="tea-party-product"><img src="/images/' + escapeAttr(image) + '" alt="' + escapeAttr(title) + '餐點" loading="lazy"></div>').join("") + '</div></section>').join("");
   const content = `<section class="tea-party-page">
     <section class="tea-party-hero">
       <div class="tea-party-hero-copy">
         <img class="tea-party-hero-icon" src="/images/icon-cake2.png" alt="" aria-hidden="true">
-        <h1>點心餐盒</h1>
+        <h1>酒會與茶會點心</h1>
         <p>不管是公司會議或是學校舉辦活動，實惠價格搭配可口精緻茶點，<br>超高CP值，森森是您最佳的選擇!</p>
         <span class="tea-party-hero-rule" aria-hidden="true"></span>
         <div class="tea-party-hero-actions">
@@ -2056,11 +2132,8 @@ function teaPartyContent() {
         </div>
       </div>
     </section>
-    <section class="catalog-empty-state tea-party-empty-state" aria-labelledby="tea-party-empty-title">
-      <p class="catalog-empty-eyebrow">TEA PARTY BOX</p>
-      <h2 id="tea-party-empty-title">商品頁面準備中</h2>
-      <p>點心餐盒的商品資料正在整理中，敬請期待。</p>
-    </section>
+    ${sectionHtml}
+    <section class="tea-party-note"><span class="tea-party-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section>
     ${inquirySection({ id: "tea-party-inquiry", title: "茶會詢價專區", subject: "茶會詢價" })}
     <section class="tea-party-stores"><div class="tea-party-stores-panel"><a class="tea-party-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a></div></section>
     ${inquiryScript()}
@@ -2129,7 +2202,7 @@ function storefrontProductPathMap() {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260904-2"></script><script src="/assets/drink-menu-modal.js"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260908-menu-sections-1"></script><script src="/assets/drink-menu-modal.js"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -2389,6 +2462,12 @@ function pageContent(page) {
   }
   if (localPath === PRODUCT_INTRO_PATH) {
     return storefrontCatalogContent("overview");
+  }
+  if (localPath === ONLINE_LONG_CAKE_PATH) {
+    return onlineLongCakeContent();
+  }
+  if (localPath === ONLINE_TEA_PARTY_PATH) {
+    return onlineTeaPartyContent();
   }
   if (localPath === EMERALD_LYSK_PATH) {
     return emeraldLyskContent();
@@ -2720,8 +2799,11 @@ function rewriteR2ImagePaths() {
 
 function rewriteEmptyCatalogPages() {
   const pages = [
-    { localPath: LONG_CAKE_PATH, title: "長條蛋糕(冷凍) – 森森點心坊" },
-    { localPath: TEA_PARTY_PATH, title: "點心餐盒 – 森森點心坊" },
+    { localPath: PRODUCT_INTRO_PATH, title: "線上商城 – 森森點心坊", hasBrandedHero: true, showHero: true },
+    { localPath: ONLINE_LONG_CAKE_PATH, title: "長條蛋糕 – 森森點心坊", hasBrandedHero: true, showHero: true },
+    { localPath: ONLINE_TEA_PARTY_PATH, title: "點心餐盒 – 森森點心坊", hasBrandedHero: true, showHero: true },
+    { localPath: LONG_CAKE_PATH, title: "彌月長條蛋糕 – 森森點心坊", hasBrandedHero: false, showHero: false },
+    { localPath: TEA_PARTY_PATH, title: "酒會與茶會點心 – 森森點心坊", hasBrandedHero: false, showHero: false },
   ];
   for (const page of pages) {
     const filePath = htmlFileForLocalPath(page.localPath);
@@ -2734,9 +2816,73 @@ function rewriteEmptyCatalogPages() {
       title: page.title,
       pathLabel: decodeURI(page.localPath),
       content,
-      hasBrandedHero: false,
-      showHero: false,
+      hasBrandedHero: page.hasBrandedHero,
+      showHero: page.showHero,
     }));
+  }
+}
+
+function rewriteStaticSnapshotNavigation() {
+  const htmlFiles = [];
+  const walk = (directory) => {
+    if (!fs.existsSync(directory)) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) walk(filePath);
+      else if (entry.isFile() && path.extname(filePath).toLowerCase() === ".html") htmlFiles.push(filePath);
+    }
+  };
+  walk(OUT_DIR);
+  const onlineLongCakeLink = `<a href="${encodeURI(ONLINE_LONG_CAKE_PATH)}/">長條蛋糕</a>`;
+  const onlineTeaPartyLink = `<a href="${encodeURI(ONLINE_TEA_PARTY_PATH)}/">點心餐盒</a>`;
+  const onlineMenuPattern = /(<div class="menu-item"><a href="[^"]*"[^>]*>線上商城[\s\S]*?<div class="submenu">[\s\S]*?)(<a href="[^"]*">)長條蛋糕(?:\(冷凍\))?(<\/a>)/;
+  const onlineTeaPartyPattern = /(<div class="menu-item"><a href="[^"]*"[^>]*>線上商城[\s\S]*?<div class="submenu">[\s\S]*?)(<a href="[^"]*">)點心餐盒(<\/a>)/;
+  for (const filePath of htmlFiles) {
+    const html = fs.readFileSync(filePath, "utf8");
+    const updated = html
+      .replace(onlineMenuPattern, `$1${onlineLongCakeLink}`)
+      .replace(onlineTeaPartyPattern, `$1${onlineTeaPartyLink}`);
+    if (updated !== html) fs.writeFileSync(filePath, updated);
+  }
+
+  const sitemapJsonFile = path.join(OUT_DIR, "site-map.json");
+  if (fs.existsSync(sitemapJsonFile)) {
+    const entries = readJson(sitemapJsonFile);
+    const topHouseEntry = entries.find((entry) => entry.path === LONG_CAKE_PATH);
+    if (topHouseEntry) topHouseEntry.title = "彌月長條蛋糕 – 森森點心坊";
+    const teaPartyEntry = entries.find((entry) => entry.path === TEA_PARTY_PATH);
+    if (teaPartyEntry) teaPartyEntry.title = "酒會與茶會點心 – 森森點心坊";
+    if (!entries.some((entry) => entry.path === ONLINE_LONG_CAKE_PATH)) {
+      entries.push({
+        title: "長條蛋糕 – 森森點心坊",
+        url: `${SOURCE_ORIGIN}${encodeURI(ONLINE_LONG_CAKE_PATH)}/`,
+        path: ONLINE_LONG_CAKE_PATH,
+      });
+    }
+    if (!entries.some((entry) => entry.path === ONLINE_TEA_PARTY_PATH)) {
+      entries.push({
+        title: "點心餐盒 – 森森點心坊",
+        url: `${SOURCE_ORIGIN}${encodeURI(ONLINE_TEA_PARTY_PATH)}/`,
+        path: ONLINE_TEA_PARTY_PATH,
+      });
+    }
+    fs.writeFileSync(sitemapJsonFile, `${JSON.stringify(entries, null, 2)}\n`);
+  }
+
+  const sitemapHtmlFile = path.join(OUT_DIR, "site-map.html");
+  if (fs.existsSync(sitemapHtmlFile)) {
+    let html = fs.readFileSync(sitemapHtmlFile, "utf8")
+      .replace(/(<a class="directory-card" href="\/頂家彌月\/彌月長條蛋糕">\s*<span>)[^<]+(<\/span>)/, "$1彌月長條蛋糕 – 森森點心坊$2")
+      .replace(/(<a class="directory-card" href="\/茶會點心-tea-party">\s*<span>)[^<]+(<\/span>)/, "$1酒會與茶會點心 – 森森點心坊$2");
+    if (!html.includes(`href="${ONLINE_LONG_CAKE_PATH}"`)) {
+      const card = `<a class="directory-card" href="${ONLINE_LONG_CAKE_PATH}"><span>長條蛋糕 – 森森點心坊</span><small>${ONLINE_LONG_CAKE_PATH}</small></a>`;
+      html = html.replace(/(<section class="directory-group">\s*<h2>產品介紹<\/h2>\s*<div class="directory-grid">[\s\S]*?)(\s*<\/div>\s*<\/section>)/, `$1${card}$2`);
+    }
+    if (!html.includes(`href="${ONLINE_TEA_PARTY_PATH}"`)) {
+      const card = `<a class="directory-card" href="${ONLINE_TEA_PARTY_PATH}"><span>點心餐盒 – 森森點心坊</span><small>${ONLINE_TEA_PARTY_PATH}</small></a>`;
+      html = html.replace(/(<section class="directory-group">\s*<h2>產品介紹<\/h2>\s*<div class="directory-grid">[\s\S]*?)(\s*<\/div>\s*<\/section>)/, `$1${card}$2`);
+    }
+    fs.writeFileSync(sitemapHtmlFile, html);
   }
 }
 
@@ -2748,7 +2894,9 @@ function main() {
   if (!hasImportedContentSources() && fs.existsSync(path.join(OUT_DIR, "index.html"))) {
     pruneRetiredStaticSnapshot();
     fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
+    fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
     rewriteEmptyCatalogPages();
+    rewriteStaticSnapshotNavigation();
     rewriteR2ImagePaths();
     process.stdout.write("No crawler/export sources found; preserving the committed static site snapshot.\n");
     return;

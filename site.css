@@ -5537,7 +5537,7 @@ body:has(.round-pie-page) .menu-item:nth-child(5) > a::after { background: #ae62
   min-height: 242px;
   display: grid;
   place-items: center;
-  background: url("/images/長條.jpg") center top / cover no-repeat;
+  background: url("/images/long-cake-banner.jpg") center top / cover no-repeat;
 }
 .round-pie-hero h1 {
   margin: 0;
