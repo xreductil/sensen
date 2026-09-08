@@ -6,11 +6,11 @@
   "rewrites": [
     {
       "source": "/latest-news/article/:path*/",
-      "destination": "https://sensen.jinfeng8605.workers.dev/latest-news/article/:path*/"
+      "destination": "/latest-news/article/index.html"
     },
     {
       "source": "/latest-news/article/:path*",
-      "destination": "https://sensen.jinfeng8605.workers.dev/latest-news/article/:path*"
+      "destination": "/latest-news/article/index.html"
     },
     {
       "source": "/api/:path*",
