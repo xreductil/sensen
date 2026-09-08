@@ -2923,15 +2923,20 @@ function rewriteStaticSnapshotNavigation() {
     }
   };
   walk(OUT_DIR);
+  const homeFile = path.join(OUT_DIR, "index.html");
+  const homeHtml = fs.existsSync(homeFile) ? fs.readFileSync(homeFile, "utf8") : "";
+  const homeNavigation = homeHtml.match(/<header class="site-header">[\s\S]*?<\/header>/)?.[0] || "";
   const onlineLongCakeLink = `<a href="${encodeURI(ONLINE_LONG_CAKE_PATH)}/">長條蛋糕</a>`;
   const onlineTeaPartyLink = `<a href="${encodeURI(ONLINE_TEA_PARTY_PATH)}/">點心餐盒</a>`;
   const onlineMenuPattern = /(<div class="menu-item"><a href="[^"]*"[^>]*>線上商城[\s\S]*?<div class="submenu">[\s\S]*?)(<a href="[^"]*">)長條蛋糕(?:\(冷凍\))?(<\/a>)/;
   const onlineTeaPartyPattern = /(<div class="menu-item"><a href="[^"]*"[^>]*>線上商城[\s\S]*?<div class="submenu">[\s\S]*?)(<a href="[^"]*">)點心餐盒(<\/a>)/;
   for (const filePath of htmlFiles) {
     const html = fs.readFileSync(filePath, "utf8");
-    const updated = html
-      .replace(onlineMenuPattern, `$1${onlineLongCakeLink}`)
-      .replace(onlineTeaPartyPattern, `$1${onlineTeaPartyLink}`);
+    const updated = homeNavigation
+      ? html.replace(/<header class="site-header">[\s\S]*?<\/header>/, homeNavigation)
+      : html
+        .replace(onlineMenuPattern, `$1${onlineLongCakeLink}`)
+        .replace(onlineTeaPartyPattern, `$1${onlineTeaPartyLink}`);
     if (updated !== html) fs.writeFileSync(filePath, updated);
   }
 
