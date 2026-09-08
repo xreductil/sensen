@@ -1950,6 +1950,13 @@ function productIdForDetailPath(localPath) {
   return match?.[0] || "";
 }
 
+function productDetailTitleForPath(localPath) {
+  const souvenir = SOUVENIR_PRODUCTS.find(([, href]) => href === localPath);
+  if (souvenir) return stripTags(souvenir[0]);
+  const cake = CAKE_PRODUCT_RECORDS.find((product) => product.path === localPath);
+  return cake?.title || "商品";
+}
+
 function productDetailDataAttributes(localPath) {
   return `data-product-id="${escapeAttr(productIdForDetailPath(localPath))}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"`;
 }
@@ -1963,7 +1970,7 @@ function productDetailShell({ localPath, kind = "cake" }) {
     <section class="emerald-product-feature" aria-labelledby="product-detail-title">
       <div class="product-detail-gallery" data-product-gallery><p class="product-detail-loading">商品圖片載入中…</p></div>
       <div class="emerald-product-copy">
-        <h2 id="product-detail-title" data-product-title>商品資料載入中…</h2>
+        <h2 id="product-detail-title" data-product-title>${escapeHtml(productDetailTitleForPath(localPath))}</h2>
         <div class="emerald-product-description" data-product-description><span>產品說明</span><p data-product-description-value>商品資料載入中…</p></div>
         <p class="emerald-product-emphasis" data-product-emphasis hidden></p>
         <hr class="product-detail-spec-divider" hidden>
@@ -3023,7 +3030,8 @@ function syncProductDetailSnapshot() {
     if (isProductPage) {
       const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : "cake";
       updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
-      updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1><p[^>]*>[\s\S]*?<\/p><\/div>/, '$1 data-product-hero-title>商品資料載入中…</h1><p data-product-hero-category>▱ 產品介紹</p></div>');
+      const productTitle = escapeHtml(productDetailTitleForPath(localPath));
+      updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1><p[^>]*>[\s\S]*?<\/p><\/div>/, (_, prefix) => `${prefix} data-product-hero-title>${productTitle}</h1><p data-product-hero-category>▱ 產品介紹</p></div>`);
     }
     if (html.includes("data-storefront-catalog")) {
       updated = updated.replace(/data-product-paths="[^"]*"/, `data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"`);
