@@ -250,10 +250,24 @@
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
       const products = orderProducts((data.products || []).filter(product => product.published !== false));
       if (view === 'overview') {
-        content.innerHTML = menuSections.map(section => renderOverviewSection(
-          section,
-          products.filter(product => section.categories.includes(product.cat))
-        )).join('');
+        const hotProducts = selectFeaturedProducts(products, 'salesCount', hotProductFallback, 5);
+        const newProducts = selectFeaturedProducts(products, 'newArrivalRank', newProductFallback);
+        content.innerHTML = renderFeaturedSection(hotProducts, {
+          eyebrow: 'BEST SELLERS',
+          title: '熱銷排行榜',
+          icon: '/images/icon-cake.png',
+          badge: (_, index) => `TOP ${index + 1}`
+        })
+          + renderFeaturedSection(newProducts, {
+            eyebrow: 'NEW ARRIVALS',
+            title: '新品上市',
+            icon: '/images/icon-wheat.png',
+            badge: 'NEW'
+          })
+          + menuSections.map(section => renderOverviewSection(
+            section,
+            products.filter(product => section.categories.includes(product.cat))
+          )).join('');
       } else if (view === 'cakes') {
         renderCakes(products);
       } else {

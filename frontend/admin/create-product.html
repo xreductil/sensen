@@ -224,9 +224,23 @@
                   <input type="file" class="form-control" id="productImage" accept="image/*" required>
                 </div>
                 <div class="mb-3">
-                  <label for="productDescription" class="form-label">Description</label>
+                  <label for="productDescription" class="form-label">產品說明</label>
                   <textarea class="form-control" id="productDescription" rows="4"
-                    placeholder="Enter product description"></textarea>
+                    placeholder="顯示於前台商品介紹頁"></textarea>
+                </div>
+                <div class="row">
+                  <div class="col-md-6 mb-3">
+                    <label for="productSize" class="form-label">商品尺寸</label>
+                    <textarea class="form-control" id="productSize" rows="2" placeholder="例如：6 吋、8 吋；或 6 入、9 入"></textarea>
+                  </div>
+                  <div class="col-md-6 mb-3">
+                    <label for="productStorage" class="form-label">保存方式</label>
+                    <textarea class="form-control" id="productStorage" rows="2" placeholder="例如：冷藏保存，請於三日內食用完畢"></textarea>
+                  </div>
+                </div>
+                <div class="mb-3">
+                  <label for="productOther" class="form-label">其他</label>
+                  <textarea class="form-control" id="productOther" rows="3" placeholder="其他商品注意事項"></textarea>
                 </div>
                 <div class="d-flex gap-2">
                   <button type="submit" class="btn btn-primary">Add Product</button>
@@ -279,6 +293,7 @@
       })();
     </script>
     <script src="./create-product-redirect.js"></script>
+    <script src="./create-product-fields.js"></script>
 </body>
 
 </html>

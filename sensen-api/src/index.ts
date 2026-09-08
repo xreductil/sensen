@@ -25,6 +25,9 @@ type StoreProduct = {
   day: string;
   img: string;
   desc: string;
+  size: string;
+  storage: string;
+  other: string;
   published: boolean;
 };
 
@@ -394,7 +397,7 @@ const adminProductFromRow = (row: ProductRow) => {
   return {
     ...product,
     sku: String(metadata.sku || product.id),
-    spec: String(metadata.spec || ""),
+    spec: String(metadata.spec || product.size || ""),
     day: String(metadata.day || 5),
     img: String(metadata.img || product.img),
   };
@@ -442,6 +445,7 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   }
   const priceValue = Number(row.price || 0);
   const imageKey = String(row.image_key || "").replace(/^images\//, "");
+  const description = row.description || String(metadata.desc || metadata.description || "");
   return {
     id: row.slug,
     title: row.title,
@@ -451,7 +455,10 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     quantity: Math.max(0, Number(row.stock || 0)),
     day: String(metadata.day || 5),
     img: imageKey ? `/images/${imageKey}` : "",
-    desc: row.description || String(metadata.desc || ""),
+    desc: description,
+    size: String(metadata.size || metadata.productSize || metadata.spec || ""),
+    storage: String(metadata.storage || metadata.storageMethod || ""),
+    other: String(metadata.other || metadata.otherNotes || ""),
     published: row.is_active === 1,
   };
 };
@@ -747,6 +754,10 @@ export default {
           const price = Math.max(0, Math.round(Number(body.priceValue ?? body.price ?? existing?.price ?? 0)));
           const stock = Math.max(0, Math.round(Number(body.quantity ?? existing?.stock ?? 0)));
           const published = body.published !== undefined ? body.published !== false : existing?.is_active === 1;
+          const description = String(body.desc ?? existing?.description ?? existingMetadata.desc ?? existingMetadata.description ?? "").trim();
+          const size = String(body.size ?? body.spec ?? existingMetadata.size ?? existingMetadata.productSize ?? existingMetadata.spec ?? "").trim();
+          const storage = String(body.storage ?? body.storageMethod ?? existingMetadata.storage ?? existingMetadata.storageMethod ?? "").trim();
+          const other = String(body.other ?? body.otherNotes ?? existingMetadata.other ?? existingMetadata.otherNotes ?? "").trim();
           if (!title) return json(request, { error: "商品名稱不可為空白。" }, 400);
           if (!Number.isFinite(price) || !Number.isFinite(stock)) return json(request, { error: "售價或庫存格式錯誤。" }, 400);
 
@@ -760,10 +771,15 @@ export default {
             .replace(/^\/?assets\/images\//, "")
             .replace(/^\/?images\//, "");
           const metadata = JSON.stringify({
+            ...existingMetadata,
             sku: String(body.sku ?? existingMetadata.sku ?? "").trim(),
-            spec: String(body.spec ?? existingMetadata.spec ?? "").trim(),
+            spec: size,
+            size,
+            storage,
+            other,
             day: String(body.day ?? existingMetadata.day ?? "5").trim(),
             img: imageValue,
+            ...(body.variants !== undefined ? { variants: body.variants } : {}),
           });
 
           if (request.method === "POST") {
@@ -773,7 +789,7 @@ export default {
             const result = await env.DB.prepare(`
               INSERT INTO products (category_id, name, slug, description, price, stock, image_key, is_active, metadata_json)
               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
-            `).bind(category.id, title, slug, String(body.desc || "").trim(), price, stock, imageKey, published ? 1 : 0, metadata).run();
+            `).bind(category.id, title, slug, description, price, stock, imageKey, published ? 1 : 0, metadata).run();
             const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(Number(result.meta.last_row_id)).first<ProductRow>();
             return json(request, { product: row ? adminProductFromRow(row) : null }, 201);
           }
@@ -782,7 +798,7 @@ export default {
             UPDATE products SET category_id = ?1, name = ?2, description = ?3, price = ?4,
               stock = ?5, image_key = ?6, is_active = ?7, metadata_json = ?8, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?9
-          `).bind(category.id, title, String(body.desc ?? existing?.description ?? "").trim(), price, stock, imageKey, published ? 1 : 0, metadata, existing?.db_id).run();
+          `).bind(category.id, title, description, price, stock, imageKey, published ? 1 : 0, metadata, existing?.db_id).run();
           const updated = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(existing?.db_id).first<ProductRow>();
           return json(request, { product: updated ? adminProductFromRow(updated) : null });
         }

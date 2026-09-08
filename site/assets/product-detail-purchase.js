@@ -13,8 +13,27 @@
   const money = value => `NT$${Number(value || 0).toLocaleString('zh-TW')}`;
   const pageTitle = normalize(titleElement.textContent);
   const pagePath = decodeURI(window.location.pathname).replace(/\/$/, '');
+  const setText = (element, value) => {
+    if (!element || !String(value || '').trim()) return;
+    element.textContent = String(value).replace(/<br\s*\/?\s*>/gi, '\n');
+    element.style.whiteSpace = 'pre-line';
+  };
+  const syncProductDetails = product => {
+    setText(copy.querySelector('.emerald-product-description p'), product.desc);
+    const specs = copy.querySelector('.emerald-product-specs, .bean-tart-specs');
+    if (!specs) return;
+    const updateSpec = (labels, value) => {
+      if (!String(value || '').trim()) return;
+      const item = [...specs.children].find(entry => labels.includes(entry.querySelector('dt')?.textContent.trim()));
+      setText(item?.querySelector('dd'), value);
+    };
+    updateSpec(['商品尺寸', '蛋糕吋數', '規格'], product.size);
+    updateSpec(['保存方式'], product.storage);
+    updateSpec(['其他'], product.other);
+  };
 
   const render = product => {
+    syncProductDetails(product);
     const inStock = product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
     if (Number(product.priceValue || 0) <= 0) {
       const badge = copy.querySelector('.emerald-product-badge, .bean-tart-badge');

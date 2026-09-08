@@ -47,6 +47,9 @@
     form.elements.sku.value = product?.sku || '';
     form.elements.cat.value = product?.cat || '';
     form.elements.spec.value = product?.spec || '';
+    form.elements.size.value = product?.size || product?.spec || '';
+    form.elements.storage.value = product?.storage || '';
+    form.elements.other.value = product?.other || '';
     form.elements.priceValue.value = product?.priceValue ?? '';
     const variants = product?.variants || {};
     form.elements.drinkTemperatures.value = (variants.temperatures || []).join(', ');

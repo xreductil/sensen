@@ -18,6 +18,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260909-fields-1";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
   ["https://www.sensen.com.tw/latest-news/歐包系列/", "latest-detail-2.md"],
@@ -1246,7 +1247,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   const robotsMeta = privatePage ? '<meta name="robots" content="noindex, nofollow">' : '<meta name="robots" content="index, follow">';
   const isBirthdayCakePage = pathLabel === BIRTHDAY_CAKE_PATH || (title.includes("生日蛋糕") && title.includes("DM"));
   const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
-    ? '<script src="/assets/product-detail-purchase.js?v=20260904-4"></script>'
+    ? `<script src="${PRODUCT_DETAIL_SCRIPT_URL}"></script>`
     : '';
   const nav = NAV_ITEMS.map(([label, href]) => {
     const children = NAV_CHILDREN.get(label) || [];
@@ -2346,7 +2347,7 @@ function emeraldLyskContent() {
         <div class="emerald-product-description"><span>產品說明</span><p>香草蛋糕│法國萊思克乳霜、雙層當季新鮮綠葡萄</p></div>
         <p class="emerald-product-emphasis">※歐盟AOP認證，純粹乳香及果香交織成法式的質感享受</p>
         <dl class="emerald-product-specs">
-          <div><dt>蛋糕吋數</dt><dd>6吋、8吋</dd></div>
+          <div><dt>商品尺寸</dt><dd>6吋、8吋</dd></div>
           <div><dt>保存方式</dt><dd>需冷藏。離開冷藏，請於1小時內食用完畢</dd></div>
           <div><dt>其他</dt><dd>無添加防腐劑等食品添加物，天然食品效期較短，請於賞味期限內儘早食用完畢。</dd></div>
         </dl>
@@ -2407,7 +2408,7 @@ function birthdayCakeProductContent(page) {
         <div class="emerald-product-description"><span>產品說明</span><p>${description || "生日蛋糕"}</p></div>
         ${emphasis ? `<p class="emerald-product-emphasis">${escapeHtml(cleanText(emphasis))}</p>` : ""}
         <dl class="emerald-product-specs">
-          <div><dt>蛋糕吋數</dt><dd>${size || "—"}</dd></div>
+          <div><dt>商品尺寸</dt><dd>${size || "—"}</dd></div>
           <div><dt>保存方式</dt><dd>${storage || "需冷藏。離開冷藏，請於1小時內食用完畢"}</dd></div>
           <div><dt>其他</dt><dd>${other || "無添加防腐劑等食品添加物，天然食品效期較短，請於賞味期限內儘早食用完畢。"}</dd></div>
         </dl>
@@ -2886,6 +2887,44 @@ function rewriteStaticSnapshotNavigation() {
   }
 }
 
+function syncAdminFrontendSnapshot() {
+  const adminFrontendDir = path.join(ROOT, "frontend", "admin");
+  if (!fs.existsSync(adminFrontendDir)) return;
+  const adminOutputDir = path.join(OUT_DIR, "admin");
+  fs.cpSync(adminFrontendDir, adminOutputDir, { recursive: true, force: true });
+  for (const file of fs.readdirSync(adminOutputDir)) {
+    if (!file.endsWith(".html")) continue;
+    const adminFile = path.join(adminOutputDir, file);
+    const html = fs.readFileSync(adminFile, "utf8");
+    const adminTitle = (html.match(/<title>(.*?)<\/title>/i) || [])[1] || "森森點心坊後台";
+    const adminPath = file === "index.html" ? "/admin/" : `/admin/${file}`;
+    const seoHead = `<meta name="description" content="${escapeAttr(adminTitle)}，僅供授權人員使用。">\n  <link rel="canonical" href="${SOURCE_ORIGIN}${adminPath}">\n  <meta name="robots" content="noindex, nofollow">`;
+    const withoutGeneratedHead = html.replace(/\n  <meta name="description" content="[^"]*，僅供授權人員使用。">\n  <link rel="canonical" href="[^"]*">\n  <meta name="robots" content="noindex, nofollow">/g, "");
+    fs.writeFileSync(adminFile, withoutGeneratedHead.replace(/(<meta name="viewport"[^>]*>)/i, `$1\n  ${seoHead}`));
+  }
+}
+
+function syncProductDetailSnapshot() {
+  fs.copyFileSync(path.join(__dirname, "product-detail-purchase.js"), path.join(OUT_DIR, "assets", "product-detail-purchase.js"));
+  const htmlFiles = [];
+  const walk = directory => {
+    if (!fs.existsSync(directory)) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) walk(filePath);
+      else if (entry.isFile() && path.extname(filePath).toLowerCase() === ".html") htmlFiles.push(filePath);
+    }
+  };
+  walk(OUT_DIR);
+  for (const filePath of htmlFiles) {
+    const html = fs.readFileSync(filePath, "utf8");
+    const updated = html
+      .replace(/\/assets\/product-detail-purchase\.js(?:\?[^"']*)?/g, PRODUCT_DETAIL_SCRIPT_URL)
+      .replace(/<dt>蛋糕吋數<\/dt>/g, "<dt>商品尺寸</dt>");
+    if (updated !== html) fs.writeFileSync(filePath, updated);
+  }
+}
+
 function main() {
   // The crawler/API exports are intentionally not part of the deployable repo.
   // Keep the committed static snapshot when those optional source files are absent;
@@ -2895,6 +2934,8 @@ function main() {
     pruneRetiredStaticSnapshot();
     fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
     fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
+    syncProductDetailSnapshot();
+    syncAdminFrontendSnapshot();
     rewriteEmptyCatalogPages();
     rewriteStaticSnapshotNavigation();
     rewriteR2ImagePaths();
@@ -2954,7 +2995,7 @@ function main() {
   fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
   fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
-  fs.copyFileSync(path.join(__dirname, "product-detail-purchase.js"), path.join(OUT_DIR, "assets", "product-detail-purchase.js"));
+  syncProductDetailSnapshot();
   fs.copyFileSync(path.join(__dirname, "drink-menu-modal.js"), path.join(OUT_DIR, "assets", "drink-menu-modal.js"));
   fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));
   fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
@@ -2966,19 +3007,7 @@ function main() {
   if (fs.existsSync(IMAGE_DATA_DIR)) {
     fs.cpSync(IMAGE_DATA_DIR, path.join(OUT_DIR, "assets", "images"), { recursive: true });
   }
-  const adminFrontendDir = path.join(ROOT, "frontend", "admin");
-  if (fs.existsSync(adminFrontendDir)) {
-    fs.cpSync(adminFrontendDir, path.join(OUT_DIR, "admin"), { recursive: true });
-    for (const file of fs.readdirSync(path.join(OUT_DIR, "admin"))) {
-      if (!file.endsWith(".html")) continue;
-      const adminFile = path.join(OUT_DIR, "admin", file);
-      const html = fs.readFileSync(adminFile, "utf8");
-      const adminTitle = (html.match(/<title>(.*?)<\/title>/i) || [])[1] || "森森點心坊後台";
-      const adminPath = file === "index.html" ? "/admin/" : `/admin/${file}`;
-      const seoHead = `<meta name="description" content="${escapeAttr(adminTitle)}，僅供授權人員使用。">\n  <link rel="canonical" href="${SOURCE_ORIGIN}${adminPath}">\n  <meta name="robots" content="noindex, nofollow">`;
-      fs.writeFileSync(adminFile, html.replace(/(<meta name="viewport"[^>]*>)/i, `$1\n  ${seoHead}`));
-    }
-  }
+  syncAdminFrontendSnapshot();
 
   const home = pages.find((page) => localPathFromUrl(page.url) === "/") || pages[0];
   for (const page of pages) {
