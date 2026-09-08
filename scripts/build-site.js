@@ -460,14 +460,15 @@ const EMERALD_LYSK_PATH = "/product-item/綠寶石萊思克季節限定-1870";
 const BEAN_TART_PATH = "/product-item/豆塔禮盒";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
+const CATERING_MENU_URL = "https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566";
 const STORE_INFO_HERO_SOURCE = "/assets/images/headtitle-bg6.jpg";
 const BIRTHDAY_CAKE_PAGE_TITLE = "蛋糕 (下方有DM供下載)";
 
 const SEASONAL_CATALOGS = new Map([
   [FROZEN_BREAD_PATH, {
-    title: "冷凍麵包",
-    eyebrow: "FROZEN BREAD",
-    intro: "嚴選麵包品項，方便冷凍保存，隨時享用森森的手作風味。",
+    title: "歐式麵包(冷凍)",
+    eyebrow: "EUROPEAN BREAD (FROZEN)",
+    intro: "嚴選歐式麵包品項，方便冷凍保存，隨時享用森森的手作風味。",
     products: [
       ["職人手感麵包", "bread.jpg", "手作麵包"],
       ["奶露芒果麵包", "truffle-mango-bread.jpg", "季節風味"],
@@ -648,12 +649,13 @@ const NAV_CHILDREN = new Map([
   ["線上商城", [
     ["生日蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
     ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/"],
-    ["冷凍麵包", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e5%86%b7%e5%87%8d%e9%ba%b5%e5%8c%85/"],
-    ["飲品 MENU", "/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/"],
+    ["長條蛋糕(冷凍)", `${encodeURI(LONG_CAKE_PATH)}/`],
+    ["點心餐盒", `${encodeURI(TEA_PARTY_PATH)}/`],
+    ["歐式麵包(冷凍)", `${encodeURI(FROZEN_BREAD_PATH)}/`],
   ]],
   ["酒會/茶會", [
     ["精緻外燴", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
-    ["茶會點心", "/%e8%8c%b6%e6%9c%83%e9%bb%9e%e5%bf%83-tea-party/"],
+    ["茶會菜單下載", CATERING_MENU_URL],
   ]],
   ["頂家彌月", [
     ["彌月試吃申請", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/"],
@@ -668,7 +670,7 @@ const NAV_CHILDREN = new Map([
 ]);
 
 const STORE_MODULE_PAGES = [
-  { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "冷凍麵包" },
+  { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "歐式麵包(冷凍)" },
   { url: "https://www.sensen.com.tw/customer/admin/", title: "會員登入" },
   { url: "https://www.sensen.com.tw/customer/admin/backup/", title: "會員後台" },
   { url: "https://www.sensen.com.tw/cart/", title: "購物車" },
@@ -1222,7 +1224,10 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   const nav = NAV_ITEMS.map(([label, href]) => {
     const children = NAV_CHILDREN.get(label) || [];
     const childMenu = children.length
-      ? `<div class="submenu">${children.map(([childLabel, childHref]) => `<a href="${childHref}">${childLabel}</a>`).join("")}</div>`
+      ? `<div class="submenu">${children.map(([childLabel, childHref]) => {
+        const external = /^https?:\/\//i.test(childHref);
+        return `<a href="${escapeAttr(childHref)}"${external ? ' target="_blank" rel="noreferrer"' : ""}>${escapeHtml(childLabel)}</a>`;
+      }).join("")}</div>`
       : "";
     return `<div class="menu-item"><a href="${href}">${label}${children.length ? " <span class=\"menu-arrow\">⌄</span>" : ""}</a>${childMenu}</div>`;
   }).join("");
@@ -1758,7 +1763,7 @@ function cateringContent() {
       <h1>嚴選食材。精心烹調。味覺饗宴</h1>
       <p class="catering-intro-copy">節慶與親友同事公司聚餐、商務會議與媒體公關活動<br>用心帶給您新鮮與美味的餐點，實惠的價格，美味可口的精緻菜色，森森是你最佳的選擇</p>
       <div class="catering-hero-actions">
-        <a class="catering-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="catering-menu-book" aria-hidden="true"></span><span>外燴菜單下載</span></a>
+        <a class="catering-menu-download" href="${CATERING_MENU_URL}" target="_blank" rel="noreferrer"><span class="catering-menu-book" aria-hidden="true"></span><span>外燴菜單下載</span></a>
         <a class="catering-inquiry-link" href="#catering-inquiry">外燴詢價</a>
       </div>
     </section>
@@ -2075,7 +2080,7 @@ function teaPartyContent() {
         <p>不管是公司會議或是學校舉辦活動，實惠價格搭配可口精緻茶點，<br>超高CP值，森森是您最佳的選擇!</p>
         <span class="tea-party-hero-rule" aria-hidden="true"></span>
         <div class="tea-party-hero-actions">
-          <a class="tea-party-menu-download" href="https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566" target="_blank" rel="noreferrer"><span class="tea-party-menu-book" aria-hidden="true"></span><span>茶會菜單下載</span></a>
+          <a class="tea-party-menu-download" href="${CATERING_MENU_URL}" target="_blank" rel="noreferrer"><span class="tea-party-menu-book" aria-hidden="true"></span><span>茶會菜單下載</span></a>
           <a class="catering-inquiry-link" href="#tea-party-inquiry">茶會詢價</a>
         </div>
       </div>
