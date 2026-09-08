@@ -18,7 +18,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260909-fields-2";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260909-template-1";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
   ["https://www.sensen.com.tw/latest-news/歐包系列/", "latest-detail-2.md"],
@@ -1956,34 +1956,29 @@ function productDetailDataAttributes(localPath) {
 
 function productDetailShell({ localPath, kind = "cake" }) {
   const souvenir = kind === "souvenir";
-  const pageClass = souvenir ? "bean-tart-product-page souvenir-product-page" : kind === "emerald" ? "" : "cake-product-page";
-  const titleId = souvenir ? "souvenir-product-title" : kind === "emerald" ? "emerald-product-title" : "cake-product-title";
-  const specsClass = souvenir ? "bean-tart-specs" : "emerald-product-specs";
-  const copyClass = souvenir ? "emerald-product-copy bean-tart-copy" : "emerald-product-copy";
-  const gallery = souvenir
-    ? `<div class="bean-tart-gallery" data-product-gallery><p class="product-detail-loading">商品圖片載入中…</p></div>`
-    : `<figure class="emerald-product-image"><img data-product-main-image alt="" hidden></figure>`;
-  const descriptionClass = souvenir ? "bean-tart-intro" : "emerald-product-description";
-  const sizeLabel = souvenir ? "規格" : "商品尺寸";
+  const pageClass = souvenir
+    ? "product-detail-template bean-tart-product-page souvenir-product-page"
+    : "product-detail-template cake-product-page";
   return `<section class="emerald-product-page ${pageClass}" ${productDetailDataAttributes(localPath)}>
-    <section class="emerald-product-feature${souvenir ? " bean-tart-feature" : ""}" aria-labelledby="${titleId}">
-      ${gallery}
-      <div class="${copyClass}">
-        <h2 id="${titleId}" data-product-title>商品資料載入中…</h2>
-        <div class="${descriptionClass}" data-product-description><span>產品說明</span><p data-product-description-value>商品資料載入中…</p></div>
-        ${souvenir ? "" : '<p class="emerald-product-emphasis" data-product-emphasis hidden></p>'}
-        <hr${souvenir ? "" : ' class="product-detail-spec-divider" hidden'}>
-        <dl class="${specsClass}" data-product-specs>
-          <div><dt>${sizeLabel}</dt><dd data-product-size>—</dd></div>
+    <section class="emerald-product-feature" aria-labelledby="product-detail-title">
+      <div class="product-detail-gallery" data-product-gallery><p class="product-detail-loading">商品圖片載入中…</p></div>
+      <div class="emerald-product-copy">
+        <h2 id="product-detail-title" data-product-title>商品資料載入中…</h2>
+        <div class="emerald-product-description" data-product-description><span>產品說明</span><p data-product-description-value>商品資料載入中…</p></div>
+        <p class="emerald-product-emphasis" data-product-emphasis hidden></p>
+        <hr class="product-detail-spec-divider" hidden>
+        <dl class="emerald-product-specs" data-product-specs>
+          <div><dt>商品尺寸</dt><dd data-product-size>—</dd></div>
           <div><dt>保存方式</dt><dd data-product-storage>—</dd></div>
           <div><dt>其他</dt><dd data-product-other>—</dd></div>
         </dl>
-        ${souvenir ? "" : '<p class="emerald-product-note" data-product-note hidden></p>'}
-        <div class="${souvenir ? "bean-tart-badge" : "emerald-product-badge"}" data-product-dietary hidden><img data-product-dietary-image alt=""></div>
+        <p class="emerald-product-note" data-product-note hidden></p>
+        <div class="emerald-product-badge" data-product-dietary hidden><img data-product-dietary-image alt=""></div>
+        <div data-product-purchase-slot></div>
       </div>
     </section>
     <div class="emerald-share" data-product-share><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="0 個喜歡">♡ <span data-product-likes>0</span></div></div>
-    <section class="emerald-related${souvenir ? " souvenir-related" : ""}" data-product-related aria-labelledby="${souvenir ? "souvenir-related-title" : "cake-related-title"}"><h2 id="${souvenir ? "souvenir-related-title" : "cake-related-title"}">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track><p class="product-detail-loading">相關商品載入中…</p></div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
+    <section class="emerald-related" data-product-related aria-labelledby="product-related-title"><h2 id="product-related-title">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track><p class="product-detail-loading">相關商品載入中…</p></div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
   </section>`;
 }
 

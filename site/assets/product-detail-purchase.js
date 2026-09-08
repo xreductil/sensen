@@ -152,23 +152,29 @@
 
   const renderPurchase = product => {
     productPage.querySelectorAll('.product-detail-purchase, .product-detail-pending-price').forEach(element => element.remove());
+    const purchaseSlot = copy.querySelector('[data-product-purchase-slot]');
+    const insertPurchase = element => {
+      if (purchaseSlot) {
+        purchaseSlot.appendChild(element);
+        return;
+      }
+      const badge = copy.querySelector('[data-product-dietary]');
+      if (badge && !badge.hidden) badge.insertAdjacentElement('afterend', element);
+      else titleElement.insertAdjacentElement('afterend', element);
+    };
     const inStock = product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
     if (Number(product.priceValue || 0) <= 0) {
       const pending = document.createElement('p');
       pending.className = 'product-detail-pending-price';
       pending.textContent = '價格待設定';
-      const badge = copy.querySelector('[data-product-dietary]');
-      if (badge && !badge.hidden) badge.insertAdjacentElement('afterend', pending);
-      else titleElement.insertAdjacentElement('afterend', pending);
+      insertPurchase(pending);
       return;
     }
     const section = document.createElement('section');
     section.className = 'product-detail-purchase';
     section.setAttribute('aria-label', '商品購買');
     section.innerHTML = `<p class="product-detail-price">${money(product.priceValue)}</p><div class="cake-product-purchase" data-cake-purchase><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock ? '' : ' disabled'}>${inStock ? '加入購物車' : '暫停供應'}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
-    const badge = copy.querySelector('[data-product-dietary]');
-    if (badge && !badge.hidden) badge.insertAdjacentElement('afterend', section);
-    else titleElement.insertAdjacentElement('afterend', section);
+    insertPurchase(section);
 
     section.querySelectorAll('[data-cake-quantity-change]').forEach(button => button.addEventListener('click', () => {
       const output = section.querySelector('[data-cake-quantity]');

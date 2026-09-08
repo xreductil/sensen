@@ -6425,6 +6425,43 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .bean-tart-badge img { display: block; width: 58px; height: 58px; object-fit: contain; }
 .souvenir-related .emerald-related-card img { height: 235px; object-fit: cover; }
 
+/* Shared product detail template: every online-store product uses the same data order. */
+.product-detail-template .emerald-product-feature {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  align-items: start;
+}
+.product-detail-template .product-detail-gallery {
+  display: grid;
+  min-height: 540px;
+  align-content: start;
+  gap: 36px;
+}
+.product-detail-template .product-detail-gallery img {
+  display: block;
+  width: min(100%, 450px);
+  height: auto;
+  margin: 0 auto;
+  object-fit: contain;
+}
+.product-detail-template .emerald-product-copy {
+  padding-top: 78px;
+}
+.product-detail-template .emerald-product-description p {
+  white-space: pre-line;
+}
+.product-detail-template .emerald-product-specs > div {
+  margin: 12px 0;
+}
+.product-detail-template .emerald-product-note {
+  margin-left: 118px;
+}
+.product-detail-template .emerald-product-badge {
+  margin-left: 118px;
+}
+.product-detail-template [data-product-purchase-slot] {
+  min-height: 0;
+}
+
 @media (max-width: 760px) {
   .product-detail-hero .hero-banner,
   .product-detail-hero .hero-banner > .image-slot,
@@ -6456,4 +6493,10 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .bean-tart-copy hr { margin: 30px 0 24px; }
   .bean-tart-specs > div { grid-template-columns: 100px minmax(0, 1fr); gap: 8px; margin: 16px 0; }
   .souvenir-related .emerald-related-card img { height: auto; aspect-ratio: 1; object-fit: cover; }
+  .product-detail-template .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
+  .product-detail-template .product-detail-gallery { min-height: 0; gap: 36px; }
+  .product-detail-template .product-detail-gallery img { width: min(100%, 300px); }
+  .product-detail-template .emerald-product-copy { padding-top: 0; }
+  .product-detail-template .emerald-product-note,
+  .product-detail-template .emerald-product-badge { margin-left: 0; }
 }
