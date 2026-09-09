@@ -16,12 +16,14 @@
   const fields = {
     name: root.querySelector('[data-checkout-name]'), email: root.querySelector('[data-checkout-email]'), phone: root.querySelector('[data-checkout-phone]'),
     shipping: root.querySelector('[data-checkout-shipping]'), delivery: root.querySelector('[data-checkout-delivery-fields]'), address: root.querySelector('[data-checkout-address]'), city: root.querySelector('[data-checkout-city]'), zip: root.querySelector('[data-checkout-zip]'),
-    pickup: root.querySelector('[data-checkout-pickup]'), pickupLabel: root.querySelector('[data-checkout-pickup-label]'), note: root.querySelector('[data-checkout-note]'), coupon: root.querySelector('[data-checkout-coupon]')
+    pickupFields: root.querySelector('[data-checkout-pickup-fields]'), pickupStore: root.querySelector('[data-checkout-pickup-store]'), pickupTime: root.querySelector('[data-checkout-pickup-time]'), pickup: root.querySelector('[data-checkout-pickup]'), pickupLabel: root.querySelector('[data-checkout-pickup-label]'), note: root.querySelector('[data-checkout-note]'), coupon: root.querySelector('[data-checkout-coupon]')
   };
   const save = () => {
     localStorage.setItem('sensen-cart-shipping', fields.shipping.value);
     localStorage.setItem('sensen-cart-coupon', fields.coupon.value.trim().toUpperCase());
     localStorage.setItem('sensen-cart-pickup', fields.pickup.value);
+    localStorage.setItem('sensen-cart-pickup-store', fields.pickupStore.value);
+    localStorage.setItem('sensen-cart-pickup-time', fields.pickupTime.value);
   };
   const renderItems = items => {
     root.querySelector('[data-checkout-items]').innerHTML = items.length ? items.map(item => '<div class="checkout-item"><span>' + escapeHtml(item.title || '商品') + ' × ' + Number(item.qty || 0) + '</span><span>' + money(Number(item.priceValue || 0) * Number(item.qty || 0)) + '</span></div>').join('') : '<p>目前購物車是空的。</p>';
@@ -40,6 +42,11 @@
     fields.address.disabled = isPickup;
     fields.address.placeholder = isPickup ? '宅配時填寫地址' : '請輸入地址';
     fields.address.setAttribute('aria-disabled', String(isPickup));
+    fields.pickupFields.hidden = !isPickup;
+    fields.pickupStore.disabled = !isPickup;
+    fields.pickupTime.disabled = !isPickup;
+    fields.pickupStore.required = isPickup;
+    fields.pickupTime.required = isPickup;
     save();
   };
   const fillProfile = async () => {
@@ -66,10 +73,12 @@
     setMessage('[data-checkout-submit-message]', ''); setMessage('[data-checkout-submit-message-secondary]', '');
     if (!fields.name.value.trim() || !fields.email.value.trim() || !fields.phone.value.trim()) { setMessage('[data-checkout-submit-message]', '請先填寫姓名、電子信箱與聯絡電話。', true); return; }
     if (!fields.pickup.value) { setMessage('[data-checkout-submit-message]', '請選擇取貨／配送日期。', true); return; }
+    if (fields.shipping.value === 'pickup' && (!fields.pickupStore.value || !fields.pickupTime.value)) { setMessage('[data-checkout-submit-message]', '請選擇取貨門市與取貨時間。', true); return; }
     if (fields.shipping.value !== 'pickup' && (!fields.address.value.trim() || !fields.phone.value.trim())) { setMessage('[data-checkout-submit-message]', '宅配訂單請先填寫收件地址與電話。', true); return; }
     root.querySelectorAll('[data-checkout-submit]').forEach(item => { item.disabled = true; item.textContent = '送出中…'; });
     try {
-      const data = await api('/api/checkout', { method: 'POST', body: JSON.stringify({ name: fields.name.value.trim(), email: fields.email.value.trim(), phone: fields.phone.value.trim(), fulfillmentDate: fields.pickup.value, couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value, shippingAddress: { fullName: fields.name.value.trim(), phone: fields.phone.value.trim(), address: fields.address?.value.trim() || '', city: fields.city?.value.trim() || '', zip: fields.zip?.value.trim() || '' }, customerNote: fields.note.value.trim() }) });
+      const customerNote = [fields.shipping.value === 'pickup' ? '取貨門市：' + fields.pickupStore.value : '', fields.shipping.value === 'pickup' ? '取貨時間：' + fields.pickupTime.value : '', fields.note.value.trim()].filter(Boolean).join('\n');
+      const data = await api('/api/checkout', { method: 'POST', body: JSON.stringify({ name: fields.name.value.trim(), email: fields.email.value.trim(), phone: fields.phone.value.trim(), fulfillmentDate: fields.pickup.value, couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value, shippingAddress: { fullName: fields.name.value.trim(), phone: fields.phone.value.trim(), address: fields.address?.value.trim() || '', city: fields.city?.value.trim() || '', zip: fields.zip?.value.trim() || '' }, customerNote }) });
       localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping');
       const emailText = data.email?.status === 'sent' ? '訂單確認信已寄至 ' + escapeHtml(data.email.recipient) + '。' : data.email?.status === 'pending' ? '訂單已建立；確認信寄送服務尚未設定。' : '';
       const card = root.querySelector('.checkout-order-card');
@@ -88,6 +97,8 @@
     const method = saved('sensen-cart-shipping');
     fields.shipping.value = ['pickup', 'home', 'frozen'].includes(method) ? method : 'pickup';
     fields.coupon.value = saved('sensen-cart-coupon');
+    fields.pickupStore.value = ['文龍店', '新富店', '澄和店', '博愛店'].includes(saved('sensen-cart-pickup-store')) ? saved('sensen-cart-pickup-store') : '';
+    fields.pickupTime.value = saved('sensen-cart-pickup-time');
     const minDate = new Date(); minDate.setHours(0, 0, 0, 0); minDate.setDate(minDate.getDate() + Number(cart.leadDays || 5));
     fields.pickup.min = toIsoDate(minDate);
     const savedDate = saved('sensen-cart-pickup');

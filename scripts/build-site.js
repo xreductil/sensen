@@ -677,6 +677,7 @@ const NAV_CHILDREN = new Map([
   ]],
   ["酒會/茶會", [
     ["精緻外燴", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
+    ["茶會點心", `${encodeURI(TEA_PARTY_PATH)}/`],
     ["茶會菜單下載", CATERING_MENU_URL],
   ]],
   ["頂家彌月", [
@@ -1026,6 +1027,7 @@ function pageTitleFor(page, localPath) {
   if (localPath === "/404-error") return "找不到頁面 – 森森點心坊";
   if (localPath === PRODUCT_INTRO_PATH) return "線上商城 – 森森點心坊";
   if (localPath === BIRTHDAY_CAKE_PATH) return BIRTHDAY_CAKE_PAGE_TITLE;
+  if (localPath === "/頂家彌月") return "頂家彌月專區 – 森森點心坊";
   if (localPath === LONG_CAKE_PATH) return "彌月長條蛋糕 – 森森點心坊";
   if (localPath === ONLINE_LONG_CAKE_PATH) return "長條蛋糕 – 森森點心坊";
   if (localPath === ONLINE_TEA_PARTY_PATH) return "點心餐盒 – 森森點心坊";
@@ -1707,6 +1709,10 @@ function inquirySection({ id, title, subject }) {
         <span>Email <b>*</b></span>
         <input name="email" type="email" placeholder="you@email.com" autocomplete="email" required>
       </label>
+      <label class="catering-inquiry-field catering-inquiry-field-wide">
+        <span>地址 <b>*</b></span>
+        <input name="address" type="text" placeholder="請輸入活動地址" autocomplete="street-address" required>
+      </label>
       <label class="catering-inquiry-field">
         <span>預計人數 <b>*</b></span>
         <select name="guests" required>
@@ -1771,6 +1777,7 @@ function inquiryScript() {
             "預計人數：" + value("guests"),
             "活動日期：" + value("date"),
             "活動時間：" + value("time"),
+            "活動地址：" + value("address"),
             "特殊需求：" + (value("specialRequests") || "無")
           ].join("\\n")
         };
@@ -1852,8 +1859,10 @@ const BIG_BEAR_STYLES = [["cheese.jpg", "波士頓派禮盒"], ["single-piece.jp
 function bigBearContent() {
   const card = ([image, label, description]) => "<article class=\"big-bear-card" + (label === "C4" ? " big-bear-card-c4" : "") + "\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
   const cards = BIG_BEAR_GIFTS.map(card);
+  const bigBearCards = [cards[0], cards[1], cards[2], cards[7]];
+  const littleBearCards = cards.slice(3, 7);
   const styleCards = BIG_BEAR_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
-  return "<section class=\"big-bear-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>大熊/小熊禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section\"><h2>大熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-three\">" + cards.slice(0, 3).join("") + "</div></section><section class=\"big-bear-section big-bear-little-section\"><h2>小熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-four\">" + cards.slice(3).join("") + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"boston-dm\" id=\"big-bear-dm\"><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-title\"><strong>彌月禮盒DM下載</strong><span>⟶</span></a><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-icon\" aria-label=\"查看彌月禮盒 DM\"><span class=\"boston-dm-book\" aria-hidden=\"true\"></span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
+  return "<section class=\"big-bear-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>大熊/小熊禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section\"><h2>大熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-four\">" + bigBearCards.join("") + "</div></section><section class=\"big-bear-section big-bear-little-section\"><h2>小熊禮盒</h2><div class=\"big-bear-grid big-bear-grid-four\">" + littleBearCards.join("") + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"boston-dm\" id=\"big-bear-dm\"><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-title\"><strong>彌月禮盒DM下載</strong><span>⟶</span></a><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-icon\" aria-label=\"查看彌月禮盒 DM\"><span class=\"boston-dm-book\" aria-hidden=\"true\"></span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
 }
 
 
@@ -2084,7 +2093,7 @@ function checkoutPageContent() {
     <section class="checkout-layout" data-checkout-page>
       <div class="checkout-main">
         <section class="checkout-details-panel"><p class="eyebrow">ORDER INFORMATION</p><h2>Your Details</h2><div class="checkout-form-grid">
-          <label class="checkout-field">姓名 *<input data-checkout-name autocomplete="name" required placeholder="請輸入姓名"></label><label class="checkout-field">電子信箱 *<input data-checkout-email type="email" autocomplete="email" required placeholder="請輸入電子信箱"></label><label class="checkout-field">聯絡電話 *<input data-checkout-phone type="tel" autocomplete="tel" required placeholder="請輸入聯絡電話"></label><label class="checkout-field">物流方式 *<select data-checkout-shipping><option value="pickup">門市自取（免運）</option><option value="home">宅配（$120）</option><option value="frozen">冷凍宅配（$240）</option></select></label><label class="checkout-field checkout-field-wide">國家／地區 *<select data-checkout-country><option>Taiwan</option></select></label>
+          <label class="checkout-field">姓名 *<input data-checkout-name autocomplete="name" required placeholder="請輸入姓名"></label><label class="checkout-field">電子信箱 *<input data-checkout-email type="email" autocomplete="email" required placeholder="請輸入電子信箱"></label><label class="checkout-field">聯絡電話 *<input data-checkout-phone type="tel" autocomplete="tel" required placeholder="請輸入聯絡電話"></label><label class="checkout-field">物流方式 *<select data-checkout-shipping><option value="pickup">門市自取（免運）</option><option value="home">宅配（$120）</option><option value="frozen">冷凍宅配（$240）</option></select></label><label class="checkout-field checkout-field-wide">國家／地區 *<select data-checkout-country><option>Taiwan</option></select></label><div class="checkout-pickup-fields checkout-field-wide" data-checkout-pickup-fields><label class="checkout-field">取貨門市 *<select data-checkout-pickup-store required><option value="">請選擇取貨門市</option><option value="文龍店">文龍店</option><option value="新富店">新富店</option><option value="澄和店">澄和店</option><option value="博愛店">博愛店</option></select></label><label class="checkout-field">取貨時間 *<select data-checkout-pickup-time required><option value="">請選擇取貨時間</option><option value="13:00">13:00</option><option value="13:30">13:30</option><option value="14:00">14:00</option><option value="14:30">14:30</option><option value="15:00">15:00</option><option value="15:30">15:30</option><option value="16:00">16:00</option><option value="16:30">16:30</option><option value="17:00">17:00</option><option value="17:30">17:30</option><option value="18:00">18:00</option></select></label></div>
           <label class="checkout-field checkout-field-wide">地址<input data-checkout-address autocomplete="street-address" placeholder="請輸入地址"></label><div class="checkout-delivery-fields checkout-field-wide" data-checkout-delivery-fields hidden><label class="checkout-field">縣市／區域<input data-checkout-city autocomplete="address-level2" placeholder="例如：台北市"></label><label class="checkout-field">郵遞區號<input data-checkout-zip autocomplete="postal-code" placeholder="郵遞區號"></label></div>
           <label class="checkout-field checkout-field-wide">給店家的備註<textarea data-checkout-note rows="4" placeholder="例如：蛋糕牌文字、配送提醒"></textarea></label>
         </div><p class="checkout-account-hint">需要修改姓名、地址或電話？請返回會員中心的 Account Details / Addresses 更新。</p><p class="checkout-form-message" data-checkout-submit-message role="status"></p><button class="checkout-submit checkout-submit-mobile" type="button" data-checkout-submit>確認訂單</button></section>
@@ -2256,10 +2265,10 @@ faqContent = () => originalFaqContent()
 
 function storeInfoContent() {
   const stores = [
-    { name: "澄和店", image: "store-1.jpg", address: "高雄市三民區澄和路78號", hours: "8:00~22:00", phone: "07-3816662", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
-    { name: "新富店", image: "store-2.jpg", address: "高雄市鳳山區新富路276號", hours: "8:00~22:00", phone: "07-7675992", map: "https://goo.gl/maps/EZFqqQPeh6z" },
-    { name: "博愛店", image: "store-3.jpg", address: "高雄市鳳山區博愛路219號", hours: "7:30~22:00", phone: "07-7993070", map: "https://goo.gl/maps/rYLh32wnRdm" },
-    { name: "文龍店", image: "store-4.jpg", address: "高雄市鳳山區文龍東路336號", hours: "10:00~22:00", phone: "07-7335812", map: "https://goo.gl/maps/5hoEqTmHsuF2" }
+    { name: "澄和店", image: "store-1.jpg", address: "高雄市三民區澄和路78號", hours: "08:00-10:00", phone: "07-3816662", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
+    { name: "新富店", image: "store-2.jpg", address: "高雄市鳳山區新富路276號", hours: "08:00-10:30", phone: "07-7675992", map: "https://goo.gl/maps/EZFqqQPeh6z" },
+    { name: "博愛店", image: "store-3.jpg", address: "高雄市鳳山區博愛路219號", hours: "07:30-10:30", phone: "07-7993070", map: "https://goo.gl/maps/rYLh32wnRdm" },
+    { name: "文龍店", image: "store-4.jpg", address: "高雄市鳳山區文龍東路336號", hours: "12:30-21:30", phone: "07-7335812", map: "https://goo.gl/maps/5hoEqTmHsuF2" }
   ];
 
   const cards = stores.map((store) => '<article class="store-info-card">' +
@@ -2912,6 +2921,70 @@ function rewriteEmptyCatalogPages() {
   }
 }
 
+function replaceSnapshotSection(html, sectionClass, replacement) {
+  const start = html.indexOf(`<section class="${sectionClass}`);
+  if (start < 0) return html;
+  const tokens = /<section\b|<\/section>/g;
+  tokens.lastIndex = start;
+  let depth = 0;
+  let match;
+  while ((match = tokens.exec(html))) {
+    depth += match[0] === "</section>" ? -1 : 1;
+    if (depth === 0) {
+      const end = match.index + match[0].length;
+      return `${html.slice(0, start)}${replacement}${html.slice(end)}`;
+    }
+  }
+  return html;
+}
+
+function extractSnapshotSection(html, sectionClass) {
+  const start = html.indexOf(`<section class="${sectionClass}`);
+  if (start < 0) return "";
+  const tokens = /<section\b|<\/section>/g;
+  tokens.lastIndex = start;
+  let depth = 0;
+  let match;
+  while ((match = tokens.exec(html))) {
+    depth += match[0] === "</section>" ? -1 : 1;
+    if (depth === 0) return html.slice(start, match.index + match[0].length);
+  }
+  return "";
+}
+
+function syncStaticSnapshotContent() {
+  const pages = [
+    { localPath: CATERING_PATH, sectionClass: "catering-page", content: cateringContent() },
+    { localPath: TEA_PARTY_PATH, sectionClass: "tea-party-page", content: teaPartyContent() },
+    { localPath: BIG_BEAR_PATH, sectionClass: "big-bear-page", content: bigBearContent() },
+    { localPath: "/門市資訊", sectionClass: "store-info-page", content: storeInfoContent() },
+  ];
+  for (const page of pages) {
+    const filePath = htmlFileForLocalPath(page.localPath);
+    if (!fs.existsSync(filePath)) continue;
+    const html = fs.readFileSync(filePath, "utf8");
+    const updated = replaceSnapshotSection(html, page.sectionClass, page.content);
+    if (updated !== html) fs.writeFileSync(filePath, updated);
+  }
+
+  const checkoutFile = htmlFileForLocalPath("/checkout");
+  if (fs.existsSync(checkoutFile)) {
+    const html = fs.readFileSync(checkoutFile, "utf8");
+    const checkoutSection = extractSnapshotSection(checkoutPageContent(), "checkout-layout");
+    const updated = checkoutSection ? replaceSnapshotSection(html, "checkout-layout", checkoutSection) : html;
+    if (updated !== html) fs.writeFileSync(checkoutFile, updated);
+  }
+
+  const topHouseFile = htmlFileForLocalPath("/頂家彌月");
+  if (fs.existsSync(topHouseFile)) {
+    const html = fs.readFileSync(topHouseFile, "utf8");
+    const updated = html
+      .replace(/<title>頂家彌月\s*[–|-]\s*森森點心坊<\/title>/, "<title>頂家彌月專區 – 森森點心坊</title>")
+      .replace(/(<div class="hero-banner-title"><p>\/頂家彌月<\/p><h1>)[^<]+(<\/h1>)/, "$1頂家彌月專區$2");
+    if (updated !== html) fs.writeFileSync(topHouseFile, updated);
+  }
+}
+
 function rewriteStaticSnapshotNavigation() {
   const htmlFiles = [];
   const walk = (directory) => {
@@ -2925,7 +2998,10 @@ function rewriteStaticSnapshotNavigation() {
   walk(OUT_DIR);
   const homeFile = path.join(OUT_DIR, "index.html");
   const homeHtml = fs.existsSync(homeFile) ? fs.readFileSync(homeFile, "utf8") : "";
-  const homeNavigation = homeHtml.match(/<header class="site-header">[\s\S]*?<\/header>/)?.[0] || "";
+  const generatedHomeHtml = layout({ title: "森森點心坊", pathLabel: "/", content: "", isHome: true });
+  const homeNavigation = generatedHomeHtml.match(/<header class="site-header">[\s\S]*?<\/header>/)?.[0]
+    || homeHtml.match(/<header class="site-header">[\s\S]*?<\/header>/)?.[0]
+    || "";
   const onlineLongCakeLink = `<a href="${encodeURI(ONLINE_LONG_CAKE_PATH)}/">長條蛋糕</a>`;
   const onlineTeaPartyLink = `<a href="${encodeURI(ONLINE_TEA_PARTY_PATH)}/">點心餐盒</a>`;
   const onlineMenuPattern = /(<div class="menu-item"><a href="[^"]*"[^>]*>線上商城[\s\S]*?<div class="submenu">[\s\S]*?)(<a href="[^"]*">)長條蛋糕(?:\(冷凍\))?(<\/a>)/;
@@ -3057,9 +3133,12 @@ function main() {
     pruneRetiredStaticSnapshot();
     fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
     fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
+    fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
+    fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
     syncProductDetailSnapshot();
     syncAdminFrontendSnapshot();
     rewriteEmptyCatalogPages();
+    syncStaticSnapshotContent();
     rewriteStaticSnapshotNavigation();
     rewriteR2ImagePaths();
     process.stdout.write("No crawler/export sources found; preserving the committed static site snapshot.\n");
