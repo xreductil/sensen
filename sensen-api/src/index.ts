@@ -23,6 +23,7 @@ type StoreProduct = {
   cat: string;
   price: string;
   priceValue: number;
+  priceOptions: Record<string, number>;
   quantity: number;
   day: string;
   img: string;
@@ -466,12 +467,20 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   const variants = metadata.variants && typeof metadata.variants === "object" && !Array.isArray(metadata.variants)
     ? metadata.variants as Record<string, unknown>
     : {};
+  const priceOptions = metadata.priceOptions && typeof metadata.priceOptions === "object" && !Array.isArray(metadata.priceOptions)
+    ? Object.fromEntries(Object.entries(metadata.priceOptions).reduce<Array<[string, number]>>((entries, [size, value]) => {
+      const amount = Number(value);
+      if (Number.isFinite(amount) && amount > 0) entries.push([size, amount]);
+      return entries;
+    }, []))
+    : {};
   return {
     id: row.slug,
     title: row.title,
     cat: row.category || String(metadata.cat || "未分類"),
     price: `$${priceValue.toFixed(2)}`,
     priceValue,
+    priceOptions,
     quantity: Math.max(0, Number(row.stock || 0)),
     day: String(metadata.day || 5),
     img: images[0] || "",

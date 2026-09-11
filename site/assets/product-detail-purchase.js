@@ -14,6 +14,13 @@
     .toLowerCase();
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const money = value => `NT$${Number(value || 0).toLocaleString('zh-TW')}`;
+  const priceSummary = product => {
+    const options = Object.entries(product.priceOptions || {})
+      .filter(([, value]) => Number.isFinite(Number(value)) && Number(value) > 0);
+    return options.length
+      ? options.map(([size, value]) => `${size} ${money(value)}`).join(' · ')
+      : money(product.priceValue);
+  };
   const pagePath = decodeURI(window.location.pathname).replace(/\/$/, '');
   const productId = productPage.dataset.productId || '';
   const pathMap = (() => {
@@ -173,7 +180,7 @@
     const section = document.createElement('section');
     section.className = 'product-detail-purchase';
     section.setAttribute('aria-label', '商品購買');
-    section.innerHTML = `<p class="product-detail-price">${money(product.priceValue)}</p><div class="cake-product-purchase" data-cake-purchase><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock ? '' : ' disabled'}>${inStock ? '加入購物車' : '暫停供應'}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
+    section.innerHTML = `<p class="product-detail-price">${escapeHtml(priceSummary(product))}</p><div class="cake-product-purchase" data-cake-purchase><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock ? '' : ' disabled'}>${inStock ? '加入購物車' : '暫停供應'}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
     insertPurchase(section);
 
     section.querySelectorAll('[data-cake-quantity-change]').forEach(button => button.addEventListener('click', () => {
