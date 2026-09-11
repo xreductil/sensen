@@ -183,6 +183,14 @@ body:has(.account-shell) #message { padding: 18px 22px; border: 1px solid #e8edf
 .store-page-actions { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 30px; }.cart-page-total { margin: 24px 0; color: var(--brown-2); font-size: 1.3rem; font-weight: 700; }
 .cake-add-cart { flex: 1; min-height: 40px; padding: 6px 12px; border: 1px solid var(--sand); border-radius: 7px; background: transparent; color: var(--brown-2); cursor: pointer; font-size: clamp(13px, .9vw, 16px); }
 .cake-add-cart:hover, .cake-add-cart:disabled { background: var(--sand-soft); }
+.top-house-purchase { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 9px; margin-top: 14px; }
+.top-house-purchase strong { color: var(--brown-2); font-size: 1.05rem; }
+.top-house-add-cart { min-height: 38px; padding: 6px 13px; border: 1px solid var(--sand); border-radius: 7px; background: transparent; color: var(--brown-2); cursor: pointer; font-size: 14px; }
+.top-house-add-cart:hover, .top-house-add-cart:disabled { background: var(--sand-soft); }
+.top-house-purchase-message { min-height: 1.25em; margin: 6px 0 0; color: #a3463d; font-size: 13px; text-align: center; }
+.boston-flavor-purchases { display: grid; gap: 9px; margin-top: 18px; }
+.boston-flavor-purchases > div { display: grid; gap: 2px; }
+.boston-flavor-purchases > div > span { color: var(--brown-2); font-weight: 700; }
 
 @media (max-width: 760px) {
   body:has(.account-shell) .account-shell { width: calc(100% - 24px); padding: 24px 0 42px; }

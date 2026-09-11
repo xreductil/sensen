@@ -31,6 +31,7 @@ const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-products.json');
+const TOP_HOUSE_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-top-house-products.json');
 const DRINK_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-drink-products.json');
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 8081);
@@ -370,7 +371,7 @@ function publicUser(user) {
 }
 
 function productsFromData() {
-  const products = [PRODUCTS_PATH, DRINK_PRODUCTS_PATH]
+  const products = [PRODUCTS_PATH, TOP_HOUSE_PRODUCTS_PATH, DRINK_PRODUCTS_PATH]
     .filter(filePath => fs.existsSync(filePath))
     .flatMap(filePath => JSON.parse(fs.readFileSync(filePath, 'utf8')));
   return products.map(product => {

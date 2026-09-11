@@ -249,9 +249,9 @@ const ONLINE_TEA_PARTY_PATH = "/產品介紹/點心餐盒";
 const BOSTON_PIE_PATH = "/頂家彌月/波士頓派系列";
 const COUNTRY_CHEESE_PATH = "/頂家彌月/香村乳酪禮盒";
 const COUNTRY_CHEESE_GIFTS = [
-  ["country-cheese-l1.png", "L1", "6吋檸檬老奶奶x1、小檸檬x1、KT貓蛋糕x1、手工餅乾x1、草莓大理石x1"],
-  ["country-cheese-l2.jpg", "L2", "6吋比利時巧克力x1、紫羅蘭x1、油飯8兩x1、紅蛋x2"],
-  ["country-cheese-l3.png", "L3", "8吋烤布蕾x1、手工餅乾x1、熊大x1、小檸檬x1、油飯8兩x1、紅蛋x2"],
+  ["country-cheese-l1.png", "L1", "6吋檸檬老奶奶x1、小檸檬x1、KT貓蛋糕x1、手工餅乾x1、草莓大理石x1", 660, "top-house-l1-country-cheese"],
+  ["country-cheese-l2.jpg", "L2", "6吋比利時巧克力x1、紫羅蘭x1、油飯8兩x1、紅蛋x2", 748, "top-house-l2-country-cheese"],
+  ["country-cheese-l3.png", "L3", "8吋烤布蕾x1、手工餅乾x1、熊大x1、小檸檬x1、油飯8兩x1、紅蛋x2", 620, "top-house-l3-country-cheese"],
 ];
 const COUNTRY_CHEESE_STYLES = [
   ["cheese.jpg", "波士頓派禮盒"],
@@ -262,12 +262,12 @@ const COUNTRY_CHEESE_STYLES = [
 
 const ROUND_PIE_PATH = "/頂家彌月/圓圓派-744";
 const ROUND_PIE_PRODUCTS = [
-  ["K1 烤布蕾", "k2.png"],
-  ["K2 開心果雲石", "k2-copy.png"],
-  ["K3 重乳酪(草莓/藍莓)", "k3-2.png"],
-  ["K4 輕乳酪", "light-cheese.png"],
-  ["K5 比利時巧克力", "k3.png"],
-  ["K6 檸檬老奶奶", "k4.png"],
+  ["K1 烤布蕾", "k2.png", 380, "top-house-k1-creme-brulee"],
+  ["K2 開心果雲石", "k2-copy.png", 380, "top-house-k2-pistachio-marble"],
+  ["K3 重乳酪(草莓/藍莓)", "k3-2.png", 380, "top-house-k3-cheesecake"],
+  ["K4 輕乳酪", "light-cheese.png", 355, "top-house-k4-light-cheesecake"],
+  ["K5 比利時巧克力", "k3.png", 355, "top-house-k5-belgian-chocolate"],
+  ["K6 檸檬老奶奶", "k4.png", 355, "top-house-k6-lemon-cheesecake"],
 ];
 
 const LONG_CAKE_PATH = "/頂家彌月/彌月長條蛋糕";
@@ -276,39 +276,45 @@ const PAIRING_PATH = "/頂家彌月/搭配單品";
 const THANK_YOU_CARD_PATH = "/頂家彌月/彌月謝卡";
 
 const LONG_CAKE_HOT_PRODUCTS = [
-  ["日式千層", "japanese-layer-cake.png"],
-  ["桂花烏龍甜心", "osmanthus-oolong-cake.png"],
-  ["摩卡巧克力", "a5.png"],
-  ["伯爵甜心捲", "a6.png"],
-  ["左岸咖啡捲", "a7.png"],
+  ["日式千層", "japanese-layer-cake.png", 288, "top-house-a11-japanese-layer"],
+  ["桂花烏龍甜心", "osmanthus-oolong-cake.png", 288, "top-house-a12-osmanthus-oolong"],
+  ["摩卡巧克力", "a5.png", 288, "top-house-a9-mocha-chocolate"],
+  ["伯爵甜心捲", "a6.png", 288, "top-house-a8-earl-grey-roll"],
+  ["左岸咖啡捲", "a7.png", 288, "top-house-a6-left-bank-coffee-roll"],
 ];
 const LONG_CAKE_MARBLE_PRODUCTS = [
-  ["草莓大理石", "strawberry-marble.png"],
-  ["藍莓天使", "blueberry-angel.png"],
-  ["經典巧克力", "classic-chocolate.png"],
-  ["檸檬之戀", "lemon-love.png"],
-  ["蜂蜜蛋糕", "a14.jpg"],
+  ["草莓大理石", "strawberry-marble.png", 198, "top-house-a1-strawberry-marble"],
+  ["藍莓天使", "blueberry-angel.png", 198, "top-house-a3-blueberry-angel"],
+  ["經典巧克力", "classic-chocolate.png", 198, "top-house-a5-classic-chocolate"],
+  ["檸檬之戀", "lemon-love.png", 198, "top-house-a4-lemon-love"],
+  ["蜂蜜蛋糕", "a14.jpg", 198, "top-house-a2-honey-cake"],
 ];
 const LONG_CAKE_NAPOLEON_PRODUCTS = [
-  ["香草拿破崙派", "f1-1.png"],
-  ["巧克力拿破崙派", "f2.png"],
+  ["香草拿破崙派", "f1-1.png", 288, "top-house-a7-vanilla-napoleon"],
+  ["巧克力拿破崙派", "f2.png", 288, "top-house-a7-chocolate-napoleon"],
 ];
 
+function topHousePurchaseMarkup(id, price) {
+  return `<div class="top-house-purchase"><strong>NT$${Number(price).toLocaleString("zh-TW")}</strong><button class="top-house-add-cart" type="button" data-top-house-product-id="${escapeAttr(id)}">加入購物車</button></div><p class="top-house-purchase-message" data-top-house-product-message role="status"></p>`;
+}
+
 function longCakeContent() {
-  const cardList = (items, className = "") => items.map(([title, image]) => `
+  const cardList = (items, className = "") => items.map(([title, image, price, id]) => `
     <article class="long-cake-product ${className}">
       <img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
       <h3>${escapeHtml(title)}</h3>
+      ${topHousePurchaseMarkup(id, price)}
     </article>`).join("");
   return `<section class="long-cake-page">
     <section class="long-cake-hero"><div class="long-cake-hero-title"><h1>彌月長條蛋糕</h1></div></section>
     <div class="long-cake-baby"><img src="/images/icon-baby.png" alt="" aria-hidden="true"></div>
     <section class="long-cake-feature" aria-labelledby="long-cake-feature-title">
-      <div class="long-cake-feature-image"><img src="/images/a2-2.jpg" alt="A1 紫羅蘭長條蛋糕" loading="lazy"></div>
+      <div class="long-cake-feature-image"><img src="/images/a2-2.jpg" alt="A10 紫羅蘭長條蛋糕" loading="lazy"></div>
       <div class="long-cake-feature-copy">
-        <h2 id="long-cake-feature-title">A1 紫羅蘭</h2>
+        <h2 id="long-cake-feature-title">A10 紫羅蘭</h2>
         <p class="long-cake-feature-filling">內餡：大甲芋頭+布丁</p>
         <p>嚴選大甲芋頭，綿密芋泥搭配芋頭塊與手作香草布丁。<br>一口接一口，是頂家銷售NO.1的招牌蛋糕！</p>
+        ${topHousePurchaseMarkup("top-house-a10-violet", 288)}
       </div>
     </section>
     <section class="long-cake-series" aria-labelledby="long-cake-hot-title">
@@ -355,33 +361,33 @@ const PAIRING_FEATURES = [
 ];
 
 const PAIRING_PRODUCTS = [
-  ["黃金乳酪球", "s12.jpg"],
-  ["草莓大福", "s10.jpg"],
-  ["泡芙", "s14.jpg"],
-  ["KT蛋糕", "s8.jpg"],
-  ["熊大蛋糕", "s41.jpg"],
-  ["小檸檬", "s9.jpg"],
-  ["珍珠脆糖小泡芙", "pearl-crunch-puff.png"],
-  ["鈕釦牛軋餅", "button.jpg"],
-  ["杏仁千層酥", "mille-feuille.jpg"],
-  ["杏加", "photo-1-6.jpg"],
-  ["手工餅乾", "s13.jpg"],
-  ["手工餅乾", "s22.jpg"],
-  ["夏威夷豆塔", "hawaiian.jpg"],
-  ["達克瓦茲", "dacquoise-3.jpg"],
-  ["蝴蝶酥", "palmiers.jpg"],
-  ["手工餅乾", "cookies-2.png"],
-  ["手工餅乾", "cookies-1.png"],
-  ["栗子燒", "chestnut-cake.png"],
-  ["洋菓子", "japanese-pastry-2.png"],
-  ["洋菓子", "japanese-pastry.png"],
-  ["油飯-1斤", "s3.jpg"],
-  ["油飯-半斤", "s4.jpg"],
-  ["1斤油飯禮盒", "s7.jpg", "含紅蛋2入"],
-  ["紅蛋-2入", "s6.jpg"],
-  ["大雞腿", "simg-1.jpg"],
-  ["紅龜", "red-turtle.png"],
-  ["紅圓", "s24.jpg"],
+  ["黃金乳酪球", "s12.jpg", "", 60, "top-house-pairing-golden-cheese-ball"],
+  ["草莓大福", "s10.jpg", "", 55, "top-house-pairing-strawberry-daifuku"],
+  ["泡芙", "s14.jpg", "", 45, "top-house-pairing-cream-puff"],
+  ["KT蛋糕", "s8.jpg", "", 45, "top-house-pairing-kt-cake"],
+  ["熊大蛋糕", "s41.jpg", "", 45, "top-house-pairing-brown-bear-cake"],
+  ["小檸檬", "s9.jpg", "", 35, "top-house-pairing-mini-lemon"],
+  ["珍珠脆糖小泡芙", "pearl-crunch-puff.png", "", 60, "top-house-pairing-pearl-crunch-puff"],
+  ["鈕釦牛軋餅", "button.jpg", "", 70, "top-house-pairing-button-nougat"],
+  ["杏仁千層酥", "mille-feuille.jpg", "", 130, "top-house-pairing-almond-layer"],
+  ["杏加", "photo-1-6.jpg", "", 60, "top-house-pairing-almond-cracker"],
+  ["手工餅乾", "s13.jpg", "", 45, "top-house-pairing-handmade-cookie-s13"],
+  ["手工餅乾", "s22.jpg", "", 45, "top-house-pairing-handmade-cookie-s22"],
+  ["夏威夷豆塔", "hawaiian.jpg", "", 50, "top-house-pairing-hawaiian-nut-tart"],
+  ["達克瓦茲", "dacquoise-3.jpg", "", 60, "top-house-pairing-dacquoise"],
+  ["蝴蝶酥", "palmiers.jpg", "", 40, "top-house-pairing-palmiers"],
+  ["手工餅乾", "cookies-2.png", "", 45, "top-house-pairing-handmade-cookie-2"],
+  ["手工餅乾", "cookies-1.png", "", 45, "top-house-pairing-handmade-cookie-1"],
+  ["栗子燒", "chestnut-cake.png", "", 60, "top-house-pairing-chestnut-cake"],
+  ["洋菓子", "japanese-pastry-2.png", "草莓", 45, "top-house-pairing-japanese-pastry-strawberry"],
+  ["洋菓子", "japanese-pastry.png", "巧克力", 45, "top-house-pairing-japanese-pastry-chocolate"],
+  ["油飯-1斤", "s3.jpg", "", 180, "top-house-pairing-oil-rice-1-jin"],
+  ["油飯-半斤", "s4.jpg", "", 90, "top-house-pairing-oil-rice-half-jin"],
+  ["1斤油飯禮盒", "s7.jpg", "含紅蛋2入", 260, "top-house-pairing-oil-rice-gift-box"],
+  ["紅蛋-2入", "s6.jpg", "", 30, "top-house-pairing-red-eggs"],
+  ["大雞腿", "simg-1.jpg", "", 90, "top-house-pairing-chicken-leg"],
+  ["紅龜", "red-turtle.png", "", 45, "top-house-pairing-red-turtle"],
+  ["紅圓", "s24.jpg", "", 45, "top-house-pairing-red-round"],
 ];
 
 function pairingContent() {
@@ -391,11 +397,12 @@ function pairingContent() {
       <h3>${escapeHtml(title)}</h3>
       <span class="pairing-rule" aria-hidden="true"></span>
     </article>`).join("");
-  const productCards = PAIRING_PRODUCTS.map(([title, image, note]) => `
+  const productCards = PAIRING_PRODUCTS.map(([title, image, note, price, id]) => `
     <article class="pairing-product${note ? " has-note" : ""}">
       <img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
       <h3>${escapeHtml(title)}</h3>
       ${note ? `<p class="pairing-product-note">${escapeHtml(note)}</p>` : ""}
+      ${topHousePurchaseMarkup(id, price)}
       <span class="pairing-rule" aria-hidden="true"></span>
     </article>`).join("");
   return `<section class="pairing-page">
@@ -447,10 +454,11 @@ function thankYouCardContent() {
 }
 
 function roundPieContent() {
-  const cards = ROUND_PIE_PRODUCTS.map(([title, image]) => `
+  const cards = ROUND_PIE_PRODUCTS.map(([title, image, price, id]) => `
     <article class="round-pie-product">
       <img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy">
       <h2>${escapeHtml(title)}</h2>
+      ${topHousePurchaseMarkup(id, price)}
       <span class="round-pie-product-rule" aria-hidden="true"></span>
     </article>`).join("");
   return `<section class="round-pie-page">
@@ -467,7 +475,7 @@ function roundPieContent() {
 }
 
 function countryCheeseContent() {
-  const card = ([image, label, description]) => "<article class=\"big-bear-card\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "鄉村乳酪禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
+  const card = ([image, label, description, price, id]) => "<article class=\"big-bear-card\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "鄉村乳酪禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p>" + topHousePurchaseMarkup(id, price) + "</article>";
   const cards = COUNTRY_CHEESE_GIFTS.map(card).join("");
   const styleCards = COUNTRY_CHEESE_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
   return "<section class=\"big-bear-page country-cheese-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>鄉村乳酪禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section country-cheese-products\"><div class=\"big-bear-grid big-bear-grid-three\">" + cards + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"boston-dm\" id=\"country-cheese-dm\"><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-title\"><strong>彌月禮盒DM下載</strong><span>⟶</span></a><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-icon\" aria-label=\"查看彌月禮盒 DM\"><span class=\"boston-dm-book\" aria-hidden=\"true\"></span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
@@ -476,6 +484,14 @@ function countryCheeseContent() {
 
 const BIG_BEAR_PATH = "/頂家彌月/大熊-小熊禮盒";
 const PRODUCT_INTRO_PATH = "/產品介紹";
+const TOP_HOUSE_PAGE_PATHS = new Set([
+  BOSTON_PIE_PATH,
+  BIG_BEAR_PATH,
+  COUNTRY_CHEESE_PATH,
+  ROUND_PIE_PATH,
+  LONG_CAKE_PATH,
+  PAIRING_PATH,
+]);
 const EMERALD_LYSK_PATH = "/product-item/綠寶石萊思克季節限定-1870";
 const BEAN_TART_PATH = "/product-item/豆塔禮盒";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
@@ -1251,6 +1267,10 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
     ? `<script src="${PRODUCT_DETAIL_SCRIPT_URL}"></script>`
     : '';
+  const topHousePurchaseScript = TOP_HOUSE_PAGE_PATHS.has(pathLabel)
+    ? '<script src="/assets/top-house-purchase.js"></script>'
+    : '';
+  const purchaseScripts = [productPurchaseScript, topHousePurchaseScript].filter(Boolean).join('\n  ');
   const nav = NAV_ITEMS.map(([label, href]) => {
     const children = NAV_CHILDREN.get(label) || [];
     const childMenu = children.length
@@ -1439,7 +1459,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <footer class="footer">© 2018 - 2026 森森點心坊. All Rights Reserved. | Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>. | <a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%a2%9d%e6%ac%be/">隱私權政策</a></footer>
   <div class="sensen-cart-overlay" id="sensen-cart-overlay" hidden></div>
   <aside class="sensen-cart-drawer" id="sensen-cart-drawer" aria-label="購物車" aria-hidden="true"><div class="sensen-cart-head"><h2>購物車</h2><button class="sensen-cart-close" type="button" aria-label="關閉購物車">×</button></div><div class="sensen-cart-body"><p data-cart-message>載入中…</p><div data-cart-items></div><div class="sensen-cart-fields" data-cart-options hidden><label>優惠碼<div class="sensen-cart-coupon-row"><input data-cart-coupon type="text" placeholder="輸入優惠碼" autocomplete="off"><button class="sensen-cart-coupon-apply" type="button" data-cart-apply-coupon>套用</button></div></label><label>Pickup date（取貨日期）<input data-cart-pickup type="date"></label><small data-cart-date-hint></small><p class="sensen-cart-quote-message" data-cart-quote-message role="status"></p></div></div><div class="sensen-cart-foot"><div class="sensen-cart-price-lines" data-cart-price-lines hidden><div><span>小計</span><strong data-cart-subtotal>$0.00</strong></div><div data-cart-discount-row hidden><span>折扣</span><strong data-cart-discount>-$0.00</strong></div><div class="is-total"><span>合計</span><strong data-cart-total>$0.00</strong></div></div><a class="button" href="/checkout/">結帳</a><a class="sensen-cart-secondary" href="/customer/admin/">前往會員中心</a></div></aside>
-  ${productPurchaseScript}
+${purchaseScripts ? `\n  ${purchaseScripts}` : "\n  "}
   <script src="/assets/cart-drawer.js"></script>
 </body>
 </html>`;
@@ -1838,26 +1858,26 @@ function cateringContent() {
 }
 
 const BOSTON_GIFTS = [
-  ["boston-pa1.jpg", "PA1", "9吋波士頓派×1、油飯8兩×1、紅蛋×2"],
-  ["boston-pa2.jpg", "PA2", "9吋波士頓派×1、小檸檬×1、KT蛋糕×1、手工餅乾×1"],
-  ["boston-pa3.png", "PA3", "9吋波士頓派×1、草莓大福×3"],
-  ["boston-pa4.png", "PA4", "9吋波士頓派×1、草莓大理石×1"],
+  ["boston-pa1.jpg", "PA1", "9吋波士頓派×1、油飯8兩×1、紅蛋×2", 375, "top-house-pa1-boston-gift"],
+  ["boston-pa2.jpg", "PA2", "9吋波士頓派×1、小檸檬×1、KT蛋糕×1、手工餅乾×1", 430, "top-house-pa2-boston-gift"],
+  ["boston-pa3.png", "PA3", "9吋波士頓派×1、草莓大福×3", 425, "top-house-pa3-boston-gift"],
+  ["boston-pa4.png", "PA4", "9吋波士頓派×1、草莓大理石×1", 458, "top-house-pa4-boston-gift"],
 ];
 
 
 const BIG_BEAR_GIFTS = [
-  ["c1.png", "C1", "草莓大理石x1、經典巧克力x1、油飯8兩x1、紅蛋x2"],
-  ["c2.png", "C2", "草莓大理石x1、鈕釦牛軋餅x1、珍珠脆糖小泡芙x1、達克瓦茲x3"],
-  ["c7.png", "C3", "9吋烤布蕾x1、油飯8兩x1、紅蛋x2"],
-  ["b1-copy.png", "B1", "草莓大理石x1、經典巧克力x1"],
-  ["b2.png", "B2", "草莓大理石x1、小檸檬x1、KT貓蛋糕x1、手工餅干x2"],
-  ["b3.png", "B3", "草莓大理石x1、油飯8兩x1、紅蛋x2"],
-  ["b4.png", "B4", "草莓大理石x1、小檸檬x1、KT貓蛋糕x1、手工餅干x1、紅蛋x2"],
-  ["c8.png", "C4", "6吋輕乳酪蛋糕x1、油飯8兩x1、紅蛋x2"],
+  ["c1.png", "C1", "草莓大理石x1、經典巧克力x1、油飯8兩x1、紅蛋x2", 511, "top-house-c1-big-bear"],
+  ["c2.png", "C2", "草莓大理石x1、鈕釦牛軋餅x1、珍珠脆糖小泡芙x1、達克瓦茲x3", 508, "top-house-c2-big-bear"],
+  ["c7.png", "C3", "9吋烤布蕾x1、油飯8兩x1、紅蛋x2", 495, "top-house-c3-big-bear"],
+  ["b1-copy.png", "B1", "草莓大理石x1、經典巧克力x1", 396, "top-house-b1-little-bear"],
+  ["b2.png", "B2", "草莓大理石x1、小檸檬x1、KT貓蛋糕x1、手工餅干x2", 368, "top-house-b2-little-bear"],
+  ["b3.png", "B3", "草莓大理石x1、油飯8兩x1、紅蛋x2", 313, "top-house-b3-little-bear"],
+  ["b4.png", "B4", "草莓大理石x1、小檸檬x1、KT貓蛋糕x1、手工餅干x1、紅蛋x2", 353, "top-house-b4-little-bear"],
+  ["c8.png", "C4", "6吋輕乳酪蛋糕x1、油飯8兩x1、紅蛋x2", 470, "top-house-c4-big-bear"],
 ];
 const BIG_BEAR_STYLES = [["cheese.jpg", "波士頓派禮盒"], ["single-piece.jpg", "單條禮盒"], ["little-bear.jpg", "小熊禮盒"], ["big-bear.jpg", "大熊禮盒"]];
 function bigBearContent() {
-  const card = ([image, label, description]) => "<article class=\"big-bear-card" + (label === "C4" ? " big-bear-card-c4" : "") + "\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p></article>";
+  const card = ([image, label, description, price, id]) => "<article class=\"big-bear-card" + (label === "C4" ? " big-bear-card-c4" : "") + "\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "禮盒\" loading=\"lazy\"><h3>" + escapeHtml(label) + "</h3><p>" + escapeHtml(description) + "</p>" + topHousePurchaseMarkup(id, price) + "</article>";
   const cards = BIG_BEAR_GIFTS.map(card);
   const bigBearCards = [cards[0], cards[1], cards[2], cards[7]];
   const littleBearCards = cards.slice(3, 7);
@@ -1867,11 +1887,12 @@ function bigBearContent() {
 
 
 function bostonPieContent() {
-  const giftCards = BOSTON_GIFTS.map(([image, label, description]) => `
+  const giftCards = BOSTON_GIFTS.map(([image, label, description, price, id]) => `
     <article class="boston-gift-card">
       <img src="/images/${escapeAttr(image)}" alt="${escapeAttr(label)}彌月禮盒">
       <h3>${escapeHtml(label)}</h3>
       <p>${escapeHtml(description)}</p>
+      ${topHousePurchaseMarkup(id, price)}
     </article>`).join("");
   return `<section class="boston-page">
     <section class="boston-product-feature">
@@ -1883,6 +1904,7 @@ function bostonPieContent() {
         <p class="boston-product-description">將鮮奶中去除83%的水，留下的精華爽口不甜<br>膩且富有細緻的口感。</p>
         <hr>
         <p class="boston-product-spec">波士頓派尺寸：9吋(23cm±10%)<br>印刷包裝：手繪水彩風格&amp;禮盒霧模搭配高質感<br>Pantone金屬色側邊。手提式紙盒設計，恕不<br>另外提供袋子</p>
+        <div class="boston-flavor-purchases"><div><span>經典口味</span>${topHousePurchaseMarkup("top-house-boston-classic", 260)}</div><div><span>新品口味</span>${topHousePurchaseMarkup("top-house-boston-new", 300)}</div></div>
         <img class="boston-vegetarian-badge" src="/images/icon-vlml.png" alt="奶蛋素">
       </div>
     </section>
@@ -2261,13 +2283,17 @@ faqContent = () => originalFaqContent()
   .replace("如配送外島", "如配送<br>外島")
   .replace("請洽詢專人服務", "請洽詢<br>專人服務")
   .replace("發票日期為領取蛋糕當日。", "發票日期為領取蛋糕當<br>日。")
-  .replace("盡量當日食用完畢", "盡量當日食用<br>完畢");
+  .replace("盡量當日食用完畢", "盡量當日食用<br>完畢")
+  .replace(
+    /(<article class="faq-item"><button type="button" aria-expanded="false" aria-controls="faq-1-7">[\s\S]*?<\/article>)(\n      <\/div>\n    <\/section>)/,
+    '$1\n        <article class="faq-item"><button type="button" aria-expanded="false" aria-controls="faq-1-8"><span class="faq-number">8</span><span class="faq-question-title">頂家彌月外送規則</span><span class="faq-plus" aria-hidden="true">＋</span></button><div id="faq-1-8" class="faq-answer" hidden>高雄市區以及屏東市滿10000元外送；外縣市依冷藏／常溫及包裹外箱尺寸計算。（目前未提供離島宅配）</div></article>$2'
+  );
 
 function storeInfoContent() {
   const stores = [
-    { name: "澄和店", image: "store-1.jpg", address: "高雄市三民區澄和路78號", hours: "08:00-10:00", phone: "07-3816662", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
-    { name: "新富店", image: "store-2.jpg", address: "高雄市鳳山區新富路276號", hours: "08:00-10:30", phone: "07-7675992", map: "https://goo.gl/maps/EZFqqQPeh6z" },
-    { name: "博愛店", image: "store-3.jpg", address: "高雄市鳳山區博愛路219號", hours: "07:30-10:30", phone: "07-7993070", map: "https://goo.gl/maps/rYLh32wnRdm" },
+    { name: "澄和店", image: "store-1.jpg", address: "高雄市三民區澄和路78號", hours: "08:00-22:00", phone: "07-3816662", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
+    { name: "新富店", image: "store-2.jpg", address: "高雄市鳳山區新富路276號", hours: "08:00-22:30", phone: "07-7675992", map: "https://goo.gl/maps/EZFqqQPeh6z" },
+    { name: "博愛店", image: "store-3.jpg", address: "高雄市鳳山區博愛路219號", hours: "07:30-22:30", phone: "07-7993070", map: "https://goo.gl/maps/rYLh32wnRdm" },
     { name: "文龍店", image: "store-4.jpg", address: "高雄市鳳山區文龍東路336號", hours: "12:30-21:30", phone: "07-7335812", map: "https://goo.gl/maps/5hoEqTmHsuF2" }
   ];
 
@@ -2956,14 +2982,23 @@ function syncStaticSnapshotContent() {
   const pages = [
     { localPath: CATERING_PATH, sectionClass: "catering-page", content: cateringContent() },
     { localPath: TEA_PARTY_PATH, sectionClass: "tea-party-page", content: teaPartyContent() },
+    { localPath: BOSTON_PIE_PATH, sectionClass: "boston-page", content: bostonPieContent() },
     { localPath: BIG_BEAR_PATH, sectionClass: "big-bear-page", content: bigBearContent() },
+    { localPath: COUNTRY_CHEESE_PATH, sectionClass: "big-bear-page country-cheese-page", content: countryCheeseContent() },
+    { localPath: ROUND_PIE_PATH, sectionClass: "round-pie-page", content: roundPieContent() },
+    { localPath: LONG_CAKE_PATH, sectionClass: "long-cake-page", content: longCakeContent() },
+    { localPath: PAIRING_PATH, sectionClass: "pairing-page", content: pairingContent() },
     { localPath: "/門市資訊", sectionClass: "store-info-page", content: storeInfoContent() },
+    { localPath: "/常見問題", sectionClass: "faq-page", content: faqContent() },
   ];
   for (const page of pages) {
     const filePath = htmlFileForLocalPath(page.localPath);
     if (!fs.existsSync(filePath)) continue;
     const html = fs.readFileSync(filePath, "utf8");
-    const updated = replaceSnapshotSection(html, page.sectionClass, page.content);
+    let updated = replaceSnapshotSection(html, page.sectionClass, page.content);
+    if (TOP_HOUSE_PAGE_PATHS.has(page.localPath) && !updated.includes('/assets/top-house-purchase.js')) {
+      updated = updated.replace('</body>', '  <script src="/assets/top-house-purchase.js"></script>\n</body>');
+    }
     if (updated !== html) fs.writeFileSync(filePath, updated);
   }
 
@@ -3135,6 +3170,7 @@ function main() {
     fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
     fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
     fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
+    fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
     syncProductDetailSnapshot();
     syncAdminFrontendSnapshot();
     rewriteEmptyCatalogPages();
@@ -3196,6 +3232,7 @@ function main() {
   fs.writeFileSync(path.join(OUT_DIR, ".assetsignore"), "# Dropbox conflict copies are local sync artifacts, not public site assets.\n*與 Chi Feng Kao 衝突的複本*\n");
   fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
+  fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
   fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
   syncProductDetailSnapshot();
   fs.copyFileSync(path.join(__dirname, "drink-menu-modal.js"), path.join(OUT_DIR, "assets", "drink-menu-modal.js"));
