@@ -691,7 +691,6 @@ const NAV_CHILDREN = new Map([
   ["酒會/茶會", [
     ["精緻外燴", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
     ["茶會點心", `${encodeURI(TEA_PARTY_PATH)}/`],
-    ["茶會菜單下載", CATERING_MENU_URL],
   ]],
   ["頂家彌月", [
     ["彌月試吃申請", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/"],
