@@ -303,11 +303,13 @@ function topHouseProductPath(id) {
   return `${TOP_HOUSE_PRODUCT_PATH_PREFIX}/${id}`;
 }
 
-function topHouseProductCardMarkup([title, image, price, id], className = "") {
+function topHouseProductCardMarkup([title, image, price, id], className = "", description = "", withPurchase = false) {
   const href = topHouseProductPath(id);
+  const descriptionMarkup = description ? `<span class="cake-product-description">${escapeHtml(description)}</span>` : "";
+  const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id, price) : "";
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">
     <a class="cake-product-card-link" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span></a>
-    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(title)}</span><span class="cake-product-price">NT$${Number(price).toLocaleString("zh-TW")}</span></a></div>
+    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(title)}</span>${descriptionMarkup}<span class="cake-product-price">NT$${Number(price).toLocaleString("zh-TW")}</span></a>${purchaseMarkup}</div>
   </article>`;
 }
 
@@ -405,7 +407,8 @@ function pairingContent() {
       <h3>${escapeHtml(title)}</h3>
       <span class="pairing-rule" aria-hidden="true"></span>
     </article>`).join("");
-  const productCards = PAIRING_PRODUCTS.map(([title, image, note, price, id]) => topHouseProductCardMarkup([title, image, price, id], note ? "pairing-product has-note" : "pairing-product")).join("");
+  const classicBostonCard = topHouseProductCardMarkup(["波士頓派（經典口味）", "poston-cream-pie-1.png", 260, "top-house-boston-classic"], "pairing-product pairing-boston-classic", "9吋波士頓鮮奶派", true);
+  const productCards = [classicBostonCard, ...PAIRING_PRODUCTS.map(([title, image, note, price, id]) => topHouseProductCardMarkup([title, image, price, id], note ? "pairing-product has-note" : "pairing-product"))].join("");
   return `<section class="pairing-page">
     <section class="pairing-hero" aria-labelledby="pairing-title">
       <h1 id="pairing-title">搭配單品</h1>
@@ -1899,7 +1902,7 @@ function bigBearContent() {
 
 
 function bostonPieContent() {
-  const giftCards = BOSTON_GIFTS.map(([image, label, description, price, id]) => topHouseProductCardMarkup([label, image, price, id], "boston-gift-card")).join("");
+  const giftCards = BOSTON_GIFTS.map(([image, label, description, price, id]) => topHouseProductCardMarkup([label, image, price, id], "boston-gift-card", description)).join("");
   return `<section class="boston-page">
     <section class="boston-product-feature">
       <div class="boston-product-visual"><img src="/images/poston-cream-pie-1.png" alt="波士頓鮮奶派與禮盒"></div>
@@ -1910,7 +1913,7 @@ function bostonPieContent() {
         <p class="boston-product-description">將鮮奶中去除83%的水，留下的精華爽口不甜<br>膩且富有細緻的口感。</p>
         <hr>
         <p class="boston-product-spec">波士頓派尺寸：9吋(23cm±10%)<br>印刷包裝：手繪水彩風格&amp;禮盒霧模搭配高質感<br>Pantone金屬色側邊。手提式紙盒設計，恕不<br>另外提供袋子</p>
-        <div class="boston-flavor-purchases"><div><span>經典口味</span>${topHousePurchaseMarkup("top-house-boston-classic", 260)}</div><div><span>新品口味</span>${topHousePurchaseMarkup("top-house-boston-new", 300)}</div></div>
+        <div class="boston-flavor-purchases"><div><span>新品口味</span>${topHousePurchaseMarkup("top-house-boston-new", 300)}</div></div>
         <img class="boston-vegetarian-badge" src="/images/icon-vlml.png" alt="奶蛋素">
       </div>
     </section>
