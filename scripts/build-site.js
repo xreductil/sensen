@@ -473,7 +473,7 @@ function roundPieContent() {
 }
 
 function countryCheeseContent() {
-  const cards = COUNTRY_CHEESE_GIFTS.map(([image, label, description, price, id]) => topHouseProductCardMarkup([label, image, price, id], "country-cheese-product-card")).join("");
+  const cards = COUNTRY_CHEESE_GIFTS.map(([image, label, description, price, id]) => topHouseProductCardMarkup([label, image, price, id], "country-cheese-product-card", description)).join("");
   const styleCards = COUNTRY_CHEESE_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
   return "<section class=\"big-bear-page country-cheese-page\"><section class=\"big-bear-hero\"><div class=\"big-bear-hero-title\"><h1>鄉村乳酪禮盒</h1></div></section><div class=\"big-bear-baby\"><img src=\"/images/icon-baby.png\" alt=\"\" aria-hidden=\"true\"></div><section class=\"big-bear-section country-cheese-products\"><div class=\"big-bear-grid big-bear-grid-three\">" + cards + "</div></section><section class=\"big-bear-styles\"><h2>••• 禮盒款式 •••</h2><div class=\"big-bear-style-grid\">" + styleCards + "</div></section><section class=\"boston-dm\" id=\"country-cheese-dm\"><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-title\"><strong>彌月禮盒DM下載</strong><span>⟶</span></a><a href=\"https://drive.google.com/file/d/1TJ37PaOoP-FWIeEDpldMbflZhHqvNIuZ/view\" target=\"_blank\" rel=\"noreferrer\" class=\"boston-dm-icon\" aria-label=\"查看彌月禮盒 DM\"><span class=\"boston-dm-book\" aria-hidden=\"true\"></span></a><p>完整商品資訊及價格，請參閱彌月商品目錄!</p></section></section>";
 }
@@ -1893,7 +1893,7 @@ const TOP_HOUSE_PRODUCT_RECORDS = [
 const TOP_HOUSE_PRODUCT_BY_ID = new Map(TOP_HOUSE_PRODUCT_RECORDS.map(record => [record[3], record]));
 
 function bigBearContent() {
-  const cards = BIG_BEAR_GIFTS.map(([image, label, description, price, id]) => topHouseProductCardMarkup([label, image, price, id], label === "C4" ? "big-bear-card-c4" : ""));
+  const cards = BIG_BEAR_GIFTS.map(([image, label, description, price, id]) => topHouseProductCardMarkup([label, image, price, id], label === "C4" ? "big-bear-card-c4" : "", description));
   const bigBearCards = [cards[0], cards[1], cards[2], cards[7]];
   const littleBearCards = cards.slice(3, 7);
   const styleCards = BIG_BEAR_STYLES.map(([image, label]) => "<figure class=\"big-bear-style-card\"><img src=\"/images/" + escapeAttr(image) + "\" alt=\"" + escapeAttr(label) + "\" loading=\"lazy\"></figure>").join("");
