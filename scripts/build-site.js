@@ -295,6 +295,45 @@ const LONG_CAKE_NAPOLEON_PRODUCTS = [
   ["巧克力拿破崙派", "f2.png", 288, "top-house-a7-chocolate-napoleon"],
 ];
 
+const TOP_HOUSE_CARD_DETAILS = new Map([
+  ["top-house-boston-classic", { title: "波士頓派（經典口味）", description: "9吋波士頓鮮奶派", originalPrice: 520 }],
+  ["top-house-boston-new", { title: "波士頓派（新品口味）", description: "9吋波士頓鮮奶派", originalPrice: 600 }],
+  ["top-house-pa1-boston-gift", { title: "PA1 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、油飯8兩x1、紅蛋x2", originalPrice: 635 }],
+  ["top-house-pa2-boston-gift", { title: "PA2 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、小檸檬x1、KT蛋糕x1、手工餅乾x1", originalPrice: 690 }],
+  ["top-house-pa3-boston-gift", { title: "PA3 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、草莓大福x3", originalPrice: 685 }],
+  ["top-house-pa4-boston-gift", { title: "PA4 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、草莓大理石x1", originalPrice: 880 }],
+  ["top-house-c1-big-bear", { title: "C1 大熊禮盒", description: "草莓大福x1、經典巧克力x1、油飯8兩x1、紅蛋x2", originalPrice: 835 }],
+  ["top-house-c2-big-bear", { title: "C2 大熊禮盒", description: "草莓大理石x1、鈕釦牛軋餅x1、珍珠脆糖小泡芙x1、達克瓦茲x3", originalPrice: 670 }],
+  ["top-house-c3-big-bear", { title: "C3 大熊禮盒", description: "9吋烤布蕾x1、油飯8兩x1、紅蛋x2", originalPrice: 875 }],
+  ["top-house-c4-big-bear", { title: "C4 大熊禮盒", description: "6吋輕乳酪蛋糕x1、油飯8兩x1、紅蛋x2", originalPrice: 785 }],
+  ["top-house-b1-little-bear", { title: "B1 小熊禮盒", description: "草莓大理石x1、經典巧克力x1", originalPrice: 720 }],
+  ["top-house-b2-little-bear", { title: "B2 小熊禮盒", description: "草莓大理石x1、手工小西點x4", originalPrice: 530 }],
+  ["top-house-b3-little-bear", { title: "B3 小熊禮盒", description: "草莓大福x1、油飯8兩x1、紅蛋x2", originalPrice: 475 }],
+  ["top-house-b4-little-bear", { title: "B4 小熊禮盒", description: "草莓大福x1、手工小西點x3、紅蛋x2", originalPrice: 515 }],
+  ["top-house-l1-country-cheese", { title: "L1 鄉村禮盒", description: "6吋檸檬老奶奶x1、小檸檬x1、KT貓蛋糕x1、手工餅乾x1、草莓大理石x1", originalPrice: 1145 }],
+  ["top-house-l2-country-cheese", { title: "L2 鄉村禮盒", description: "6吋比利時巧克力x1、草莓大理石x1、油飯8兩x1、紅蛋x2", originalPrice: 1355 }],
+  ["top-house-l3-country-cheese", { title: "L3 鄉村禮盒", description: "9吋杏仁派x1、手工餅乾x1、熊大x1、小檸檬x1、油飯8兩x1、紅蛋x2", originalPrice: 1000 }],
+  ["top-house-k1-creme-brulee", { description: "烤布蕾（9吋）", originalPrice: 760 }],
+  ["top-house-k2-pistachio-marble", { description: "開心果雲石（6吋）", originalPrice: 760 }],
+  ["top-house-k3-cheesecake", { description: "重乳酪（草莓／藍莓）（6吋）", originalPrice: 760 }],
+  ["top-house-k4-light-cheesecake", { description: "輕乳酪（6吋）", originalPrice: 670 }],
+  ["top-house-k5-belgian-chocolate", { description: "比利時巧克力（6吋）", originalPrice: 670 }],
+  ["top-house-k6-lemon-cheesecake", { description: "檸檬老奶奶（6吋）", originalPrice: 670 }],
+  ["top-house-a1-strawberry-marble", { title: "A1 草莓大理石", description: "粉嫩草莓蛋糕、雙層奶油", originalPrice: 360 }],
+  ["top-house-a2-honey-cake", { title: "A2 蜂蜜蛋糕", description: "天然蜂蜜、細緻綿密", originalPrice: 360 }],
+  ["top-house-a3-blueberry-angel", { title: "A3 藍莓天使", description: "藍莓慕斯、輕盈奶油", originalPrice: 360 }],
+  ["top-house-a4-lemon-love", { title: "A4 檸檬之戀", description: "雙層奶油、酸甜檸檬", originalPrice: 360 }],
+  ["top-house-a5-classic-chocolate", { title: "A5 經典巧克力", description: "濃郁巧克力夾心、香醇不膩口", originalPrice: 360 }],
+  ["top-house-a6-left-bank-coffee-roll", { title: "A6 左岸咖啡捲", description: "咖啡奶油、迷人醉香", originalPrice: 580 }],
+  ["top-house-a7-vanilla-napoleon", { title: "A7 香草拿破崙派", description: "香草奶油、酥脆千層", originalPrice: 580 }],
+  ["top-house-a7-chocolate-napoleon", { title: "A7 巧克力拿破崙派", description: "巧克力奶油、酥脆千層", originalPrice: 580 }],
+  ["top-house-a8-earl-grey-roll", { title: "A8 伯爵甜心捲", description: "伯爵奶油與香草布丁、茶韻清香", originalPrice: 580 }],
+  ["top-house-a9-mocha-chocolate", { title: "A9 摩卡巧克力", description: "苦甜巧克力、成熟風味", originalPrice: 580 }],
+  ["top-house-a10-violet", { title: "A10 紫羅蘭", description: "大甲芋頭、手作香草布丁", originalPrice: 580 }],
+  ["top-house-a11-japanese-layer", { title: "A11 日式千層", description: "經典千層工法、淡雅蜜香層層細緻", originalPrice: 580 }],
+  ["top-house-a12-osmanthus-oolong", { title: "A12 桂花烏龍甜心", description: "香草布丁與桂花烏龍奶油、清香優雅", originalPrice: 580 }],
+]);
+
 function topHousePurchaseMarkup(id, price) {
   return `<div class="top-house-purchase"><strong>NT$${Number(price).toLocaleString("zh-TW")}</strong><button class="top-house-add-cart" type="button" data-top-house-product-id="${escapeAttr(id)}">加入購物車</button></div><p class="top-house-purchase-message" data-top-house-product-message role="status"></p>`;
 }
@@ -305,11 +344,17 @@ function topHouseProductPath(id) {
 
 function topHouseProductCardMarkup([title, image, price, id], className = "", description = "", withPurchase = false) {
   const href = topHouseProductPath(id);
-  const descriptionMarkup = description ? `<span class="cake-product-description">${escapeHtml(description)}</span>` : "";
+  const details = TOP_HOUSE_CARD_DETAILS.get(id) || {};
+  const displayTitle = details.title || title;
+  const displayDescription = details.description || description;
+  const descriptionMarkup = displayDescription ? `<span class="cake-product-description">${escapeHtml(displayDescription)}</span>` : "";
   const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id, price) : "";
+  const priceMarkup = details.originalPrice
+    ? `<span class="cake-product-original-price">原價 NT$${Number(details.originalPrice).toLocaleString("zh-TW")}</span><strong class="cake-product-sale-price">特價 NT$${Number(price).toLocaleString("zh-TW")}</strong>`
+    : `NT$${Number(price).toLocaleString("zh-TW")}`;
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">
     <a class="cake-product-card-link" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span></a>
-    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(title)}</span>${descriptionMarkup}<span class="cake-product-price">NT$${Number(price).toLocaleString("zh-TW")}</span></a>${purchaseMarkup}</div>
+    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(displayTitle)}</span>${descriptionMarkup}<span class="cake-product-price">${priceMarkup}</span></a>${purchaseMarkup}</div>
   </article>`;
 }
 

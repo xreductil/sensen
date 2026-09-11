@@ -6565,6 +6565,18 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   font-weight: 700;
   line-height: 1.35;
 }
+.top-house-product-card .cake-product-original-price {
+  display: block;
+  color: #a28e7a;
+  font-size: .68em;
+  font-weight: 500;
+  line-height: 1.3;
+}
+.top-house-product-card .cake-product-sale-price {
+  display: block;
+  color: inherit;
+  font: inherit;
+}
 .top-house-product-card .cake-product-card-link {
   color: inherit;
   text-decoration: none;
