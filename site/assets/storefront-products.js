@@ -114,17 +114,6 @@
     .replace(/[（(]季節限定[）)]/g, '（季節限定）')
     // The API may include the package count while the legacy route map does not.
     .replace(/[（(]\d+入[）)]$/g, '');
-  const money = value => {
-    const amount = Number(value || 0);
-    return amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
-  };
-  const priceSummary = product => {
-    const options = Object.entries(product.priceOptions || {})
-      .filter(([, value]) => Number.isFinite(Number(value)) && Number(value) > 0);
-    return options.length
-      ? options.map(([size, value]) => `${size} ${money(value)}`).join(' · ')
-      : money(product.priceValue);
-  };
   const pathMap = (() => {
     try { return JSON.parse(root.dataset.productPaths || '{}'); } catch (error) { return {}; }
   })();
@@ -141,7 +130,7 @@
     const name = String(product.title || '商品');
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;
-    const meta = `<span class="cake-product-title">${title}</span><span class="cake-product-price">${escapeHtml(priceSummary(product))}</span>`;
+    const meta = `<span class="cake-product-title">${title}</span>`;
     return `<article class="${articleClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
   };
 

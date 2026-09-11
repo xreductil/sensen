@@ -15,6 +15,9 @@ type ProductRow = {
   metadata_json: string | null;
   created_at: string | null;
   gallery_json: string | null;
+  cart_quantity?: number;
+  cart_variant_key?: string | null;
+  cart_selected_options_json?: string | null;
 };
 
 type StoreProduct = {
@@ -491,7 +494,10 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     other: String(metadata.other || metadata.otherNotes || ""),
     emphasis: String(metadata.emphasis || ""),
     note: String(metadata.note || ""),
-    variants,
+    variants: {
+      ...variants,
+      sizes: Object.keys((variants.sizes || {}) as Record<string, unknown>).length ? variants.sizes : priceOptions,
+    },
     createdAt: String(row.created_at || ""),
     likes: Math.max(0, Number(metadata.likes || 0)),
     dietary: String(metadata.dietary || metadata.dietaryLabel || ""),
@@ -499,6 +505,48 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     published: row.is_active === 1,
   };
 };
+
+const productSizeOptions = (product: StoreProduct) => {
+  const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const sizes = variants.sizes && typeof variants.sizes === "object" && !Array.isArray(variants.sizes)
+    ? variants.sizes as Record<string, unknown>
+    : product.priceOptions;
+  return Object.fromEntries(Object.entries(sizes || {}).reduce<Array<[string, number]>>((entries, [size, value]) => {
+    const label = String(size).trim();
+    const amount = Number(value);
+    if (label && Number.isFinite(amount) && amount > 0) entries.push([label, amount]);
+    return entries;
+  }, []));
+};
+
+const productVariant = (product: StoreProduct, options: Record<string, unknown> = {}) => {
+  const sizes = productSizeOptions(product);
+  const labels = Object.keys(sizes);
+  if (!labels.length) return null;
+  const size = labels.includes(String(options.size || "")) ? String(options.size) : labels[0];
+  const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length
+    ? variants.temperatures.map(value => String(value).trim()).filter(Boolean)
+    : ["冷"];
+  const sugars = Array.isArray(variants.sugars) && variants.sugars.length
+    ? variants.sugars.map(value => String(value).trim()).filter(Boolean)
+    : ["正常甜"];
+  const temperature = temperatures.includes(String(options.temperature || "")) ? String(options.temperature) : temperatures[0];
+  const sugar = sugars.includes(String(options.sugar || "")) ? String(options.sugar) : sugars[0];
+  return { size, temperature, sugar, priceValue: Number(sizes[size] || 0) };
+};
+
+const variantKey = (variant: ReturnType<typeof productVariant>) => variant
+  ? encodeURIComponent([variant.size, variant.temperature, variant.sugar].join("|"))
+  : "";
+
+const variantTitle = (title: string, variant: ReturnType<typeof productVariant>) => {
+  if (!variant) return title;
+  const details = [variant.size !== "單杯" ? variant.size : "", variant.temperature, variant.sugar].filter(Boolean).join("・");
+  return details ? `${title}（${details}）` : title;
+};
+
+const baseProductLookup = (value: string) => String(value || "").split("::", 1)[0];
 
 const imagePathFromKey = (value: unknown) => {
   const key = String(value || "").trim().replace(/^\/?(?:assets\/)?images\//i, "");
@@ -535,24 +583,41 @@ const productSelect = `
 `;
 
 const findProduct = async (env: Env, value: string) => {
-  if (!value) return null;
+  const lookup = baseProductLookup(value);
+  if (!lookup) return null;
   const row = await env.DB.prepare(`${productSelect}
     LEFT JOIN categories c ON c.id = p.category_id
     WHERE p.is_active = 1 AND (p.slug = ?1 OR p.name = ?1)
-    LIMIT 1`).bind(value).first<ProductRow>();
+    LIMIT 1`).bind(lookup).first<ProductRow>();
   return row || null;
 };
 
 const cartSummary = async (env: Env, guestId: string) => {
-  const result = await env.DB.prepare(`${productSelect}
+  const cartProductSelect = productSelect.replace(
+    "    p.created_at,\n",
+    "    p.created_at,\n    ci.quantity AS cart_quantity,\n    ci.variant_key AS cart_variant_key,\n    ci.selected_options_json AS cart_selected_options_json,\n",
+  );
+  const result = await env.DB.prepare(`${cartProductSelect}
     LEFT JOIN categories c ON c.id = p.category_id
     INNER JOIN cart_items ci ON ci.product_id = p.id
     WHERE ci.guest_id = ?1 AND p.is_active = 1
     ORDER BY ci.created_at ASC`).bind(guestId).all<ProductRow & { quantity: number }>();
-  const items = result.results.map((row) => ({
-    ...productFromRow(row),
-    qty: Math.max(1, Number(row.quantity || 1)),
-  }));
+  const items = result.results.map((row) => {
+    const product = productFromRow(row);
+    const options = parseJson<Record<string, unknown>>(row.cart_selected_options_json, {});
+    const variant = productVariant(product, options);
+    const key = String(row.cart_variant_key || variantKey(variant));
+    return {
+      ...product,
+      id: key ? `${product.id}::${key}` : product.id,
+      productId: product.id,
+      title: variantTitle(product.title, variant),
+      price: variant ? `$${variant.priceValue.toFixed(2)}` : product.price,
+      priceValue: variant?.priceValue ?? product.priceValue,
+      selectedOptions: variant ? { size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
+      qty: Math.max(1, Number(row.cart_quantity || 1)),
+    };
+  });
   const subtotal = items.reduce((sum, item) => sum + item.priceValue * item.qty, 0);
   const leadDays = items.reduce((max, item) => Math.max(max, Number(item.day || 5)), 0);
   return {
@@ -1076,14 +1141,21 @@ export default {
         const product = await findProduct(env, lookup);
         if (!product) return json(request, { error: "找不到此商品，請重新整理商品頁。" }, 404);
 
+        const storeProduct = productFromRow(product);
+        const requestedOptions = body.options && typeof body.options === "object" && !Array.isArray(body.options) ? body.options as Record<string, unknown> : {};
+        const variant = productVariant(storeProduct, requestedOptions);
+        const selectedOptions = variant ? { size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : {};
+        const selectedVariantKey = variantKey(variant);
         const guestId = getGuestId(request);
         const quantity = Math.min(99, Math.max(1, Number(body.qty || 1)));
         await env.DB.prepare(`
-          INSERT INTO cart_items (guest_id, product_id, quantity)
-          VALUES (?1, ?2, ?3)
-          ON CONFLICT (guest_id, product_id)
-          DO UPDATE SET quantity = quantity + excluded.quantity, updated_at = CURRENT_TIMESTAMP
-        `).bind(guestId, product.db_id, quantity).run();
+          INSERT INTO cart_items (guest_id, product_id, variant_key, selected_options_json, quantity)
+          VALUES (?1, ?2, ?3, ?4, ?5)
+          ON CONFLICT (guest_id, product_id, variant_key)
+          DO UPDATE SET quantity = quantity + excluded.quantity,
+            selected_options_json = excluded.selected_options_json,
+            updated_at = CURRENT_TIMESTAMP
+        `).bind(guestId, product.db_id, selectedVariantKey, JSON.stringify(selectedOptions), quantity).run();
         return json(request, await cartSummary(env, guestId), 200, guestId);
       }
 
@@ -1093,11 +1165,13 @@ export default {
         const product = await findProduct(env, lookup);
         if (!product) return json(request, { error: "購物車商品不存在。" }, 404);
         const guestId = getGuestId(request);
+        const separator = lookup.indexOf("::");
+        const selectedVariantKey = separator >= 0 ? lookup.slice(separator + 2) : "";
         const quantity = Number(body.qty || 0);
         if (request.method === "DELETE" || quantity <= 0) {
-          await env.DB.prepare("DELETE FROM cart_items WHERE guest_id = ?1 AND product_id = ?2").bind(guestId, product.db_id).run();
+          await env.DB.prepare("DELETE FROM cart_items WHERE guest_id = ?1 AND product_id = ?2 AND variant_key = ?3").bind(guestId, product.db_id, selectedVariantKey).run();
         } else {
-          await env.DB.prepare("UPDATE cart_items SET quantity = ?1, updated_at = CURRENT_TIMESTAMP WHERE guest_id = ?2 AND product_id = ?3").bind(Math.min(99, quantity), guestId, product.db_id).run();
+          await env.DB.prepare("UPDATE cart_items SET quantity = ?1, updated_at = CURRENT_TIMESTAMP WHERE guest_id = ?2 AND product_id = ?3 AND variant_key = ?4").bind(Math.min(99, quantity), guestId, product.db_id, selectedVariantKey).run();
         }
         return json(request, await cartSummary(env, guestId), 200, guestId);
       }

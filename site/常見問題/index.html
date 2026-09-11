@@ -329,6 +329,45 @@
   });
 })();
 </script>
+<script>
+(() => {
+  document.querySelectorAll('.faq-item > button').forEach((button) => {
+    button.addEventListener('click', () => {
+      const answer = document.getElementById(button.getAttribute('aria-controls'));
+      const open = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!open));
+      button.querySelector('.faq-plus').textContent = open ? '＋' : '－';
+      if (answer) answer.hidden = open;
+    });
+  });
+})();
+</script>
+<script>
+(() => {
+  document.querySelectorAll('.faq-item > button').forEach((button) => {
+    button.addEventListener('click', () => {
+      const answer = document.getElementById(button.getAttribute('aria-controls'));
+      const open = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!open));
+      button.querySelector('.faq-plus').textContent = open ? '＋' : '－';
+      if (answer) answer.hidden = open;
+    });
+  });
+})();
+</script>
+<script>
+(() => {
+  document.querySelectorAll('.faq-item > button').forEach((button) => {
+    button.addEventListener('click', () => {
+      const answer = document.getElementById(button.getAttribute('aria-controls'));
+      const open = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!open));
+      button.querySelector('.faq-plus').textContent = open ? '＋' : '－';
+      if (answer) answer.hidden = open;
+    });
+  });
+})();
+</script>
   </main>
   
   <script>

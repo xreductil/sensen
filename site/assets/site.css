@@ -1802,6 +1802,71 @@ a { color: inherit; text-decoration: none; }
   font-weight: 700;
 }
 
+.product-detail-size-options {
+  margin: 0 0 18px;
+}
+
+.product-detail-size-options-label {
+  display: block;
+  margin-bottom: 8px;
+  color: #5a5049;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.product-detail-size-options-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.product-detail-size-option {
+  display: inline-flex;
+  min-width: 92px;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 9px 14px;
+  border: 1px solid #d4c4b5;
+  border-radius: 8px;
+  background: #fff;
+  color: #5a5049;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+
+.product-detail-size-option span {
+  color: #8a7463;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.product-detail-size-option.is-selected,
+.product-detail-size-option:hover,
+.product-detail-size-option:focus-visible {
+  border-color: #b66f2d;
+  background: #fff7ef;
+  color: #9d5c23;
+}
+
+.product-detail-original-price,
+.product-detail-sale-price {
+  display: block;
+}
+
+.product-detail-original-price {
+  color: #a28e7a;
+  font-size: .62em;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.product-detail-sale-price {
+  color: inherit;
+  font: inherit;
+}
+
 .product-detail-purchase .cake-add-cart {
   flex: 0 1 260px;
 }

@@ -334,8 +334,8 @@ const TOP_HOUSE_CARD_DETAILS = new Map([
   ["top-house-a12-osmanthus-oolong", { title: "A12 桂花烏龍甜心", description: "香草布丁與桂花烏龍奶油、清香優雅", originalPrice: 580 }],
 ]);
 
-function topHousePurchaseMarkup(id, price) {
-  return `<div class="top-house-purchase"><strong>NT$${Number(price).toLocaleString("zh-TW")}</strong><button class="top-house-add-cart" type="button" data-top-house-product-id="${escapeAttr(id)}">加入購物車</button></div><p class="top-house-purchase-message" data-top-house-product-message role="status"></p>`;
+function topHousePurchaseMarkup(id) {
+  return `<div class="top-house-purchase"><button class="top-house-add-cart" type="button" data-top-house-product-id="${escapeAttr(id)}">加入購物車</button></div><p class="top-house-purchase-message" data-top-house-product-message role="status"></p>`;
 }
 
 function topHouseProductPath(id) {
@@ -348,13 +348,10 @@ function topHouseProductCardMarkup([title, image, price, id], className = "", de
   const displayTitle = details.title || title;
   const displayDescription = details.description || description;
   const descriptionMarkup = displayDescription ? `<span class="cake-product-description">${escapeHtml(displayDescription)}</span>` : "";
-  const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id, price) : "";
-  const priceMarkup = details.originalPrice
-    ? `<span class="cake-product-original-price">原價 NT$${Number(details.originalPrice).toLocaleString("zh-TW")}</span><strong class="cake-product-sale-price">特價 NT$${Number(price).toLocaleString("zh-TW")}</strong>`
-    : `NT$${Number(price).toLocaleString("zh-TW")}`;
+  const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id) : "";
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">
     <a class="cake-product-card-link" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span></a>
-    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(displayTitle)}</span>${descriptionMarkup}<span class="cake-product-price">${priceMarkup}</span></a>${purchaseMarkup}</div>
+    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(displayTitle)}</span>${descriptionMarkup}</a>${purchaseMarkup}</div>
   </article>`;
 }
 
@@ -1661,7 +1658,7 @@ function birthdayCakeContent() {
           </span>
         </a>
         <div class="cake-product-meta">
-          <a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${name}</span><span class="cake-product-price">${PRODUCT_PRICE_LABEL}</span></a>
+          <a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${name}</span></a>
           <button class="cake-add-cart" type="button" data-add-cart-title="${escapeAttr(name.replace(/<br>/g, "").replace(/\(季節限定\)/g, "（季節限定）"))}">加入購物車</button>
         </div>
       </article>`;
@@ -2090,7 +2087,7 @@ const PRODUCT_ROUTE_ALIASES = new Map([
 ]);
 
 function souvenirPageContent() {
-  const cards = SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => `<article class="souvenir-card"><a class="souvenir-card-link" href="${escapeAttr(href)}"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(title)}</h2><span class="souvenir-card-price">${PRODUCT_PRICE_LABEL}</span></div><span class="souvenir-likes" aria-label="收藏 ${likes} 次"><span aria-hidden="true">♡</span> ${likes}</span></div></a><button class="souvenir-add-cart" type="button" data-souvenir-add-cart="${escapeAttr(title)}">加入購物車</button></article>`).join("");
+  const cards = SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => `<article class="souvenir-card"><a class="souvenir-card-link" href="${escapeAttr(href)}"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(title)}</h2></div><span class="souvenir-likes" aria-label="收藏 ${likes} 次"><span aria-hidden="true">♡</span> ${likes}</span></div></a><button class="souvenir-add-cart" type="button" data-souvenir-add-cart="${escapeAttr(title)}">加入購物車</button></article>`).join("");
   return `<section class="souvenir-page"><section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt=""><div class="souvenir-grid">${cards}</div></section></section>
   <script>
   (() => {

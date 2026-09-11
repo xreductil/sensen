@@ -390,7 +390,9 @@ function productsFromData() {
       quantity: Math.max(0, Number(product.quantity ?? 25)),
       day: String(product.day || '5')
     };
-    if (product.variants) normalized.variants = normalizeProductVariants(product.variants, priceValue);
+    if (product.variants || product.priceOptions) {
+      normalized.variants = normalizeProductVariants(product.variants || { sizes: product.priceOptions }, priceValue);
+    }
     return normalized;
   });
 }
@@ -429,7 +431,9 @@ function productsWithOverrides(db) {
     merged.img = normalizeProductImage(merged.img);
     merged.priceValue = Number(merged.priceValue || String(merged.price || '').replace(/[^0-9.]/g, '')) || 0;
     merged.price = merged.price || ('$' + merged.priceValue.toFixed(2));
-    if (merged.variants) merged.variants = normalizeProductVariants(merged.variants, merged.priceValue);
+    if (merged.variants || merged.priceOptions) {
+      merged.variants = normalizeProductVariants(merged.variants || { sizes: merged.priceOptions }, merged.priceValue);
+    }
     merged.sku = String(merged.sku || merged.id || '').trim();
     merged.spec = String(merged.spec || '').trim();
     merged.published = merged.published !== false;
