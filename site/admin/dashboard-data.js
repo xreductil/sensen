@@ -51,6 +51,29 @@
   const calendarKey = parts => parts ? `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}` : '';
   const calendarDate = parts => new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
   const calendarParts = date => ({ year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() });
+  const calendarRangePoint = (start, end) => {
+    const startParts = calendarParts(start);
+    const endParts = calendarParts(end);
+    return {
+      label: `${startParts.month}/${startParts.day}–${endParts.month}/${endParts.day}`,
+      startKey: calendarKey(startParts),
+      endKey: calendarKey(endParts)
+    };
+  };
+  const dashboardRangeState = {
+    value: 'year',
+    salesRenderer: null,
+    customerRenderer: null
+  };
+  const dashboardRanges = new Set(['year', 'month', 'week']);
+  const syncDashboardRange = value => {
+    dashboardRangeState.value = dashboardRanges.has(value) ? value : 'year';
+    document.querySelectorAll('[data-dashboard-range]').forEach(select => {
+      if (select.value !== dashboardRangeState.value) select.value = dashboardRangeState.value;
+    });
+    dashboardRangeState.salesRenderer?.();
+    dashboardRangeState.customerRenderer?.();
+  };
   const ordersInRange = (orders, range) => {
     const today = dateParts(new Date());
     if (!today) return [];
@@ -102,14 +125,29 @@
     installDashboardVisualStyles();
 
     const render = () => {
-      const range = rangeSelect?.value || 'year';
+      const range = dashboardRangeState.value;
       const today = dateParts(new Date());
       const points = [];
       if (range === 'year') {
         for (let month = 1; month <= 12; month += 1) points.push({ label: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1], key: `${today.year}-${String(month).padStart(2, '0')}` });
       } else if (range === 'month') {
-        const days = new Date(Date.UTC(today.year, today.month, 0)).getUTCDate();
-        for (let day = 1; day <= days; day += 1) points.push({ label: String(day), key: `${today.year}-${String(today.month).padStart(2, '0')}-${String(day).padStart(2, '0')}` });
+        const monthStart = calendarDate({ year: today.year, month: today.month, day: 1 });
+        const monthEnd = new Date(Date.UTC(today.year, today.month, 0));
+        let start = new Date(monthStart);
+        const firstMondayOffset = (8 - start.getUTCDay()) % 7;
+        if (firstMondayOffset > 0) {
+          const end = new Date(start);
+          end.setUTCDate(end.getUTCDate() + firstMondayOffset - 1);
+          points.push(calendarRangePoint(start, end > monthEnd ? monthEnd : end));
+          start = new Date(end);
+          start.setUTCDate(start.getUTCDate() + 1);
+        }
+        while (start <= monthEnd) {
+          const end = new Date(start);
+          end.setUTCDate(end.getUTCDate() + 6);
+          points.push(calendarRangePoint(start, end > monthEnd ? monthEnd : end));
+          start.setUTCDate(start.getUTCDate() + 7);
+        }
       } else {
         const start = calendarDate(today);
         start.setUTCDate(start.getUTCDate() - 6);
@@ -126,13 +164,17 @@
       const sales = points.map(point => scopedOrders.filter(order => {
         const parts = dateParts(order.createdAt);
         const key = range === 'year' ? `${parts?.year}-${String(parts?.month || '').padStart(2, '0')}` : calendarKey(parts);
-        return key === point.key;
+        return range === 'month' ? key >= point.startKey && key <= point.endKey : key === point.key;
       }).reduce((sum, order) => sum + Math.max(0, Number(order.total || 0)), 0));
       const max = Math.max(1, ...sales);
       const salesTotal = sales.reduce((sum, value) => sum + value, 0);
-      chart.innerHTML = `<div class="admin-live-chart" role="img" aria-label="Sales linked to real orders. Purchase has no cost data yet."><div class="admin-live-legend"><span style="--legend-color:#E66239">Sales ${money(salesTotal)}</span><span style="--legend-color:#4FAF7A">Purchase 尚無進貨成本資料</span></div>${sales.length ? `<div class="admin-live-bars">${points.map((point, index) => `<div class="admin-live-bar-group"><div class="admin-live-bar-stack"><span class="admin-live-bar" style="--bar-color:#E66239;height:${Math.max(2, sales[index] / max * 100)}%" title="Sales ${money(sales[index])}"${sales[index] ? '' : ' data-zero="true"'}></span><span class="admin-live-bar" style="--bar-color:#4FAF7A;height:2px" title="Purchase 尚無進貨成本資料" data-zero="true"></span></div><small>${escapeHtml(point.label)}</small></div>`).join('')}</div>` : '<div class="admin-live-empty">目前沒有訂單銷售資料。</div>'}</div>`;
+      chart.innerHTML = `<div class="admin-live-chart" role="img" aria-label="Sales linked to real orders. Purchase has no cost data yet."><div class="admin-live-legend"><span style="--legend-color:#E66239">Sales ${money(salesTotal)}</span><span style="--legend-color:#4FAF7A">Purchase 尚無進貨成本資料</span></div>${sales.length ? `<div class="admin-live-bars" style="grid-template-columns:repeat(${points.length},minmax(2rem,1fr))">${points.map((point, index) => `<div class="admin-live-bar-group"><div class="admin-live-bar-stack"><span class="admin-live-bar" style="--bar-color:#E66239;height:${Math.max(2, sales[index] / max * 100)}%" title="Sales ${money(sales[index])}"${sales[index] ? '' : ' data-zero="true"'}></span><span class="admin-live-bar" style="--bar-color:#4FAF7A;height:2px" title="Purchase 尚無進貨成本資料" data-zero="true"></span></div><small>${escapeHtml(point.label)}</small></div>`).join('')}</div>` : '<div class="admin-live-empty">目前沒有訂單銷售資料。</div>'}</div>`;
     };
-    if (rangeSelect) rangeSelect.onchange = render;
+    dashboardRangeState.salesRenderer = render;
+    if (rangeSelect) {
+      rangeSelect.value = dashboardRangeState.value;
+      rangeSelect.onchange = () => syncDashboardRange(rangeSelect.value);
+    }
     render();
   };
 
@@ -142,7 +184,7 @@
     if (!chart) return;
     installDashboardVisualStyles();
     const render = () => {
-      const scopedOrders = ordersInRange(activeOrders, rangeSelect?.value || 'six-months');
+      const scopedOrders = ordersInRange(activeOrders, dashboardRangeState.value);
       const customerOrders = new Map();
       scopedOrders.forEach(order => {
         const key = String(order.userId || order.customer?.email || `guest:${order.id}`);
@@ -162,7 +204,11 @@
       setText('[data-customer-percent="return"]', `${100 - firstPercent}%`);
       chart.innerHTML = `<div class="admin-customer-donut" style="--first-degree:${firstPercent * 3.6}deg"><span class="admin-customer-donut-label">${totalCustomers}<br>Customers</span></div>`;
     };
-    if (rangeSelect) rangeSelect.onchange = render;
+    dashboardRangeState.customerRenderer = render;
+    if (rangeSelect) {
+      rangeSelect.value = dashboardRangeState.value;
+      rangeSelect.onchange = () => syncDashboardRange(rangeSelect.value);
+    }
     render();
   };
 
