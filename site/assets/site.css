@@ -5203,6 +5203,7 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   .catering-hero-actions,
   .tea-party-hero-actions {
     width: min(320px, 100%);
+    justify-self: center;
     flex-direction: column;
     gap: 12px;
     margin-top: 28px;
