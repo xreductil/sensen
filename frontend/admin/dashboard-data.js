@@ -89,6 +89,8 @@
           ${items.map(item => `<div class="admin-order-item"><span>${escapeHtml(item.title || '商品')} × ${Number(item.qty || 0)}</span><strong>${money(Number(item.priceValue || 0) * Number(item.qty || 0))}</strong></div>`).join('')}
         </div>
         <div class="admin-order-total"><strong>合計</strong><strong>${money(order.total)}</strong></div>
+        <button type="button" class="btn btn-primary w-100 admin-order-complete" data-order-complete="${escapeHtml(order.id)}"${['completed', 'picked_up'].includes(status) ? ' disabled' : ''}>${['completed', 'picked_up'].includes(status) ? '已完成' : '標記為已完成'}</button>
+        <button type="button" class="btn btn-outline-primary w-100 mt-2 admin-order-picked-up" data-order-picked-up="${escapeHtml(order.id)}"${status === 'picked_up' ? ' disabled' : ''}>${status === 'picked_up' ? '已取貨' : '標記為已取貨'}</button>
       </div>`;
     document.body.appendChild(modal);
 
@@ -103,6 +105,29 @@
     modal.addEventListener('click', event => {
       if (event.target === modal) close();
     });
+    const updateStatus = async (nextStatus, button) => {
+      const originalText = button.textContent;
+      button.disabled = true;
+      button.textContent = '更新中...';
+      try {
+        const response = await fetch('/api/admin/orders/status', {
+          method: 'PATCH',
+          credentials: 'include',
+          headers: { Accept: 'application/json', 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: order.id, status: nextStatus })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || '訂單狀態更新失敗。');
+        close();
+        await loadDashboardData();
+      } catch (error) {
+        console.error(error);
+        button.disabled = false;
+        button.textContent = originalText;
+      }
+    };
+    modal.querySelector('[data-order-complete]').addEventListener('click', event => updateStatus('completed', event.currentTarget));
+    modal.querySelector('[data-order-picked-up]').addEventListener('click', event => updateStatus('picked_up', event.currentTarget));
     document.addEventListener('keydown', onKeyDown);
     modal.querySelector('[data-close-order-modal]').focus();
   };
