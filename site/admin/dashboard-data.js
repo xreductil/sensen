@@ -126,10 +126,9 @@
     const recentList = document.querySelector('[data-admin-list="recent-orders"]');
     if (recentList) recentList.innerHTML = recentOrders.length
       ? recentOrders.map(order => {
-          const firstItem = order.items?.[0] || {};
           const itemCount = (order.items || []).reduce((sum, item) => sum + Math.max(0, Number(item.qty || 0)), 0);
           const status = String(order.status || 'created').toLowerCase();
-          return `<li class="list-group-item d-flex align-items-center gap-3 admin-order-row"><img src="${escapeHtml(productImage(firstItem.img))}" alt="${escapeHtml(firstItem.title || '訂單商品')}" class="avatar avatar-md rounded object-fit-cover"><span class="flex-grow-1"><strong>#${escapeHtml(order.id)}</strong><small class="d-block text-secondary">${escapeHtml(order.customer?.name || '森森會員')} · ${itemCount} 件 · ${escapeHtml(formatOrderDate(order.createdAt))}</small></span><span class="badge bg-success-subtle text-success">${escapeHtml(statusLabels[status] || status)}</span><strong>${money(order.total)}</strong></li>`;
+          return `<li class="list-group-item d-flex align-items-center gap-3 admin-order-row"><span class="flex-grow-1"><strong>#${escapeHtml(order.id)}</strong><small class="d-block text-secondary">${escapeHtml(order.customer?.name || '森森會員')} · ${itemCount} 件 · ${escapeHtml(formatOrderDate(order.createdAt))}</small></span><span class="badge bg-success-subtle text-success">${escapeHtml(statusLabels[status] || status)}</span><strong>${money(order.total)}</strong></li>`;
         }).join('')
       : '<li class="list-group-item text-secondary">目前沒有訂單。</li>';
   };
