@@ -1599,7 +1599,6 @@ function birthdayCakeContent() {
         </a>
         <div class="cake-product-meta">
           <a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${name}</span></a>
-          <button class="cake-add-cart" type="button" data-add-cart-title="${escapeAttr(name.replace(/<br>/g, "").replace(/\(季節限定\)/g, "（季節限定）"))}">加入購物車</button>
         </div>
       </article>`;
     const cards = section.products.map(cardHtml).join("");
@@ -1645,29 +1644,6 @@ function birthdayCakeContent() {
     document.addEventListener("click", (event) => {
       const button = event.target.closest ? event.target.closest("[data-cake-load-more]") : null;
       if (button) toggleCakeProducts(button);
-    });
-  })();
-  (() => {
-    document.querySelectorAll("[data-add-cart-title]").forEach((button) => {
-      button.addEventListener("click", async (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        const original = button.textContent;
-        button.disabled = true;
-        button.textContent = "加入中…";
-        try {
-          const response = await fetch("/api/cart/add", { method: "POST", credentials: "include", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ title: button.dataset.addCartTitle, qty: 1 }) });
-          const data = await response.json().catch(() => ({}));
-          if (!response.ok) throw new Error(data.error || "加入購物車失敗。");
-          button.textContent = "已加入購物車";
-          document.querySelector(".cart-trigger")?.click();
-        } catch (error) {
-          button.textContent = error.message;
-          window.setTimeout(() => { button.textContent = original; }, 1800);
-        } finally {
-          button.disabled = false;
-        }
-      });
     });
   })();
   </script>`;
