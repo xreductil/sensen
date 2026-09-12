@@ -1445,7 +1445,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     });
   })();
   </script>
-  <footer class="footer">© 2018 - 2026 森森點心坊. All Rights Reserved. | Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>. | <a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%a2%9d%e6%ac%be/">隱私權政策</a></footer>
+  <footer class="footer"><span class="footer-item">© 2018 - 2026 森森點心坊. All Rights Reserved.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item">Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item"><a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%A2%9d%e6%ac%be/">隱私權政策</a></span></footer>
   <div class="sensen-cart-overlay" id="sensen-cart-overlay" hidden></div>
   <aside class="sensen-cart-drawer" id="sensen-cart-drawer" aria-label="購物車" aria-hidden="true"><div class="sensen-cart-head"><h2>購物車</h2><button class="sensen-cart-close" type="button" aria-label="關閉購物車">×</button></div><div class="sensen-cart-body"><p data-cart-message>載入中…</p><div data-cart-items></div><div class="sensen-cart-fields" data-cart-options hidden><label>優惠碼<div class="sensen-cart-coupon-row"><input data-cart-coupon type="text" placeholder="輸入優惠碼" autocomplete="off"><button class="sensen-cart-coupon-apply" type="button" data-cart-apply-coupon>套用</button></div></label><label>Pickup date（取貨日期）<input data-cart-pickup type="date"></label><small data-cart-date-hint></small><p class="sensen-cart-quote-message" data-cart-quote-message role="status"></p></div></div><div class="sensen-cart-foot"><div class="sensen-cart-price-lines" data-cart-price-lines hidden><div><span>小計</span><strong data-cart-subtotal>$0.00</strong></div><div data-cart-discount-row hidden><span>折扣</span><strong data-cart-discount>-$0.00</strong></div><div class="is-total"><span>合計</span><strong data-cart-total>$0.00</strong></div></div><a class="button" href="/checkout/">結帳</a><a class="sensen-cart-secondary" href="/customer/admin/">前往會員中心</a></div></aside>
 ${purchaseScripts ? `\n  ${purchaseScripts}` : "\n  "}
@@ -3128,12 +3128,13 @@ function syncProductDetailSnapshot() {
     }
   };
   walk(OUT_DIR);
+  const footerMarkup = `<footer class="footer"><span class="footer-item">© 2018 - 2026 森森點心坊. All Rights Reserved.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item">Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item"><a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%A2%9d%e6%ac%be/">隱私權政策</a></span></footer>`;
   for (const filePath of htmlFiles) {
     const html = fs.readFileSync(filePath, "utf8");
     const relative = path.relative(OUT_DIR, filePath).split(path.sep);
     const localPath = relative.length > 1 ? `/${relative.slice(0, -1).join("/")}` : "/";
     const isProductPage = localPath.startsWith("/product-item/") && productIdForDetailPath(localPath);
-    let updated = html;
+    let updated = html.replace(/<footer class="footer">[\s\S]*?<\/footer>/, footerMarkup);
     if (isProductPage) {
       const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
       updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));

@@ -2449,6 +2449,13 @@ body.product-order-info-open {
   text-align: center;
 }
 .footer a { color: var(--sand); }
+.footer-item { display: inline; }
+
+@media (max-width: 620px) {
+  .footer { padding: 30px 16px; line-height: 1.7; }
+  .footer-item { display: block; }
+  .footer-separator { display: none; }
+}
 
 body::after {
   position: fixed;
