@@ -13,7 +13,7 @@
     'season-only': '季節限定',
     'new-arrival': '新品上市',
     'latest-news': '最新消息',
-    'sensen-coffee': '森森飲品'
+    'sensen-coffee': '生日蛋糕'
   };
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({

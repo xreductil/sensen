@@ -5,7 +5,8 @@
   const list = page.querySelector('[data-news-list]');
   const buttons = [...page.querySelectorAll('[data-news-filter]')];
   let articles = [];
-  let activeFilter = 'all';
+  const requestedFilter = new URLSearchParams(window.location.search).get('category');
+  let activeFilter = buttons.some(button => button.dataset.newsFilter === requestedFilter) ? requestedFilter : 'all';
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -65,6 +66,14 @@
     });
     render();
   }));
+
+  if (activeFilter !== 'all') {
+    buttons.forEach(button => {
+      const active = button.dataset.newsFilter === activeFilter;
+      button.classList.toggle('is-active', active);
+      button.setAttribute('aria-pressed', String(active));
+    });
+  }
 
   fetch('/api/news', { credentials: 'include', headers: { Accept: 'application/json' } })
     .then(response => {

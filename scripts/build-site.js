@@ -35,6 +35,8 @@ const EXTRA_MARKDOWN_PAGES = [
 const SOURCE_ORIGIN = "https://www.sensen.com.tw";
 const RETIRED_CONTENT_PATHS = new Set([
   "/author/admin",
+  "/森森咖啡",
+  "/產品介紹/生日蛋糕-下方有dm供下載-264",
   "/slide-types/index-slider",
   "/產品介紹/page/2",
   "/產品介紹/page/3",
@@ -612,55 +614,6 @@ const CAKE_SECTIONS = [
   },
 ];
 
-const COFFEE_MENU_SECTIONS = [
-  { title: "咖啡類", items: [
-    ["黑咖啡", "Black Coffee", "冷／熱", "M NT$65 · L NT$80"], ["原味拿鐵", "Coffee Latte", "冷／熱", "M NT$85 · L NT$100"],
-    ["青梅氣泡冰咖啡", "Green plum sparkling coffee", "冷", "NT$95"], ["西西里青檸冰咖啡", "Lemon ice coffee", "冷", "NT$75"],
-    ["纖橙冰咖啡", "Orange ice coffee", "冷", "NT$75"], ["卡布奇諾", "Cappuccino", "冷／熱", "M NT$85 · L NT$100"],
-    ["摩卡", "Mocha", "冷／熱", "M NT$90 · L NT$110"], ["焦糖瑪奇朵", "Caramel macchiato", "冷／熱", "M NT$95 · L NT$115"],
-    ["麥芽威士忌拿鐵", "Whisky Latte", "冷／熱", "M NT$95 · L NT$115"], ["香草拿鐵", "Flavored Latte (Vanilla)", "冷／熱", "M NT$90 · L NT$110"],
-    ["榛果拿鐵", "Flavored Latte (Hazelnut)", "冷／熱", "M NT$90 · L NT$110"]
-  ]},
-  { title: "氣泡飲類", items: [
-    ["香橙泡泡", "Orange bubble drink", "冷", "NT$75"], ["柚子泡泡", "Pomelo bubble drink", "冷", "NT$75"],
-    ["葡萄泡泡", "Grape bubble drink", "冷", "NT$75"], ["水蜜桃泡泡", "Peach bubble drink", "冷", "NT$75"],
-    ["蔓越莓氣泡果醋", "Cranberry vinegar bubble drink", "冷", "NT$75"]
-  ]},
-  { title: "茶飲類", items: [
-    ["英式紅茶", "Black tea", "冷／熱", "NT$55"], ["森森綠茶", "Green tea", "冷／熱", "NT$55"],
-    ["台茶12號", "Jin Xuan Oolong tea", "冷／熱", "NT$65"], ["玄米綠茶", "Brown rice tea", "冷／熱", "NT$65"],
-    ["韓式柚子飲", "Pomelo tea", "冷／熱", "NT$75"], ["花果蜜茶", "Fruit honey tea", "冷／熱", "NT$75"],
-    ["養生花茶", "Scented tea", "冷／熱", "NT$75"], ["伯爵紅茶", "Earl black tea", "冷／熱", "NT$65"],
-    ["柚香綠茶", "Pomelo tea", "冷／熱", "NT$75"]
-  ]},
-  { title: "奶茶類", items: [
-    ["就是奶茶", "British milk tea", "冷／熱", "M NT$75 · L NT$85"], ["伯爵奶茶", "Earl milk tea", "冷／熱", "M NT$75 · L NT$85"],
-    ["黑糖歐蕾", "Brown sugar au lait", "冷／熱", "M NT$80 · L NT$95"], ["可可歐蕾", "Cocoa au lait", "冷／熱", "M NT$90 · L NT$105"],
-    ["抹茶歐蕾", "Matcha au lait", "冷／熱", "M NT$90 · L NT$105"]
-  ]}
-];
-
-const COFFEE_MENU_IMAGES = {
-  "咖啡類": "coffee.jpg",
-  "氣泡飲類": "yogurt-drink.jpg",
-  "茶飲類": "tea-12-number.jpg",
-  "奶茶類": "coffee-2.jpg",
-};
-
-const COFFEE_MENU_PRODUCT_IDS = {
-  "黑咖啡": "drink-black-coffee", "原味拿鐵": "drink-coffee-latte", "青梅氣泡冰咖啡": "drink-green-plum-sparkling-coffee", "西西里青檸冰咖啡": "drink-lemon-ice-coffee", "纖橙冰咖啡": "drink-orange-ice-coffee", "卡布奇諾": "drink-cappuccino", "摩卡": "drink-mocha", "焦糖瑪奇朵": "drink-caramel-macchiato", "麥芽威士忌拿鐵": "drink-whisky-latte", "香草拿鐵": "drink-vanilla-latte", "榛果拿鐵": "drink-hazelnut-latte",
-  "香橙泡泡": "drink-orange-bubble", "柚子泡泡": "drink-pomelo-bubble", "葡萄泡泡": "drink-grape-bubble", "水蜜桃泡泡": "drink-peach-bubble", "蔓越莓氣泡果醋": "drink-cranberry-vinegar-bubble",
-  "英式紅茶": "drink-black-tea", "森森綠茶": "drink-sensen-green-tea", "台茶12號": "drink-jin-xuan-oolong", "玄米綠茶": "drink-brown-rice-tea", "韓式柚子飲": "drink-korean-pomelo", "花果蜜茶": "drink-fruit-honey-tea", "養生花茶": "drink-scented-tea", "伯爵紅茶": "drink-earl-black-tea", "柚香綠茶": "drink-pomelo-green-tea",
-  "就是奶茶": "drink-british-milk-tea", "伯爵奶茶": "drink-earl-milk-tea", "黑糖歐蕾": "drink-brown-sugar-au-lait", "可可歐蕾": "drink-cocoa-au-lait", "抹茶歐蕾": "drink-matcha-au-lait",
-};
-
-const COFFEE_MENU_ENGLISH = {
-  "黑咖啡": "Black Coffee", "原味拿鐵": "Coffee Latte", "青梅氣泡冰咖啡": "Green plum sparkling coffee", "西西里青檸冰咖啡": "Lemon ice coffee", "纖橙冰咖啡": "Orange ice coffee", "卡布奇諾": "Cappuccino", "摩卡": "Mocha", "焦糖瑪奇朵": "Caramel macchiato", "麥芽威士忌拿鐵": "Whisky Latte", "香草拿鐵": "Flavored Latte (Vanilla)", "榛果拿鐵": "Flavored Latte (Hazelnut)",
-  "香橙泡泡": "Orange bubble drink", "柚子泡泡": "Pomelo bubble drink", "葡萄泡泡": "Grape bubble drink", "水蜜桃泡泡": "Peach bubble drink", "蔓越莓氣泡果醋": "Cranberry vinegar bubble drink",
-  "英式紅茶": "Black tea", "森森綠茶": "Green tea", "台茶12號": "Jin Xuan Oolong tea", "玄米綠茶": "Brown rice tea", "韓式柚子飲": "Pomelo tea", "花果蜜茶": "Fruit honey tea", "養生花茶": "Scented tea", "伯爵紅茶": "Earl black tea", "柚香綠茶": "Pomelo tea",
-  "就是奶茶": "British milk tea", "伯爵奶茶": "Earl milk tea", "黑糖歐蕾": "Brown sugar au lait", "可可歐蕾": "Cocoa au lait", "抹茶歐蕾": "Matcha au lait",
-};
-
 const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
   ...CAKE_SECTIONS[0].products,
   ...(CAKE_SECTIONS[0].loadMoreProducts || []),
@@ -710,7 +663,6 @@ const BRANDED_HERO_PATHS = new Set([
   "/產品介紹",
   ONLINE_LONG_CAKE_PATH,
   ONLINE_TEA_PARTY_PATH,
-  "/產品介紹/生日蛋糕-下方有dm供下載-264",
   FROZEN_BREAD_PATH,
   "/精緻外燴-355",
   "/頂家彌月",
@@ -719,12 +671,10 @@ const BRANDED_HERO_PATHS = new Set([
   "/門市資訊",
   "/contact",
   "/產品介紹/伴手禮",
-  "/森森咖啡",
 ]);
 
 const NAV_CHILDREN = new Map([
   ["線上商城", [
-    ["生日蛋糕", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/"],
     ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/"],
     ["長條蛋糕", `${encodeURI(ONLINE_LONG_CAKE_PATH)}/`],
     ["點心餐盒", `${encodeURI(ONLINE_TEA_PARTY_PATH)}/`],
@@ -1532,7 +1482,7 @@ function homeContent() {
   </section>
   <section class="home-intro"><div class="home-intro-copy"><div class="home-intro-copy-title"><h2>享受</h2><h3>嘴角上揚的幸福</h3></div><div class="home-intro-copy-lower"><span class="wheat-mark">✦</span><div class="home-intro-copy-english"><p>Fresh, healthy and delicious.</p><p>Sensen always thinks about you.</p></div></div></div>
     <div class="quick-links">
-      <a aria-label="生日蛋糕" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E9%A6%96%E9%A0%81%E5%9C%96%E7%89%87-1.jpg", label: "Birthday Cake" })}<span>Birthday Cake</span><strong>生日蛋糕</strong><span class="card-arrow" aria-hidden="true">→</span></a>
+      <a aria-label="生日蛋糕" href="/最新消息/?category=sensen-coffee">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E9%A6%96%E9%A0%81%E5%9C%96%E7%89%87-1.jpg", label: "Birthday Cake" })}<span>Birthday Cake</span><strong>生日蛋糕</strong><span class="card-arrow" aria-hidden="true">→</span></a>
       <a aria-label="彌月禮盒" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E6%A3%ae%E6%A3%ae%E9%A6%96%e9%A0%81-2.jpg", label: "Baby Gift Box" })}<span>Baby Gift Box</span><strong>彌月禮盒</strong><span class="card-arrow" aria-hidden="true">→</span></a>
       <a aria-label="酒會茶會" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2018/11/home-service-3.jpg", label: "Catering" })}<span>Catering</span><strong>酒會/茶會</strong><span class="card-arrow" aria-hidden="true">→</span></a>
     </div>
@@ -1601,17 +1551,6 @@ function productIntroContent() {
       icon: "/images/icon-cupcake.png",
       href: "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/",
       products: SOUVENIR_PRODUCTS.map(([title, href, image, likes]) => ({ title, href, image, likes, price: PRODUCT_PRICE_LABEL })),
-    },
-    {
-      eyebrow: "DRINK MENU",
-      title: "飲品 MENU",
-      icon: "/images/icon-coffee.png",
-      href: "/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/",
-      kind: "menu",
-      products: [
-        { title: "咖啡與氣泡飲", image: "coffee-menu-1.jpg" },
-        { title: "茶飲與奶茶", image: "coffee-menu-2.jpg" },
-      ],
     },
   ];
   const sectionHtml = sections.map((section) => {
@@ -2116,16 +2055,6 @@ function souvenirPageContent() {
   </script>`;
 }
 
-function coffeePageContent() {
-  const cards = COFFEE_MENU_SECTIONS.flatMap(section => section.items.map(item => {
-    const temperatures = item[2].includes('熱') ? '冷|熱' : item[2];
-    const prices = [...item[3].matchAll(/\b([ML])\s*NT\$\s*([\d,.]+)/g)].map(match => `${match[1]}=${match[2].replace(/,/g, '')}`);
-    if (!prices.length) prices.push(`單杯=${(item[3].match(/[\d,.]+/) || ['0'])[0].replace(/,/g, '')}`);
-    return `<article class="drink-menu-card cake-product-card" data-drink-menu-item data-drink-product-id="${escapeAttr(COFFEE_MENU_PRODUCT_IDS[item[0]] || '')}" data-drink-name="${escapeAttr(item[0])}" data-drink-english="${escapeAttr(COFFEE_MENU_ENGLISH[item[0]] || item[1])}" data-drink-category="${escapeAttr(section.title)}" data-drink-temperatures="${escapeAttr(temperatures)}" data-drink-sugars="正常甜|少糖|半糖|微糖|無糖" data-drink-size-prices="${escapeAttr(prices.join('|'))}" data-drink-description="${escapeAttr(`可依照喜好調整${item[0]}的溫度、糖度與尺寸。`)}" role="button" tabindex="0"><div class="cake-product-image drink-menu-card-image"><img src="/images/${escapeAttr(COFFEE_MENU_IMAGES[section.title] || 'coffee.jpg')}" alt="${escapeAttr(item[0])}飲品示意圖" loading="lazy"><span class="drink-menu-card-category">${escapeHtml(section.title)}</span></div><div class="cake-product-meta"><div class="cake-product-title-link"><span class="cake-product-title">${escapeHtml(item[0])}</span><span class="drink-menu-card-english">${escapeHtml(item[1])}</span></div></div></article>`;
-  })).join('');
-  return `<section class="coffee-page"><section class="coffee-menu-section"><img class="coffee-page-icon" src="/images/icon-coffee.png" alt="" aria-hidden="true"><div class="drink-menu-grid">${cards}</div></section></section><script src="/assets/drink-menu-modal.js"></script>`;
-}
-
 function customerPageContent(route = "login") {
   const isDashboard = route === "dashboard";
   const loginHidden = isDashboard ? " hidden" : "";
@@ -2138,7 +2067,7 @@ function customerPageContent(route = "login") {
         <button class="account-menu-toggle" type="button" aria-expanded="false" aria-controls="account-navigation"><span class="account-menu-icon" aria-hidden="true"><i></i><i></i><i></i></span><span>會員選單</span><b>⌄</b></button>
         <nav class="account-nav" id="account-navigation" aria-label="會員功能">
           <a class="account-side-link" href="/"><span>⌂</span>首頁</a>
-          <a class="account-side-link" href="/產品介紹/生日蛋糕-下方有dm供下載-264/"><span>▦</span>產品介紹</a>
+          <a class="account-side-link" href="/產品介紹/"><span>▦</span>產品介紹</a>
           <a class="account-side-link" href="/聯絡我們/"><span>◎</span>聯絡我們</a>
           <span class="account-side-divider"></span>
           <button type="button" data-account-tab="overview" class="active"><span>▦</span>帳戶總覽</button>
@@ -2165,7 +2094,7 @@ function customerPageContent(route = "login") {
 }
 
 function cartPageContent() {
-  return `<section class="store-page"><div class="store-page-card"><p class="eyebrow">SENSEN BAKERY</p><h1>購物車</h1><div data-full-cart><p>載入中…</p></div><div class="store-page-actions"><a class="button" href="/產品介紹/生日蛋糕-下方有dm供下載-264/">繼續選購</a><a class="button" href="/customer/admin/">前往會員中心</a></div></div></section>${cartPageScript()}`;
+  return `<section class="store-page"><div class="store-page-card"><p class="eyebrow">SENSEN BAKERY</p><h1>購物車</h1><div data-full-cart><p>載入中…</p></div><div class="store-page-actions"><a class="button" href="/產品介紹/">繼續選購</a><a class="button" href="/customer/admin/">前往會員中心</a></div></div></section>${cartPageScript()}`;
 }
 
 function checkoutPageContent() {
@@ -2359,16 +2288,15 @@ function storeInfoContent() {
 
   const cards = stores.map((store) => '<article class="store-info-card">' +
     '<img class="store-info-card-image" src="/images/' + escapeAttr(store.image) + '" alt="' + escapeAttr(store.name) + '門市" loading="lazy">' +
-    '<div class="store-info-card-body"><span class="store-info-marker" aria-hidden="true"></span>' +
+    '<div class="store-info-card-body">' +
       '<h2>' + escapeHtml(store.name) + '</h2>' +
-      '<p class="store-info-meta"><span class="store-info-meta-icon store-info-pin" aria-hidden="true"></span>' + escapeHtml(store.address) + '</p>' +
-      '<p class="store-info-meta"><span class="store-info-meta-icon store-info-clock" aria-hidden="true"></span>' + escapeHtml(store.hours) + '</p>' +
-      '<p class="store-info-meta"><span class="store-info-meta-icon store-info-phone" aria-hidden="true"></span>' + escapeHtml(store.phone) + '</p>' +
-      '<a class="store-info-map" href="' + escapeAttr(store.map) + '" target="_blank" rel="noreferrer">Google Map <span aria-hidden="true">→</span></a>' +
+      '<p class="store-info-meta"><strong>地址：</strong>' + escapeHtml(store.address) + '</p>' +
+      '<p class="store-info-meta"><strong>電話：</strong>' + escapeHtml(store.phone) + '</p>' +
+      '<p class="store-info-meta"><strong>營業時間：</strong>' + escapeHtml(store.hours) + '</p>' +
+      '<a class="store-info-map" href="' + escapeAttr(store.map) + '" target="_blank" rel="noreferrer">Google map</a>' +
     '</div></article>').join("");
 
   return '<section class="store-info-page">' +
-    '<div class="store-info-wheat" aria-hidden="true"><img src="/images/icon-wheat.png" alt=""></div>' +
     '<section class="store-info-stores"><div class="store-info-grid">' + cards + '</div></section>' +
   '</section>';
 }
@@ -2387,7 +2315,7 @@ function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260908-menu-sections-1"></script><script src="/assets/drink-menu-modal.js"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260908-menu-sections-1"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -2673,9 +2601,6 @@ function pageContent(page) {
   if (SEASONAL_CATALOGS.has(localPath)) {
     return seasonalCatalogContent(localPath);
   }
-  if (localPath === BIRTHDAY_CAKE_PATH) {
-    return storefrontCatalogContent("cakes");
-  }
   if (localPath === "/產品介紹/伴手禮") {
     return storefrontCatalogContent("souvenir");
   }
@@ -2711,9 +2636,6 @@ function pageContent(page) {
   }
   if (localPath === "/產品介紹/伴手禮") {
     return souvenirPageContent();
-  }
-  if (localPath === "/森森咖啡") {
-    return coffeePageContent();
   }
   if (localPath === "/最新消息") {
     return latestNewsContent(page);
@@ -2757,7 +2679,7 @@ function latestNewsContent(page) {
     ["季節限定", "season-only"],
     ["新品上市", "new-arrival"],
     ["最新消息", "latest-news"],
-    ["森森飲品", "sensen-coffee"],
+    ["生日蛋糕", "sensen-coffee"],
   ];
   const filterHtml = filters.map(([label, value, active]) => `<button class="latest-news-filter${active ? " is-active" : ""}" type="button" data-news-filter="${escapeAttr(value)}" aria-pressed="${active ? "true" : "false"}">${escapeHtml(label)}</button>`).join("");
   return `<section class="latest-news-page" data-latest-news-page aria-labelledby="latest-news-heading">
@@ -3333,7 +3255,7 @@ function main() {
   const home = pages.find((page) => localPathFromUrl(page.url) === "/") || pages[0];
   for (const page of pages) {
     const localPath = localPathFromUrl(page.url);
-    const isAboutPage = localPath === "/關於森森" || localPath === "/產品介紹/伴手禮" || localPath === "/森森咖啡";
+    const isAboutPage = localPath === "/關於森森" || localPath === "/產品介紹/伴手禮";
     const filePath = htmlFileForLocalPath(localPath);
     ensureDir(filePath);
     const rawContent = localPath === "/" ? homeContent(pages) : pageContent(page);
@@ -3351,7 +3273,7 @@ function main() {
       heroCategoryLabel: SOUVENIR_PRODUCT_PATHS.has(localPath) ? "伴手禮" : CAKE_PRODUCT_CATEGORY_LABELS.get(localPath),
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
       showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
-      heroSource: localPath === EMERALD_LYSK_PATH ? "/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : localPath === "/森森咖啡" ? "/images/cafe-coffee-restaurant-cup-food-drink-1008643-pxhere-2.jpg" : "/images/headtitle-bg2.jpg",
+      heroSource: localPath === EMERALD_LYSK_PATH ? "/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : "/images/headtitle-bg2.jpg",
     }));
   }
 

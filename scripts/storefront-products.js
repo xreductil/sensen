@@ -6,26 +6,17 @@
   const status = root.querySelector('[data-storefront-catalog-status]');
   const view = root.dataset.storefrontView || 'overview';
   const categoryRoutes = {
-    '生日蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '伴手禮': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/'
   };
   const categoryMeta = {
-    '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/images/icon-cake.png' },
     '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/images/icon-cake.png' },
     '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/images/icon-cake2.png' },
     '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.png' }
   };
-  const categoryOrder = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
+  const categoryOrder = ['造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
   const menuSections = [
-    {
-      title: '生日蛋糕',
-      categories: ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕'],
-      eyebrow: 'BIRTHDAY CAKE',
-      icon: '/images/icon-cake.png',
-      href: '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/'
-    },
     {
       title: '伴手禮',
       categories: ['伴手禮'],
@@ -57,40 +48,7 @@
   ];
   const hotProductFallback = ['oreo-ice-cream', 'colorful-world', 'macaron-forest', 'caramel-party', 'passion-pear', 'berry-melody'];
   const newProductFallback = ['emerald-lysk', 'strawberry-lysk'];
-  const drinkMenuSections = [
-    { title: '咖啡類', items: [
-      ['黑咖啡', 'Black Coffee', '冷／熱', 'M NT$65 · L NT$80'], ['原味拿鐵', 'Coffee Latte', '冷／熱', 'M NT$85 · L NT$100'],
-      ['青梅氣泡冰咖啡', 'Green plum sparkling coffee', '冷', 'NT$95'], ['西西里青檸冰咖啡', 'Lemon ice coffee', '冷', 'NT$75'],
-      ['纖橙冰咖啡', 'Orange ice coffee', '冷', 'NT$75'], ['卡布奇諾', 'Cappuccino', '冷／熱', 'M NT$85 · L NT$100'],
-      ['摩卡', 'Mocha', '冷／熱', 'M NT$90 · L NT$110'], ['焦糖瑪奇朵', 'Caramel macchiato', '冷／熱', 'M NT$95 · L NT$115'],
-      ['麥芽威士忌拿鐵', 'Whisky Latte', '冷／熱', 'M NT$95 · L NT$115'], ['香草拿鐵', 'Flavored Latte (Vanilla)', '冷／熱', 'M NT$90 · L NT$110'],
-      ['榛果拿鐵', 'Flavored Latte (Hazelnut)', '冷／熱', 'M NT$90 · L NT$110']
-    ]},
-    { title: '氣泡飲類', items: [
-      ['香橙泡泡', 'Orange bubble drink', '冷', 'NT$75'], ['柚子泡泡', 'Pomelo bubble drink', '冷', 'NT$75'],
-      ['葡萄泡泡', 'Grape bubble drink', '冷', 'NT$75'], ['水蜜桃泡泡', 'Peach bubble drink', '冷', 'NT$75'],
-      ['蔓越莓氣泡果醋', 'Cranberry vinegar bubble drink', '冷', 'NT$75']
-    ]},
-    { title: '茶飲類', items: [
-      ['英式紅茶', 'Black tea', '冷／熱', 'NT$55'], ['森森綠茶', 'Green tea', '冷／熱', 'NT$55'],
-      ['台茶12號', 'Jin Xuan Oolong tea', '冷／熱', 'NT$65'], ['玄米綠茶', 'Brown rice tea', '冷／熱', 'NT$65'],
-      ['韓式柚子飲', 'Pomelo tea', '冷／熱', 'NT$75'], ['花果蜜茶', 'Fruit honey tea', '冷／熱', 'NT$75'],
-      ['養生花茶', 'Scented tea', '冷／熱', 'NT$75'], ['伯爵紅茶', 'Earl black tea', '冷／熱', 'NT$65'],
-      ['柚香綠茶', 'Pomelo tea', '冷／熱', 'NT$75']
-    ]},
-    { title: '奶茶類', items: [
-      ['就是奶茶', 'British milk tea', '冷／熱', 'M NT$75 · L NT$85'], ['伯爵奶茶', 'Earl milk tea', '冷／熱', 'M NT$75 · L NT$85'],
-      ['黑糖歐蕾', 'Brown sugar au lait', '冷／熱', 'M NT$80 · L NT$95'], ['可可歐蕾', 'Cocoa au lait', '冷／熱', 'M NT$90 · L NT$105'],
-      ['抹茶歐蕾', 'Matcha au lait', '冷／熱', 'M NT$90 · L NT$105']
-    ]}
-  ];
-  const drinkMenuImages = {
-    '咖啡類': '/images/coffee.jpg',
-    '氣泡飲類': '/images/yogurt-drink.jpg',
-    '茶飲類': '/images/tea-12-number.jpg',
-    '奶茶類': '/images/coffee-2.jpg'
-  };
-  const drinkEnglishByTitle = Object.fromEntries(drinkMenuSections.flatMap(section => section.items.map(item => [item[0], item[1]])));
+  const birthdayCakeCategories = new Set(['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕']);
   const birthdayProductOrder = [
     'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',
     'passion-pear', 'colorful-world', 'mocha', 'hazelnut-crunch',
@@ -185,24 +143,6 @@
     return `<section class="product-intro-section" data-storefront-section data-storefront-menu-category="${escapeHtml(section.title)}"><div class="product-intro-section-heading"><div><p>${escapeHtml(section.eyebrow)}</p><h2><img src="${escapeHtml(section.icon)}" alt="" aria-hidden="true">${escapeHtml(section.title)}</h2></div>${controls}</div>${productContent}<a class="product-intro-load-more" href="${escapeHtml(section.href)}">查看全部商品</a></section>`;
   };
 
-  const drinkMenuFallbackProducts = drinkMenuSections.flatMap(section => section.items.map(item => ({ title: item[0], english: item[1], drinkCategory: section.title, temperature: item[2], priceLabel: item[3], img: drinkMenuImages[section.title] })));
-  const drinkMenuCard = product => {
-    const category = product.drinkCategory || '咖啡類';
-    const variants = product.variants || {};
-    const sizes = Object.entries(variants.sizes || {}).filter(([, value]) => Number.isFinite(Number(value)));
-    const sizePrices = sizes.length ? sizes : [['單杯', Number(product.priceValue || 0)]];
-    const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length ? variants.temperatures : String(product.temperature || '冷').split('／');
-    const sugars = Array.isArray(variants.sugars) && variants.sugars.length ? variants.sugars : ['正常甜', '少糖', '半糖', '微糖', '無糖'];
-    const image = product.img || drinkMenuImages[category] || '/images/coffee.jpg';
-    const title = product.title || '飲品';
-    const english = product.english || product.enTitle || drinkEnglishByTitle[title] || '';
-    return `<article class="product-intro-card drink-menu-card cake-product-card" data-drink-menu-item data-drink-product-id="${escapeHtml(product.id || '')}" data-drink-name="${escapeHtml(title)}" data-drink-english="${escapeHtml(english)}" data-drink-category="${escapeHtml(category)}" data-drink-temperatures="${escapeHtml(temperatures.join('|'))}" data-drink-sugars="${escapeHtml(sugars.join('|'))}" data-drink-size-prices="${escapeHtml(sizePrices.map(([size, value]) => `${size}=${Number(value)}`).join('|'))}" data-drink-description="${escapeHtml(product.desc || '')}" role="button" tabindex="0"><div class="cake-product-image drink-menu-card-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(title)}飲品示意圖" loading="lazy"><span class="drink-menu-card-category">${escapeHtml(category)}</span></div><div class="cake-product-meta"><div class="cake-product-title-link"><span class="cake-product-title">${escapeHtml(title)}</span><span class="drink-menu-card-english">${escapeHtml(english)}</span></div></div></article>`;
-  };
-  const renderMenuSection = (products = []) => {
-    const drinks = products.length ? products : drinkMenuFallbackProducts;
-    return `<section class="product-intro-section" data-storefront-section data-storefront-menu-section><div class="product-intro-section-heading"><div><p>DRINK MENU</p><h2><img src="/images/icon-coffee.png" alt="" aria-hidden="true">飲品 MENU</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div><div class="product-intro-carousel"><div class="product-intro-track" data-storefront-track tabindex="0">${drinks.map(drinkMenuCard).join('')}</div></div><a class="product-intro-load-more" href="/%e6%a3%ae%e6%a3%ae%e5%92%96%e5%95%a1/">查看完整飲品 MENU</a></section>`;
-  };
-
   const renderCakes = products => {
     const categories = categoryOrder.filter(category => category !== '伴手禮' && products.some(product => product.cat === category));
     content.innerHTML = categories.map((category, index) => {
@@ -250,9 +190,10 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
       const products = orderProducts((data.products || []).filter(product => product.published !== false));
+      const storefrontProducts = products.filter(product => !birthdayCakeCategories.has(product.cat));
       if (view === 'overview') {
-        const hotProducts = selectFeaturedProducts(products, 'salesCount', hotProductFallback, 5);
-        const newProducts = selectFeaturedProducts(products, 'newArrivalRank', newProductFallback);
+        const hotProducts = selectFeaturedProducts(storefrontProducts, 'salesCount', hotProductFallback, 5);
+        const newProducts = selectFeaturedProducts(storefrontProducts, 'newArrivalRank', newProductFallback);
         content.innerHTML = renderFeaturedSection(hotProducts, {
           eyebrow: 'BEST SELLERS',
           title: '熱銷排行榜',
@@ -267,7 +208,7 @@
           })
           + menuSections.map(section => renderOverviewSection(
             section,
-            products.filter(product => section.categories.includes(product.cat))
+            storefrontProducts.filter(product => section.categories.includes(product.cat))
           )).join('');
       } else if (view === 'cakes') {
         renderCakes(products);
