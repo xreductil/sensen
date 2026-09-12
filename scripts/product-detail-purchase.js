@@ -52,6 +52,44 @@
     'top-house-a11-japanese-layer': 580,
     'top-house-a12-osmanthus-oolong': 580
   };
+  const topHouseCardTitles = {
+    'top-house-boston-classic': '波士頓派（經典口味）',
+    'top-house-boston-new': '波士頓派（新品口味）',
+    'top-house-pa1-boston-gift': 'PA1 波士頓派禮盒',
+    'top-house-pa2-boston-gift': 'PA2 波士頓派禮盒',
+    'top-house-pa3-boston-gift': 'PA3 波士頓派禮盒',
+    'top-house-pa4-boston-gift': 'PA4 波士頓派禮盒',
+    'top-house-c1-big-bear': 'C1 大熊禮盒',
+    'top-house-c2-big-bear': 'C2 大熊禮盒',
+    'top-house-c3-big-bear': 'C3 大熊禮盒',
+    'top-house-c4-big-bear': 'C4 大熊禮盒',
+    'top-house-b1-little-bear': 'B1 小熊禮盒',
+    'top-house-b2-little-bear': 'B2 小熊禮盒',
+    'top-house-b3-little-bear': 'B3 小熊禮盒',
+    'top-house-b4-little-bear': 'B4 小熊禮盒',
+    'top-house-l1-country-cheese': 'L1 鄉村禮盒',
+    'top-house-l2-country-cheese': 'L2 鄉村禮盒',
+    'top-house-l3-country-cheese': 'L3 鄉村禮盒',
+    'top-house-k1-creme-brulee': 'K1 烤布蕾',
+    'top-house-k2-pistachio-marble': 'K2 開心果雲石',
+    'top-house-k3-cheesecake': 'K3 重乳酪(草莓/藍莓)',
+    'top-house-k4-light-cheesecake': 'K4 輕乳酪',
+    'top-house-k5-belgian-chocolate': 'K5 比利時巧克力',
+    'top-house-k6-lemon-cheesecake': 'K6 檸檬老奶奶',
+    'top-house-a1-strawberry-marble': 'A1 草莓大理石',
+    'top-house-a2-honey-cake': 'A2 蜂蜜蛋糕',
+    'top-house-a3-blueberry-angel': 'A3 藍莓天使',
+    'top-house-a4-lemon-love': 'A4 檸檬之戀',
+    'top-house-a5-classic-chocolate': 'A5 經典巧克力',
+    'top-house-a6-left-bank-coffee-roll': 'A6 左岸咖啡捲',
+    'top-house-a7-vanilla-napoleon': 'A7 香草拿破崙派',
+    'top-house-a7-chocolate-napoleon': 'A7 巧克力拿破崙派',
+    'top-house-a8-earl-grey-roll': 'A8 伯爵甜心捲',
+    'top-house-a9-mocha-chocolate': 'A9 摩卡巧克力',
+    'top-house-a10-violet': 'A10 紫羅蘭',
+    'top-house-a11-japanese-layer': 'A11 日式千層',
+    'top-house-a12-osmanthus-oolong': 'A12 桂花烏龍甜心'
+  };
   const sizeOptions = product => {
     const variants = product.variants && typeof product.variants === 'object' ? product.variants : {};
     const source = Object.keys(variants.sizes || {}).length ? variants.sizes : product.priceOptions;
@@ -131,7 +169,10 @@
   };
 
   const syncProductDetails = product => {
-    const title = String(product.title || '商品');
+    const apiTitle = String(product.title || '商品');
+    const title = productPage.dataset.productId?.startsWith('top-house-')
+      ? (titleElement.textContent.trim() || apiTitle)
+      : apiTitle;
     titleElement.textContent = title;
     setText(productPage.querySelector('[data-product-hero-title]'), title, '商品');
     setText(productPage.querySelector('[data-product-hero-category]'), product.cat ? `▱ ${product.cat}` : '▱ 產品介紹');
@@ -166,7 +207,7 @@
       likes.textContent = String(Math.max(0, Number(product.likes || 0)));
       likes.closest('.emerald-likes')?.setAttribute('aria-label', `${likes.textContent} 個喜歡`);
     }
-    updateMeta(product);
+    updateMeta({ ...product, title });
     renderGallery(product);
   };
 
@@ -189,7 +230,8 @@
     track.innerHTML = candidates.map(item => {
       const image = (Array.isArray(item.images) && item.images[0]) || item.img || '';
       const href = productPath(item);
-      return `<article class="emerald-related-card"><a href="${escapeHtml(href)}"><img src="${escapeHtml(image)}" alt="${escapeHtml(item.title || '商品')}" loading="lazy"><span>${escapeHtml(formatDate(item.createdAt))}</span><h3>${escapeHtml(item.title || '商品')}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`;
+      const displayTitle = topHouseCardTitles[item.id] || item.title || '商品';
+      return `<article class="emerald-related-card"><a href="${escapeHtml(href)}"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayTitle)}" loading="lazy"><span>${escapeHtml(formatDate(item.createdAt))}</span><h3>${escapeHtml(displayTitle)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`;
     }).join('');
   };
 

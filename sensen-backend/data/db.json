@@ -455,5 +455,19 @@
     }
   },
   "lineTickets": {},
-  "news": []
+  "news": [
+    {
+      "id": "birthday-cake-2026",
+      "title": "生日蛋糕",
+      "slug": "birthday-cake-2026",
+      "excerpt": "森森點心坊提供多款生日蛋糕，歡迎依照口味與尺寸選擇，訂購前請洽門市確認。",
+      "content": "森森點心坊不定期推出各式生日蛋糕，從經典口味到季節限定款，陪你一起慶祝每個重要時刻。\n\n蛋糕口味、造型與裝飾會依季節及門市供應調整，歡迎訂購前先洽門市確認。\n\n歡迎持續關注森森點心坊最新消息，選一份喜歡的蛋糕，為生日留下甜甜的回憶。",
+      "image": "/images/photo-1-9.jpg",
+      "category": "sensen-coffee",
+      "status": "published",
+      "publishAt": "2026-09-12T00:00:00.000Z",
+      "createdAt": "2026-09-12T00:00:00.000Z",
+      "updatedAt": "2026-09-12T00:00:00.000Z"
+    }
+  ]
 }

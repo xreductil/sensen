@@ -18,7 +18,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260909-template-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260912-related-title-1";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
   ["https://www.sensen.com.tw/latest-news/歐包系列/", "latest-detail-2.md"],
@@ -651,7 +651,7 @@ const NAV_ITEMS = [
   ["最新消息", "/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/"],
   ["線上商城", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/"],
   ["酒會/茶會", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
-  ["頂家彌月", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/"],
+  ["頂家彌月專區", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/"],
   ["常見問題", "/%e5%b8%b8%e8%a6%8b%e5%95%8f%e9%a1%8c/"],
   ["門市資訊", "/%e9%96%80%e5%b8%82%e8%b3%87%e8%a8%8a/"],
   ["連絡我們", "/contact/"],
@@ -684,7 +684,7 @@ const NAV_CHILDREN = new Map([
     ["精緻外燴", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
     ["茶會點心", `${encodeURI(TEA_PARTY_PATH)}/`],
   ]],
-  ["頂家彌月", [
+  ["頂家彌月專區", [
     ["彌月試吃申請", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/"],
     ["波士頓派系列", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/"],
     ["大熊/小熊禮盒", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e5%a4%a7%e7%86%8a-%e5%b0%8f%e7%86%8a%e7%a6%ae%e7%9b%92/"],
@@ -1032,6 +1032,7 @@ function pageTitleFor(page, localPath) {
   if (localPath === PRODUCT_INTRO_PATH) return "線上商城 – 森森點心坊";
   if (localPath === BIRTHDAY_CAKE_PATH) return BIRTHDAY_CAKE_PAGE_TITLE;
   if (localPath === "/頂家彌月") return "頂家彌月專區 – 森森點心坊";
+  if (localPath === BOSTON_PIE_PATH) return "彌月禮盒 – 森森點心坊";
   if (localPath === LONG_CAKE_PATH) return "彌月長條蛋糕 – 森森點心坊";
   if (localPath === ONLINE_LONG_CAKE_PATH) return "長條蛋糕 – 森森點心坊";
   if (localPath === ONLINE_TEA_PARTY_PATH) return "點心餐盒 – 森森點心坊";
@@ -1977,7 +1978,10 @@ function productIdForDetailPath(localPath) {
 
 function productDetailTitleForPath(localPath) {
   const topHouseId = productIdForDetailPath(localPath);
-  if (topHouseId && TOP_HOUSE_PRODUCT_BY_ID.has(topHouseId)) return TOP_HOUSE_PRODUCT_BY_ID.get(topHouseId)[0];
+  if (topHouseId && TOP_HOUSE_PRODUCT_BY_ID.has(topHouseId)) {
+    const record = TOP_HOUSE_PRODUCT_BY_ID.get(topHouseId);
+    return TOP_HOUSE_CARD_DETAILS.get(topHouseId)?.title || record[0];
+  }
   const souvenir = SOUVENIR_PRODUCTS.find(([, href]) => href === localPath);
   if (souvenir) return stripTags(souvenir[0]);
   const cake = CAKE_PRODUCT_RECORDS.find((product) => product.path === localPath);
@@ -2912,15 +2916,16 @@ function syncTopHouseProductDetailSnapshot() {
   TOP_HOUSE_PRODUCT_RECORDS.forEach(([title, image, price, id]) => {
     const localPath = topHouseProductPath(id);
     const filePath = htmlFileForLocalPath(localPath);
+    const displayTitle = TOP_HOUSE_CARD_DETAILS.get(id)?.title || title;
     ensureDir(filePath);
     const content = normalizeHeadingStructure(productDetailShell({ localPath, kind: "cake" }), localPath);
     const html = layout({
-      title: `${title}｜頂家彌月專區 – 森森點心坊`,
+      title: `${displayTitle}｜頂家彌月專區 – 森森點心坊`,
       pathLabel: localPath,
       content,
       isCakeProduct: true,
       showHero: true,
-    }).replace(/(<h1 data-product-hero-title>)[^<]*(<\/h1>)/, `$1${escapeHtml(title)}$2`);
+    }).replace(/(<h1 data-product-hero-title>)[^<]*(<\/h1>)/, `$1${escapeHtml(displayTitle)}$2`);
     fs.writeFileSync(filePath, html);
   });
 }
@@ -3057,6 +3062,8 @@ function rewriteStaticSnapshotNavigation() {
   const sitemapJsonFile = path.join(OUT_DIR, "site-map.json");
   if (fs.existsSync(sitemapJsonFile)) {
     const entries = readJson(sitemapJsonFile);
+    const topHouseOverviewEntry = entries.find((entry) => entry.path === "/頂家彌月");
+    if (topHouseOverviewEntry) topHouseOverviewEntry.title = "頂家彌月專區 – 森森點心坊";
     const topHouseEntry = entries.find((entry) => entry.path === LONG_CAKE_PATH);
     if (topHouseEntry) topHouseEntry.title = "彌月長條蛋糕 – 森森點心坊";
     const teaPartyEntry = entries.find((entry) => entry.path === TEA_PARTY_PATH);
@@ -3081,6 +3088,8 @@ function rewriteStaticSnapshotNavigation() {
   const sitemapHtmlFile = path.join(OUT_DIR, "site-map.html");
   if (fs.existsSync(sitemapHtmlFile)) {
     let html = fs.readFileSync(sitemapHtmlFile, "utf8")
+      .replace(/(<section class="directory-group">\s*<h2>)頂家彌月(<\/h2>)/, "$1頂家彌月專區$2")
+      .replace(/(<a class="directory-card" href="\/頂家彌月">\s*<span>)頂家彌月\s+–\s+森森點心坊(<\/span>)/, "$1頂家彌月專區 – 森森點心坊$2")
       .replace(/(<a class="directory-card" href="\/頂家彌月\/彌月長條蛋糕">\s*<span>)[^<]+(<\/span>)/, "$1彌月長條蛋糕 – 森森點心坊$2")
       .replace(/(<a class="directory-card" href="\/茶會點心-tea-party">\s*<span>)[^<]+(<\/span>)/, "$1酒會與茶會點心 – 森森點心坊$2");
     if (!html.includes(`href="${ONLINE_LONG_CAKE_PATH}"`)) {
