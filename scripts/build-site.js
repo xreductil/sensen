@@ -18,7 +18,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260912-related-title-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260912-order-info-1";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
   ["https://www.sensen.com.tw/latest-news/歐包系列/", "latest-detail-2.md"],

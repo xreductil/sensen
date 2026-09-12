@@ -128,6 +128,40 @@
   };
   const formatDate = value => String(value || '').slice(0, 10);
 
+  let orderInfoModal;
+  let lastOrderInfoTrigger;
+
+  const closeOrderInfoModal = () => {
+    if (!orderInfoModal) return;
+    orderInfoModal.hidden = true;
+    document.body.classList.remove('product-order-info-open');
+    lastOrderInfoTrigger?.focus();
+  };
+
+  const ensureOrderInfoModal = () => {
+    if (orderInfoModal) return orderInfoModal;
+    orderInfoModal = document.createElement('div');
+    orderInfoModal.className = 'product-order-info-modal';
+    orderInfoModal.hidden = true;
+    orderInfoModal.innerHTML = '<div class="product-order-info-backdrop" data-product-order-info-close></div><article class="product-order-info-dialog" role="dialog" aria-modal="true" aria-labelledby="product-order-info-title"><button class="product-order-info-close" type="button" data-product-order-info-close aria-label="關閉訂購資訊">×</button><div class="product-order-info-content"><p class="product-order-info-eyebrow">訂購資訊</p><h2 id="product-order-info-title">請聯絡門市訂購</h2><p class="product-order-info-message">客人自行跟門市聯絡下訂</p><a class="product-order-info-store-link" href="/門市資訊/">前往門市資訊</a></div></article>';
+    document.body.appendChild(orderInfoModal);
+    orderInfoModal.addEventListener('click', event => {
+      if (event.target.closest('[data-product-order-info-close]')) closeOrderInfoModal();
+    });
+    document.addEventListener('keydown', event => {
+      if (event.key === 'Escape' && orderInfoModal && !orderInfoModal.hidden) closeOrderInfoModal();
+    });
+    return orderInfoModal;
+  };
+
+  const openOrderInfoModal = trigger => {
+    const modal = ensureOrderInfoModal();
+    lastOrderInfoTrigger = trigger;
+    modal.hidden = false;
+    document.body.classList.add('product-order-info-open');
+    modal.querySelector('.product-order-info-close')?.focus();
+  };
+
   const updateMeta = product => {
     const title = String(product.title || '商品');
     document.title = `${title} – 森森點心坊`;
@@ -269,11 +303,11 @@
     }
     const section = document.createElement('section');
     section.className = 'product-detail-purchase';
-    section.setAttribute('aria-label', '商品購買');
+    section.setAttribute('aria-label', '訂購資訊');
     const sizeMarkup = options.length > 1
       ? `<div class="product-detail-size-options"><span class="product-detail-size-options-label">商品尺寸</span><div class="product-detail-size-options-list" role="group" aria-label="選擇商品尺寸">${options.map(([size, value], index) => `<button class="product-detail-size-option${index === 0 ? ' is-selected' : ''}" type="button" data-product-size="${escapeHtml(size)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(size)}<span>${money(value)}</span></button>`).join('')}</div></div>`
       : '';
-    section.innerHTML = `${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p><div class="cake-product-purchase" data-cake-purchase><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock() ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock() ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock() ? '' : ' disabled'}>${inStock() ? '加入購物車' : '暫停供應'}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
+    section.innerHTML = `${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p><div class="cake-product-purchase" data-cake-purchase><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock() ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock() ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="product-order-info-button cake-add-cart" type="button" data-product-order-info>訂購資訊</button></div>`;
     insertPurchase(section);
 
     const updateVariant = () => {
@@ -286,8 +320,6 @@
         button.setAttribute('aria-pressed', String(isSelected));
       });
       section.querySelectorAll('[data-cake-quantity-change]').forEach(button => { button.disabled = !available; });
-      addButton.disabled = !available;
-      if (!addButton.disabled) addButton.textContent = '加入購物車';
     };
 
     section.querySelectorAll('[data-product-size]').forEach(button => button.addEventListener('click', () => {
@@ -299,26 +331,8 @@
       const output = section.querySelector('[data-cake-quantity]');
       output.textContent = String(Math.max(1, Math.min(99, Number(output.textContent || 1) + Number(button.dataset.cakeQuantityChange || 0))));
     }));
-    const addButton = section.querySelector('[data-product-detail-add-cart]');
-    addButton.addEventListener('click', async () => {
-      const message = section.querySelector('[data-product-detail-message]');
-      const quantity = Number(section.querySelector('[data-cake-quantity]').textContent || 1);
-      addButton.disabled = true;
-      addButton.textContent = '加入中…';
-      message.textContent = '';
-      try {
-        const response = await fetch('/api/cart/add', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: product.id, qty: quantity, options: selectedSize ? { size: selectedSize } : {} }) });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.error || '加入購物車失敗。');
-        addButton.textContent = '已加購物車';
-        document.querySelector('.cart-trigger')?.click();
-      } catch (error) {
-        message.textContent = error.message;
-        addButton.textContent = '加入購物車';
-      } finally {
-        addButton.disabled = false;
-      }
-    });
+    const orderInfoButton = section.querySelector('[data-product-order-info]');
+    orderInfoButton.addEventListener('click', () => openOrderInfoModal(orderInfoButton));
   };
 
   const showError = message => {
