@@ -1492,7 +1492,7 @@ function homeContent() {
   <section class="home-section" data-home-news-section hidden><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/">更多訊息</a></div><div class="home-news-grid" data-home-news-list></div></section><script src="/assets/home-news.js"></script>
   <section class="gift-section"><div class="gift-copy"><img class="gift-icon" src="/images/home-icon-giftbox.png" alt="" aria-hidden="true"><h2>精選伴手禮</h2><p>各式經典組合<br>多樣化的選擇<br>吃進嘴裡都是幸福的味道</p><a class="button" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/">更多伴手禮</a></div><div class="gift-mosaic">${giftTiles}</div></section>
   <section class="home-catering"><div class="catering-copy"><div class="catering-panel"><div class="catering-title-row"><img class="catering-icon" src="/images/home-icon-cutlery.png" alt="" aria-hidden="true"><div><h2>酒會/外燴服務</h2><p>嚴選食材。精心烹調。味覺饗宴</p></div></div><span class="catering-wave" aria-hidden="true"></span><a class="button" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">了解更多 <span aria-hidden="true">›</span></a></div></div><div class="catering-images"><a class="catering-card buffet" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "/images/home-buffet.jpg", label: "Buffet" })}<div class="catering-card-copy"><span>Buffet</span><strong>精緻外燴</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a><a class="catering-card tea-party" href="/%e8%8c%b6%e6%9c%83%e9%bb%9e%e5%bf%83-tea-party/">${imageSlotHtml({ source: "/images/home-catering.jpg", label: "Tea Party" })}<div class="catering-card-copy"><span>Tea Party</span><strong>茶會點心</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a></div></section>
-  <section class="catering-stores"><div class="catering-stores-panel"><a class="catering-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="catering-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="catering-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>三民區博愛路219號</span><span>07-7993070</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="catering-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a></div></section>`;
+  <section class="catering-stores"><div class="catering-stores-panel">${storeDirectoryMarkup("catering")}</div></section>`;
 }
 
 function aboutContent() {
@@ -1801,10 +1801,7 @@ function cateringContent() {
     ${inquirySection({ id: "catering-inquiry", title: "外燴詢價專區", subject: "外燴詢價" })}
     <section class="catering-stores">
       <div class="catering-stores-panel">
-        <a class="catering-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
-        <a class="catering-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
-        <a class="catering-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
-        <a class="catering-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="catering-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="catering-store-map" aria-hidden="true">Google Map <span>→</span></span></a>
+        ${storeDirectoryMarkup("catering")}
       </div>
     </section>
     ${inquiryScript()}
@@ -2221,7 +2218,7 @@ function teaPartyContent() {
     ${sectionHtml}
     <section class="tea-party-note"><span class="tea-party-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section>
     ${inquirySection({ id: "tea-party-inquiry", title: "茶會詢價專區", subject: "茶會詢價" })}
-    <section class="tea-party-stores"><div class="tea-party-stores-panel"><a class="tea-party-store" href="https://goo.gl/maps/3oxsrUzT22G2" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>澄和店</strong><span>三民區澄和路78號</span><span>07-3816662</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/JptBgTTquh92" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>新富店</strong><span>鳳山區新富路276號</span><span>07-7675992</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/Wea9v9dtqCs" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>博愛店</strong><span>鳳山區博愛路219號</span><span>07-7993070</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a><a class="tea-party-store" href="https://goo.gl/maps/NpDLVEYQHAk" target="_blank" rel="noreferrer"><span class="tea-party-store-line" aria-hidden="true"></span><strong>文龍店</strong><span>鳳山區文龍東路336號</span><span>07-7335812</span><span class="tea-party-store-map" aria-hidden="true">Google Map <span>→</span></span></a></div></section>
+    <section class="tea-party-stores"><div class="tea-party-stores-panel">${storeDirectoryMarkup("tea-party")}</div></section>
     ${inquiryScript()}
   </section>`;
   return content
@@ -2257,6 +2254,18 @@ faqContent = () => originalFaqContent()
     /(<article class="faq-item"><button type="button" aria-expanded="false" aria-controls="faq-1-7">[\s\S]*?<\/article>)(\n      <\/div>\n    <\/section>)/,
     '$1\n        <article class="faq-item"><button type="button" aria-expanded="false" aria-controls="faq-1-8"><span class="faq-number">8</span><span class="faq-question-title">頂家彌月外送規則</span><span class="faq-plus" aria-hidden="true">＋</span></button><div id="faq-1-8" class="faq-answer" hidden>高雄市區以及屏東市滿10000元外送；外縣市依冷藏／常溫及包裹外箱尺寸計算。（目前未提供離島宅配）</div></article>$2'
   );
+
+const STORE_DIRECTORY = [
+  { name: "澄和店", address: "三民區澄和路78號", phone: "07-3816662", hours: "08:00-22:00", map: "https://goo.gl/maps/3oxsrUzT22G2" },
+  { name: "新富店", address: "鳳山區新富路276號", phone: "07-7675992", hours: "08:00-22:30", map: "https://goo.gl/maps/JptBgTTquh92" },
+  { name: "博愛店", address: "三民區博愛路219號", phone: "07-7993070", hours: "07:30-22:30", map: "https://goo.gl/maps/Wea9v9dtqCs" },
+  { name: "文龍店", address: "鳳山區文龍東路336號", phone: "07-7335812", hours: "12:30-21:30", map: "https://goo.gl/maps/NpDLVEYQHAk" },
+];
+
+function storeDirectoryMarkup(prefix = "catering") {
+  const field = (label, value) => `<span class="${prefix}-store-field"><b>${label}</b><span>${escapeHtml(value)}</span></span>`;
+  return STORE_DIRECTORY.map((store) => `<a class="${prefix}-store" href="${escapeAttr(store.map)}" target="_blank" rel="noreferrer"><span class="${prefix}-store-line" aria-hidden="true"></span><strong>${escapeHtml(store.name)}</strong>${field("地址", store.address)}${field("電話", store.phone)}${field("營業時間", store.hours)}<span class="${prefix}-store-map" aria-hidden="true">Google map <span>→</span></span></a>`).join("");
+}
 
 function storeInfoContent() {
   const stores = [
@@ -3135,6 +3144,9 @@ function syncProductDetailSnapshot() {
     const localPath = relative.length > 1 ? `/${relative.slice(0, -1).join("/")}` : "/";
     const isProductPage = localPath.startsWith("/product-item/") && productIdForDetailPath(localPath);
     let updated = html.replace(/<footer class="footer">[\s\S]*?<\/footer>/, footerMarkup);
+    if (localPath === "/") {
+      updated = updated.replace(/<section class="catering-stores">[\s\S]*?<\/section>/, `<section class="catering-stores"><div class="catering-stores-panel">${storeDirectoryMarkup("catering")}</div></section>`);
+    }
     if (isProductPage) {
       const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
       updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
