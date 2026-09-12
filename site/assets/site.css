@@ -2739,6 +2739,7 @@ body:has(.menu.is-open)::after {
     max-width: 100%;
     margin-right: auto;
     margin-left: auto;
+    text-align: left;
   }
   .about-flavor-copy p br {
     display: none;
@@ -2757,7 +2758,7 @@ body:has(.menu.is-open)::after {
     padding-bottom: 44px;
   }
   .about-more::before {
-    background-position: 24px 32px;
+    background-position: 50px 40px;
   }
   .about-more-mark {
     margin-bottom: 56px;
@@ -6688,7 +6689,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .product-detail-hero .hero-banner,
   .product-detail-hero .hero-banner > .image-slot,
   .product-detail-hero .hero-banner-title { min-height: 360px; }
-  .product-detail-hero .hero-banner-title h1 { max-width: calc(100% - 32px); margin-bottom: 14px; font-size: clamp(30px, 8vw, 42px); }
+  .product-detail-hero .hero-banner-title h1 { max-width: calc(100% - 32px); margin-bottom: 14px; font-size: clamp(18px, 6vw, 22px); letter-spacing: .02em; white-space: nowrap !important; }
   .product-detail-hero .hero-banner-title p { font-size: 15px; }
   .emerald-product-page { width: calc(100% - 28px); }
   .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
