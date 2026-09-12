@@ -1974,7 +1974,7 @@ function productDetailShell({ localPath, kind = "cake" }) {
   const pageClass = souvenir
     ? "product-detail-template bean-tart-product-page souvenir-product-page"
     : "product-detail-template cake-product-page";
-  return `<section class="emerald-product-page ${pageClass}" ${productDetailDataAttributes(localPath)}>
+  return `<section class="emerald-product-page ${pageClass}" data-product-kind="${escapeAttr(kind)}" ${productDetailDataAttributes(localPath)}>
     <section class="emerald-product-feature" aria-labelledby="product-detail-title">
       <div class="product-detail-gallery" data-product-gallery><p class="product-detail-loading">商品圖片載入中…</p></div>
       <div class="emerald-product-copy">
@@ -2897,7 +2897,7 @@ function syncTopHouseProductDetailSnapshot() {
     const filePath = htmlFileForLocalPath(localPath);
     const displayTitle = TOP_HOUSE_CARD_DETAILS.get(id)?.title || title;
     ensureDir(filePath);
-    const content = normalizeHeadingStructure(productDetailShell({ localPath, kind: "cake" }), localPath);
+    const content = normalizeHeadingStructure(productDetailShell({ localPath, kind: "top-house" }), localPath);
     const html = layout({
       title: `${displayTitle}｜頂家彌月專區 – 森森點心坊`,
       pathLabel: localPath,
@@ -3135,7 +3135,7 @@ function syncProductDetailSnapshot() {
     const isProductPage = localPath.startsWith("/product-item/") && productIdForDetailPath(localPath);
     let updated = html;
     if (isProductPage) {
-      const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : "cake";
+      const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
       updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
       const productTitle = escapeHtml(productDetailTitleForPath(localPath));
       updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1><p[^>]*>[\s\S]*?<\/p><\/div>/, (_, prefix) => `${prefix} data-product-hero-title>${productTitle}</h1><p data-product-hero-category>▱ 產品介紹</p></div>`);

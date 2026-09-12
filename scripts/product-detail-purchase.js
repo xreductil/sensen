@@ -5,6 +5,7 @@
   const copy = productPage.querySelector('.emerald-product-copy');
   const titleElement = copy?.querySelector('[data-product-title]');
   if (!copy || !titleElement) return;
+  const isCakeDetail = ['cake', 'emerald'].includes(productPage.dataset.productKind);
 
   const normalize = value => String(value || '')
     .normalize('NFKC')
@@ -303,11 +304,14 @@
     }
     const section = document.createElement('section');
     section.className = 'product-detail-purchase';
-    section.setAttribute('aria-label', '訂購資訊');
+    section.setAttribute('aria-label', isCakeDetail ? '訂購資訊' : '商品購買');
     const sizeMarkup = options.length > 1
       ? `<div class="product-detail-size-options"><span class="product-detail-size-options-label">商品尺寸</span><div class="product-detail-size-options-list" role="group" aria-label="選擇商品尺寸">${options.map(([size, value], index) => `<button class="product-detail-size-option${index === 0 ? ' is-selected' : ''}" type="button" data-product-size="${escapeHtml(size)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(size)}<span>${money(value)}</span></button>`).join('')}</div></div>`
       : '';
-    section.innerHTML = `${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p><div class="cake-product-purchase" data-cake-purchase><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock() ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock() ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="product-order-info-button cake-add-cart" type="button" data-product-order-info>訂購資訊</button></div>`;
+    const purchaseMarkup = isCakeDetail
+      ? '<div class="cake-product-purchase"><button class="product-order-info-button cake-add-cart" type="button" data-product-order-info>訂購資訊</button></div>'
+      : `<div class="cake-product-purchase"><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock() ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock() ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock() ? '' : ' disabled'}>${inStock() ? '加入購物車' : '暫停供應'}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
+    section.innerHTML = `${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p>${purchaseMarkup}`;
     insertPurchase(section);
 
     const updateVariant = () => {
@@ -320,6 +324,11 @@
         button.setAttribute('aria-pressed', String(isSelected));
       });
       section.querySelectorAll('[data-cake-quantity-change]').forEach(button => { button.disabled = !available; });
+      const addButton = section.querySelector('[data-product-detail-add-cart]');
+      if (addButton) {
+        addButton.disabled = !available;
+        if (!addButton.disabled) addButton.textContent = '加入購物車';
+      }
     };
 
     section.querySelectorAll('[data-product-size]').forEach(button => button.addEventListener('click', () => {
@@ -332,7 +341,30 @@
       output.textContent = String(Math.max(1, Math.min(99, Number(output.textContent || 1) + Number(button.dataset.cakeQuantityChange || 0))));
     }));
     const orderInfoButton = section.querySelector('[data-product-order-info]');
-    orderInfoButton.addEventListener('click', () => openOrderInfoModal(orderInfoButton));
+    if (orderInfoButton) {
+      orderInfoButton.addEventListener('click', () => openOrderInfoModal(orderInfoButton));
+      return;
+    }
+    const addButton = section.querySelector('[data-product-detail-add-cart]');
+    addButton.addEventListener('click', async () => {
+      const message = section.querySelector('[data-product-detail-message]');
+      const quantity = Number(section.querySelector('[data-cake-quantity]').textContent || 1);
+      addButton.disabled = true;
+      addButton.textContent = '加入中…';
+      message.textContent = '';
+      try {
+        const response = await fetch('/api/cart/add', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: product.id, qty: quantity, options: selectedSize ? { size: selectedSize } : {} }) });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || '加入購物車失敗。');
+        addButton.textContent = '已加購物車';
+        document.querySelector('.cart-trigger')?.click();
+      } catch (error) {
+        message.textContent = error.message;
+        addButton.textContent = '加入購物車';
+      } finally {
+        addButton.disabled = false;
+      }
+    });
   };
 
   const showError = message => {
