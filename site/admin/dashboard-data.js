@@ -1,6 +1,10 @@
 (() => {
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const money = value => '$' + Number(value || 0).toFixed(0);
+  const setText = (selector, value) => {
+    const element = document.querySelector(selector);
+    if (element) element.textContent = String(value);
+  };
   const statusLabels = {
     created: '訂單已建立',
     pending: '待付款',
@@ -32,6 +36,134 @@
           hour: '2-digit', minute: '2-digit', hour12: false
         }).format(date)
       : '時間未提供';
+  };
+
+  const dateParts = value => {
+    const date = value instanceof Date ? value : parseDate(value);
+    if (!date) return null;
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit'
+    }).formatToParts(date);
+    const values = Object.fromEntries(parts.filter(part => part.type !== 'literal').map(part => [part.type, Number(part.value)]));
+    return { year: values.year, month: values.month, day: values.day };
+  };
+
+  const calendarKey = parts => parts ? `${parts.year}-${String(parts.month).padStart(2, '0')}-${String(parts.day).padStart(2, '0')}` : '';
+  const calendarDate = parts => new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+  const calendarParts = date => ({ year: date.getUTCFullYear(), month: date.getUTCMonth() + 1, day: date.getUTCDate() });
+  const ordersInRange = (orders, range) => {
+    const today = dateParts(new Date());
+    if (!today) return [];
+    const todayKey = calendarKey(today);
+    let startKey = `${today.year}-01-01`;
+    if (range === 'month') startKey = `${today.year}-${String(today.month).padStart(2, '0')}-01`;
+    if (range === 'week') {
+      const start = calendarDate(today);
+      start.setUTCDate(start.getUTCDate() - 6);
+      startKey = calendarKey(calendarParts(start));
+    }
+    if (range === 'six-months') {
+      const start = calendarDate({ year: today.year, month: today.month, day: 1 });
+      start.setUTCMonth(start.getUTCMonth() - 5);
+      startKey = calendarKey(calendarParts(start));
+    }
+    return orders.filter(order => {
+      const key = calendarKey(dateParts(order.createdAt));
+      return key && key >= startKey && key <= todayKey;
+    });
+  };
+
+  const installDashboardVisualStyles = () => {
+    if (document.getElementById('admin-dashboard-visual-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'admin-dashboard-visual-styles';
+    style.textContent = `
+      .admin-live-chart { min-height: 350px; }
+      .admin-live-legend { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; font-size: .8rem; color: var(--bs-secondary-color, #737373); }
+      .admin-live-legend span::before { display: inline-block; width: .65rem; height: .65rem; margin-right: .35rem; content: ''; border-radius: 50%; background: var(--legend-color); }
+      .admin-live-bars { display: grid; grid-template-columns: repeat(12, minmax(2rem, 1fr)); align-items: end; gap: .5rem; height: 270px; padding: 1rem 0 0; border-bottom: 1px solid var(--bs-border-color, #e5e5e5); }
+      .admin-live-bar-group { display: grid; grid-template-rows: 1fr auto; align-items: end; min-width: 0; height: 100%; text-align: center; }
+      .admin-live-bar-stack { display: flex; align-items: end; justify-content: center; gap: .2rem; height: 100%; }
+      .admin-live-bar { display: block; width: min(1rem, 40%); min-height: 2px; border-radius: .25rem .25rem 0 0; background: var(--bar-color); }
+      .admin-live-bar[data-zero="true"] { opacity: .15; }
+      .admin-live-bar-group small { overflow: hidden; margin-top: .5rem; color: var(--bs-secondary-color, #737373); font-size: .7rem; text-overflow: ellipsis; white-space: nowrap; }
+      .admin-live-empty { display: grid; place-items: center; height: 270px; color: var(--bs-secondary-color, #737373); }
+      .admin-customer-donut { position: relative; display: grid; place-items: center; width: min(11rem, 100%); aspect-ratio: 1; margin: auto; border-radius: 50%; background: conic-gradient(#FB2C36 0 var(--first-degree), #F0B100 var(--first-degree) 100%); }
+      .admin-customer-donut::after { width: 65%; height: 65%; content: ''; background: var(--bs-body-bg, #fff); border-radius: 50%; }
+      .admin-customer-donut-label { position: absolute; inset: 0; z-index: 1; display: grid; place-items: center; text-align: center; font-size: .8rem; color: var(--bs-secondary-color, #737373); }
+    `;
+    document.head.appendChild(style);
+  };
+
+  const renderSalesPurchase = activeOrders => {
+    const chart = document.getElementById('salesPurchaseChart');
+    const rangeSelect = document.querySelector('[data-sales-purchase-range]');
+    if (!chart) return;
+    installDashboardVisualStyles();
+
+    const render = () => {
+      const range = rangeSelect?.value || 'year';
+      const today = dateParts(new Date());
+      const points = [];
+      if (range === 'year') {
+        for (let month = 1; month <= 12; month += 1) points.push({ label: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month - 1], key: `${today.year}-${String(month).padStart(2, '0')}` });
+      } else if (range === 'month') {
+        const days = new Date(Date.UTC(today.year, today.month, 0)).getUTCDate();
+        for (let day = 1; day <= days; day += 1) points.push({ label: String(day), key: `${today.year}-${String(today.month).padStart(2, '0')}-${String(day).padStart(2, '0')}` });
+      } else {
+        const start = calendarDate(today);
+        start.setUTCDate(start.getUTCDate() - 6);
+        for (let index = 0; index < 7; index += 1) {
+          const date = new Date(start);
+          date.setUTCDate(start.getUTCDate() + index);
+          const parts = calendarParts(date);
+          points.push({ label: `${parts.month}/${parts.day}`, key: calendarKey(parts) });
+        }
+      }
+      const scopedOrders = range === 'year'
+        ? activeOrders.filter(order => dateParts(order.createdAt)?.year === today.year)
+        : ordersInRange(activeOrders, range === 'month' ? 'month' : 'week');
+      const sales = points.map(point => scopedOrders.filter(order => {
+        const parts = dateParts(order.createdAt);
+        const key = range === 'year' ? `${parts?.year}-${String(parts?.month || '').padStart(2, '0')}` : calendarKey(parts);
+        return key === point.key;
+      }).reduce((sum, order) => sum + Math.max(0, Number(order.total || 0)), 0));
+      const max = Math.max(1, ...sales);
+      const salesTotal = sales.reduce((sum, value) => sum + value, 0);
+      chart.innerHTML = `<div class="admin-live-chart" role="img" aria-label="Sales linked to real orders. Purchase has no cost data yet."><div class="admin-live-legend"><span style="--legend-color:#E66239">Sales ${money(salesTotal)}</span><span style="--legend-color:#4FAF7A">Purchase 尚無進貨成本資料</span></div>${sales.length ? `<div class="admin-live-bars">${points.map((point, index) => `<div class="admin-live-bar-group"><div class="admin-live-bar-stack"><span class="admin-live-bar" style="--bar-color:#E66239;height:${Math.max(2, sales[index] / max * 100)}%" title="Sales ${money(sales[index])}"${sales[index] ? '' : ' data-zero="true"'}></span><span class="admin-live-bar" style="--bar-color:#4FAF7A;height:2px" title="Purchase 尚無進貨成本資料" data-zero="true"></span></div><small>${escapeHtml(point.label)}</small></div>`).join('')}</div>` : '<div class="admin-live-empty">目前沒有訂單銷售資料。</div>'}</div>`;
+    };
+    if (rangeSelect) rangeSelect.onchange = render;
+    render();
+  };
+
+  const renderCustomerOverview = (activeOrders, summary) => {
+    const rangeSelect = document.querySelector('[data-customer-range]');
+    const chart = document.getElementById('customerChart');
+    if (!chart) return;
+    installDashboardVisualStyles();
+    const render = () => {
+      const scopedOrders = ordersInRange(activeOrders, rangeSelect?.value || 'six-months');
+      const customerOrders = new Map();
+      scopedOrders.forEach(order => {
+        const key = String(order.userId || order.customer?.email || `guest:${order.id}`);
+        customerOrders.set(key, (customerOrders.get(key) || 0) + 1);
+      });
+      const firstTime = [...customerOrders.values()].filter(count => count === 1).length;
+      const returning = [...customerOrders.values()].filter(count => count > 1).length;
+      const totalCustomers = firstTime + returning;
+      const completedOrders = scopedOrders.filter(order => ['completed', 'picked_up'].includes(String(order.status || '').toLowerCase())).length;
+      const firstPercent = totalCustomers ? Math.round(firstTime / totalCustomers * 100) : 0;
+      setText('[data-admin-summary="first-time"]', firstTime);
+      setText('[data-admin-summary="returning"]', returning);
+      setText('[data-admin-summary="completed-orders"]', completedOrders);
+      setText('[data-admin-summary="customers"]', Math.max(Number(summary?.customerCount || 0), totalCustomers));
+      setText('[data-admin-summary="orders"]', scopedOrders.length);
+      setText('[data-customer-percent="first"]', `${firstPercent}%`);
+      setText('[data-customer-percent="return"]', `${100 - firstPercent}%`);
+      chart.innerHTML = `<div class="admin-customer-donut" style="--first-degree:${firstPercent * 3.6}deg"><span class="admin-customer-donut-label">${totalCustomers}<br>Customers</span></div>`;
+    };
+    if (rangeSelect) rangeSelect.onchange = render;
+    render();
   };
 
   const installOrderModalStyles = () => {
@@ -194,10 +326,6 @@
       .slice(0, 5)
       .map(entry => entry.order);
 
-    const setText = (selector, value) => {
-      const element = document.querySelector(selector);
-      if (element) element.textContent = String(value);
-    };
     const activeSales = activeOrders.reduce((sum, order) => sum + Math.max(0, Number(order.total || 0)), 0);
     const activeItemCount = activeOrders.reduce((sum, order) => sum + (order.items || []).reduce((itemSum, item) => itemSum + Math.max(0, Number(item.qty || 0)), 0), 0);
     setText('[data-admin-stat="sales"]', money(activeSales));
@@ -206,6 +334,8 @@
     setText('[data-admin-stat="items"]', activeItemCount);
     setText('[data-admin-summary="completed-sales"]', money(summary?.completedSales ?? activeOrders.filter(order => ['completed', 'picked_up'].includes(String(order.status || '').toLowerCase())).reduce((sum, order) => sum + Number(order.total || 0), 0)));
     setText('[data-admin-summary="pending-sales"]', money(summary?.pendingSales ?? Math.max(0, activeSales - activeOrders.filter(order => ['completed', 'picked_up'].includes(String(order.status || '').toLowerCase())).reduce((sum, order) => sum + Number(order.total || 0), 0))));
+    renderSalesPurchase(activeOrders);
+    renderCustomerOverview(activeOrders, summary);
     setText('[data-admin-status]', '已連線：客戶訂單與商品庫存');
 
     const topList = document.querySelector('[data-admin-list="top-products"]');
