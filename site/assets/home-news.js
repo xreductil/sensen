@@ -6,6 +6,12 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
+  const imageUrl = value => {
+    const image = String(value || '').trim();
+    if (!image) return '';
+    if (/^(https?:|data:|\/)/i.test(image)) return image;
+    return '/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
+  };
   const formatDate = value => {
     const date = new Date(value || 0);
     if (Number.isNaN(date.getTime())) return '';
@@ -18,9 +24,15 @@
       section.hidden = true;
       return;
     }
-    list.innerHTML = visible.map(article => `<a class="home-news-card" href="/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id || ''))}/">
-      <small>${escapeHtml(formatDate(article.publishAt || article.createdAt))}</small><h3>${escapeHtml(article.title || '最新消息')}</h3><span>更多</span>
-    </a>`).join('');
+    list.innerHTML = visible.map(article => {
+      const image = imageUrl(article.image);
+      const imageMarkup = image
+        ? `<div class="home-news-card-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(article.title || '最新消息')}" loading="lazy"></div>`
+        : '<div class="home-news-card-placeholder" aria-hidden="true">森森點心坊</div>';
+      return `<a class="home-news-card" href="/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id || ''))}/">
+      ${imageMarkup}<small>${escapeHtml(formatDate(article.publishAt || article.createdAt))}</small><h3>${escapeHtml(article.title || '最新消息')}</h3><span>更多</span>
+    </a>`;
+    }).join('');
     section.hidden = false;
   };
 
