@@ -9,8 +9,16 @@
   const imageUrl = value => {
     const image = String(value || '').trim();
     if (!image) return '';
+    if (/^\/images\/legacy-news(?:[?#]|$)/i.test(image)) {
+      try {
+        const legacyUrl = new URL(image, window.location.origin).searchParams.get('url');
+        if (legacyUrl) return legacyUrl;
+      } catch {}
+    }
+    const localImage = image.match(/^\/?(?:assets\/)?images\/([^?#]+)$/i);
+    if (localImage) return '/assets/images/' + localImage[1];
     if (/^(https?:|data:|\/)/i.test(image)) return image;
-    return '/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
+    return '/assets/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
   };
   const formatDate = value => {
     const date = new Date(value || 0);

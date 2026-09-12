@@ -19,7 +19,7 @@ const WORDPRESS_EXPORT_FILES = [
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260912-order-info-2";
-const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-1";
+const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
   ["https://www.sensen.com.tw/latest-news/歐包系列/", "latest-detail-2.md"],
