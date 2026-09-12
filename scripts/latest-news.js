@@ -7,6 +7,8 @@
   let articles = [];
   const requestedFilter = new URLSearchParams(window.location.search).get('category');
   let activeFilter = buttons.some(button => button.dataset.newsFilter === requestedFilter) ? requestedFilter : 'all';
+  const categoryAliases = { '森森飲品': 'sensen-coffee', '生日蛋糕': 'sensen-coffee' };
+  const normalizeCategory = value => categoryAliases[String(value || '').trim()] || String(value || '').trim();
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -28,7 +30,7 @@
   const render = () => {
     const visible = activeFilter === 'all'
       ? articles
-      : articles.filter(article => article.category === activeFilter);
+      : articles.filter(article => normalizeCategory(article.category) === activeFilter);
 
     if (!visible.length) {
       list.innerHTML = '<p class="latest-news-empty">目前沒有符合條件的最新消息。</p>';
@@ -41,7 +43,7 @@
         ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(article.title)}" loading="lazy">`
         : '<div class="latest-news-card-placeholder" aria-hidden="true">森森點心坊</div>';
       const description = article.excerpt || article.content || '';
-      return `<article class="latest-news-card" data-news-category="${escapeHtml(article.category)}">
+      return `<article class="latest-news-card" data-news-category="${escapeHtml(normalizeCategory(article.category))}">
         <a class="latest-news-card-link" href="/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id))}/" aria-label="查看${escapeHtml(article.title)}完整內容">
           <div class="latest-news-card-media">
             <div class="latest-news-card-image">${imageMarkup}</div>
