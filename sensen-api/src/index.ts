@@ -2,6 +2,16 @@ const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
 const GUEST_COOKIE = "sensen_guest";
 const SESSION_COOKIE = "sensen_session";
 
+// D1/SQLite CURRENT_TIMESTAMP is UTC but is returned without an offset.
+// Mark that value explicitly so browsers do not parse it as local time.
+const utcDateString = (value: unknown) => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(text)
+    ? `${text.replace(" ", "T")}Z`
+    : text;
+};
+
 type ProductRow = {
   db_id: number;
   slug: string;
@@ -426,10 +436,10 @@ const orderFromRow = (row: Record<string, unknown>, items: Record<string, unknow
   return {
     id: row.order_number,
     userId: row.user_id,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    createdAt: utcDateString(row.created_at),
+    updatedAt: utcDateString(row.updated_at),
     status,
-    statusHistory: [{ status, at: row.updated_at || row.created_at }],
+    statusHistory: [{ status, at: utcDateString(row.updated_at || row.created_at) }],
     total,
     subtotal: Number((total - shippingFee + discount).toFixed(2)),
     shippingFee,
@@ -753,6 +763,7 @@ export default {
 
       if (url.pathname === "/api/contact" && request.method === "POST") {
         const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request);
         const name = String(body.name || "").trim();
         const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
         const phone = String(body.phone || "").trim();
@@ -768,6 +779,7 @@ export default {
 
       if (url.pathname === "/api/reservations" && request.method === "POST") {
         const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request);
         const name = String(body.name || "").trim();
         const phone = String(body.phone || "").trim();
         const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
@@ -781,6 +793,7 @@ export default {
 
       if (url.pathname === "/api/newsletter" && request.method === "POST") {
         const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request);
         const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
         if (!email || !email.includes("@")) return json(request, { error: "請填寫有效的 Email。" }, 400);
         await env.DB.prepare("INSERT INTO engagement_records (record_type, payload_json) VALUES ('subscriber', ?1)")
@@ -1014,7 +1027,7 @@ export default {
           const orders = [];
           for (const row of result.results) {
             const items = await env.DB.prepare(`
-              SELECT oi.id, oi.product_id AS productId, oi.product_name AS title,
+              SELECT oi.id, oi.product_id AS dbProductId, p.slug AS productId, oi.product_name AS title,
                 oi.price AS priceValue, oi.quantity AS qty, p.image_key AS imageKey,
                 c.name AS category
               FROM order_items oi
@@ -1043,7 +1056,7 @@ export default {
             FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.id = ?1
           `).bind(existing.id).first<Record<string, unknown>>();
           const items = await env.DB.prepare(`
-            SELECT oi.id, oi.product_id AS productId, oi.product_name AS title,
+            SELECT oi.id, oi.product_id AS dbProductId, p.slug AS productId, oi.product_name AS title,
               oi.price AS priceValue, oi.quantity AS qty, p.image_key AS imageKey,
               c.name AS category
             FROM order_items oi
@@ -1074,7 +1087,7 @@ export default {
                 address: row.address ? { fullName: row.address_name || row.name || "", phone: row.address_phone || row.phone || "", address: row.address, city: row.city || "", zip: row.zip || "" } : null,
                 orderCount: Number(totals?.orderCount || 0), totalSpent: Number(totals?.totalSpent || 0),
               },
-              orders: orders.results,
+              orders: orders.results.map(order => ({ ...order, createdAt: utcDateString(order.createdAt) })),
             });
           }
           const result = await env.DB.prepare(`
@@ -1116,7 +1129,7 @@ export default {
           const itemCount = await env.DB.prepare("SELECT COALESCE(SUM(quantity), 0) AS itemCount FROM order_items").first<{ itemCount: number }>();
           const customerCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM users WHERE role IS NULL OR role != 'admin'").first<{ count: number }>();
           const customersWithOrders = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) AS count FROM orders WHERE user_id IS NOT NULL").first<{ count: number }>();
-          const pending = await env.DB.prepare("SELECT order_number, status, customer_name FROM orders WHERE status NOT IN ('completed', 'picked_up', 'cancelled') ORDER BY created_at DESC LIMIT 5").all<Record<string, unknown>>();
+          const pending = await env.DB.prepare("SELECT order_number, status, customer_name, created_at FROM orders WHERE status NOT IN ('completed', 'picked_up', 'cancelled') ORDER BY created_at DESC LIMIT 5").all<Record<string, unknown>>();
           return json(request, {
             summary: {
               totalSales: Number(totals?.totalSales || 0), itemCount: Number(itemCount?.itemCount || 0),
@@ -1124,7 +1137,7 @@ export default {
               completedOrderCount: Number(totals?.completedOrderCount || 0), orderCount: Number(totals?.orderCount || 0),
               customerCount: Number(customerCount?.count || 0), customersWithOrders: Number(customersWithOrders?.count || 0),
             },
-            notifications: pending.results.map(row => ({ type: "order", title: `訂單 ${row.order_number} 待處理`, status: row.status, customer: row.customer_name || "會員" })),
+            notifications: pending.results.map(row => ({ type: "order", title: `訂單 ${row.order_number} 待處理`, status: row.status, customer: row.customer_name || "會員", time: utcDateString(row.created_at) })),
           });
         }
 
@@ -1193,6 +1206,7 @@ export default {
 
       if (url.pathname === "/api/register" && request.method === "POST") {
         const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request);
         const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
         const password = String(body.password || "");
         const name = String(body.name || email.split("@")[0] || "Customer").trim();
@@ -1311,13 +1325,14 @@ export default {
           WHERE user_id = ?1
           ORDER BY created_at DESC
         `).bind(user.id).all<Record<string, unknown>>();
-        return json(request, { orders: result.results });
+        return json(request, { orders: result.results.map(order => ({ ...order, createdAt: utcDateString(order.createdAt) })) });
       }
 
       if (url.pathname === "/api/checkout" && request.method === "POST") {
         const body = await parseBody(request);
         const guestId = getGuestId(request);
         const sessionUser = await getSessionUser(env, request);
+        if (!sessionUser) return json(request, { error: "請先登入會員，再完成結帳，訂單才會同步到會員後台。" }, 401);
         const cart = await cartSummary(env, guestId);
         if (!cart.items.length) return json(request, { error: "購物車是空的。" }, 400);
 

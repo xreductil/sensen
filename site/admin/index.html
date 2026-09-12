@@ -431,46 +431,13 @@
     </div>
   </main>
 
-<script>
-  (() => {
-    const money = (value) => '$' + Number(value || 0).toFixed(0);
-    const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-    const productImage = (value) => {
-      const source = String(value || '').trim();
-      if (!source) return '/images/icon-cake.png';
-      if (/^(?:https?:)?\/\//i.test(source) || source.startsWith('/images/')) return source;
-      const file = source.replace(/^\/?(?:assets\/)?images\//i, '').replace(/^\/+/, '');
-      return '/images/' + file.split('/').map((part) => encodeURIComponent(part)).join('/');
-    };
-    const loadSensenDashboard = async () => {
-      try {
-        const [productsResponse, ordersResponse] = await Promise.all([fetch('/api/products', {credentials:'include'}), fetch('/api/admin/orders', {credentials:'include'})]);
-        if (!productsResponse.ok || !ordersResponse.ok) throw new Error('森森資料尚未連線。');
-        const products = (await productsResponse.json()).products || [];
-        const orderData = (await ordersResponse.json()).orders || [];
-        const sensenProductIds = new Set(products.map((item) => item.id));
-        const orders = orderData.filter((order) => {
-          const items = Array.isArray(order.items) ? order.items : [];
-          return items.length > 0 && items.every((item) => sensenProductIds.has(item.id));
-        });
-        const sold = {};
-        orders.forEach((order) => (order.items || []).forEach((item) => { sold[item.id] = (sold[item.id] || 0) + Number(item.qty || 0); }));
-        const top = [...products].sort((a,b) => (sold[b.id] || 0) - (sold[a.id] || 0)).slice(0,5);
-        const low = products.filter((item) => Number(item.quantity ?? 0) < 10).sort((a,b) => Number(a.quantity || 0) - Number(b.quantity || 0)).slice(0,5);
-        const recent = [...orders].sort((a,b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0)).slice(0,5);
-        document.querySelector('[data-admin-list="top-products"]').innerHTML = top.length ? top.map((item) => `<li class="list-group-item d-flex align-items-center gap-3"><img src="${escapeHtml(productImage(item.img))}" alt="${escapeHtml(item.title || '商品圖片')}" class="avatar avatar-md rounded object-fit-cover"><div class="flex-grow-1"><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">已售 ${sold[item.id] || 0} 件</small></div><b>${money(item.priceValue)}</b></li>`).join('') : '<li class="list-group-item text-secondary">目前沒有商品資料。</li>';
-        document.querySelector('[data-admin-list="low-stock-products"]').innerHTML = low.length ? low.map((item) => `<li class="list-group-item d-flex align-items-center gap-3"><img src="${escapeHtml(productImage(item.img))}" alt="${escapeHtml(item.title || '商品圖片')}" class="avatar avatar-md rounded object-fit-cover"><span class="flex-grow-1">${escapeHtml(item.title)}</span><strong class="text-danger">剩餘 ${Number(item.quantity || 0)} 件</strong></li>`).join('') : '<li class="list-group-item text-secondary">目前沒有低庫存商品。</li>';
-        document.querySelector('[data-admin-list="recent-orders"]').innerHTML = recent.length ? recent.map((order) => { const item = order.items?.[0] || {}; return `<li class="list-group-item d-flex align-items-center gap-3"><img src="${escapeHtml(productImage(item.img))}" alt="${escapeHtml(item.title || '訂單商品')}" class="avatar avatar-md rounded object-fit-cover"><span class="flex-grow-1"><strong>#${escapeHtml(order.id)}</strong><small class="d-block text-secondary">${escapeHtml(order.customer?.name || '森森會員')}</small></span><strong>${money(order.total)}</strong></li>`; }).join('') : '<li class="list-group-item text-secondary">目前沒有訂單。</li>';
-      } catch (error) { document.querySelector('[data-admin-status]').textContent = error.message; }
-    };
-    loadSensenDashboard();
-  })();
-  </script>
+  <script src="./dashboard-data.js?v=20260912"></script>
   <script src="./dashboard-coupon-summary.js"></script>
   <!-- Bootstrap JS -->
 
 
 
+<script src="./admin-navigation.js?v=20260912"></script>
 <script src="./assets/zh-admin.js?v=sensen-20260814"></script>
 </body>
 

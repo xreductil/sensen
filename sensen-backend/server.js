@@ -1207,7 +1207,11 @@ async function handleApi(req, res) {
 
     if (req.method === 'GET' && url.pathname === '/api/orders') {
       if (!auth) return send(res, 401, { error: 'Please log in first.' });
-      return send(res, 200, { orders: sensenOrders(db, products).filter(o => o.userId === auth.user.id).map(publicOrder) });
+      const orders = sensenOrders(db, products)
+        .filter(o => o.userId === auth.user.id)
+        .map(publicOrder)
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+      return send(res, 200, { orders });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/admin/orders') {
@@ -1217,7 +1221,7 @@ async function handleApi(req, res) {
           ...publicOrder(order),
           customer: user ? { name: user.name, email: user.email, phone: user.phone || '' } : null
         };
-      });
+      }).sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
       return send(res, 200, { orders: adminOrders });
     }
 

@@ -125,6 +125,42 @@
 
     .menu a:hover::after { transform: scaleX(1); }
 
+    .menu-toggle {
+      display: none;
+      width: 42px;
+      height: 42px;
+      padding: 9px;
+      border: 0;
+      color: var(--brown);
+      background: transparent;
+      cursor: pointer;
+    }
+
+    .menu-toggle span {
+      display: block;
+      height: 2px;
+      margin: 5px 0;
+      background: currentColor;
+    }
+
+    .nav-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: var(--brown);
+      font-size: 13px;
+      font-weight: 700;
+      white-space: nowrap;
+    }
+
+    .nav-action {
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+    }
+
+    .nav-action:hover { border-color: var(--gold); color: var(--gold); }
+
     .mobile-menu { display: none; }
 
     .mobile-menu::before {
@@ -723,17 +759,30 @@
       .nav { min-height: 78px; }
       .site-header { min-height: 78px; }
       .menu { display: none; }
-      .mobile-menu {
+      .menu-toggle {
         position: fixed;
         top: 18px;
         right: 18px;
         display: inline-flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        width: 42px;
-        height: 42px;
-        color: var(--brown);
       }
+      .menu.is-open {
+        position: absolute;
+        top: 78px;
+        right: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0;
+        padding: 12px 20px 20px;
+        background: #fff;
+        box-shadow: 0 10px 18px rgba(78, 52, 46, .10);
+      }
+      .menu.is-open li a { padding: 12px 0; }
+      .nav-actions { display: none; }
       .hero,
       .service-layout,
       .baby-card,
@@ -756,10 +805,7 @@
       body { font-size: 15px; }
       .nav { width: min(100% - 28px, 1120px); }
       .nav { gap: 12px; }
-      .mobile-menu {
-        flex: 0 0 42px;
-        margin-left: auto;
-      }
+      .menu-toggle { right: 14px; }
       .brand-mark { width: 44px; height: 44px; font-size: 24px; }
       .brand-text { font-size: 18px; }
       .brand-text span { font-size: 12px; }
@@ -832,21 +878,26 @@
 <body>
   <header class="site-header">
     <nav class="nav" aria-label="主選單">
-      <a class="brand" href="https://www.sensen.com.tw/" target="_blank" rel="noreferrer">
+      <a class="brand" href="/" aria-label="森森點心坊首頁">
         <span class="brand-mark">S</span>
         <span class="brand-text">森森點心坊<span>SenSen Bakery</span></span>
       </a>
-      <ul class="menu">
+      <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="開啟主選單"><span></span><span></span><span></span></button>
+      <ul class="menu" id="site-menu">
         <li><a href="https://www.sensen.com.tw/%e9%97%9c%e6%96%bc%e6%a3%ae%e6%a3%ae/" target="_blank" rel="noreferrer">關於森森</a></li>
         <li><a href="https://www.sensen.com.tw/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/" target="_blank" rel="noreferrer">最新消息</a></li>
-        <li><a href="https://www.sensen.com.tw/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/" target="_blank" rel="noreferrer">產品介紹</a></li>
+        <li><a href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/">線上商城</a></li>
         <li><a href="https://www.sensen.com.tw/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/" target="_blank" rel="noreferrer">酒會/茶會</a></li>
         <li><a href="https://www.sensen.com.tw/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/" target="_blank" rel="noreferrer">頂家彌月</a></li>
         <li><a href="https://www.sensen.com.tw/%e5%b8%b8%e8%a6%8b%e5%95%8f%e9%a1%8c/" target="_blank" rel="noreferrer">常見問題</a></li>
         <li><a href="https://www.sensen.com.tw/%e9%96%80%e5%b8%82%e8%b3%87%e8%a8%8a/" target="_blank" rel="noreferrer">門市資訊</a></li>
         <li><a href="https://www.sensen.com.tw/contact/" target="_blank" rel="noreferrer">連絡我們</a></li>
       </ul>
-      <span class="mobile-menu" aria-hidden="true"></span>
+      <div class="nav-actions" aria-label="森森會員功能">
+        <a class="nav-action" href="/customer/admin/" aria-label="客戶後台">會員中心</a>
+        <a class="nav-action" href="/cart/" aria-label="購物車">購物車</a>
+        <a class="nav-action" href="/admin/" aria-label="員工後台">員工後台</a>
+      </div>
     </nav>
   </header>
 
@@ -1012,5 +1063,38 @@
   <footer class="footer">
     © 2018 - 2026 森森點心坊. All Rights Reserved. <a href="https://www.sensen.com.tw/%e9%9a%b1%e7%a7%81%e6%ac%8a%e6%a2%9d%e6%ac%be/" target="_blank" rel="noreferrer">隱私權政策</a>
   </footer>
+  <script>
+  (() => {
+    const toggle = document.querySelector('.menu-toggle');
+    const menu = document.querySelector('#site-menu');
+    if (!toggle || !menu) return;
+    const canonicalLinks = [
+      ['關於森森', '/%e9%97%9c%e6%96%bc%e6%A3%ae%e6%A3%ae/'],
+      ['最新消息', '/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/'],
+      ['線上商城', '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/'],
+      ['酒會/茶會', '/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/'],
+      ['頂家彌月', '/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/'],
+      ['常見問題', '/%e5%b8%b8%e8%a6%8b%e5%95%8f%e9%a1%8c/'],
+      ['門市資訊', '/%e9%96%80%e5%b8%82%e8%b3%87%e8%a8%8a/'],
+      ['連絡我們', '/contact/']
+    ];
+    menu.querySelectorAll('a').forEach((link, index) => {
+      const item = canonicalLinks[index];
+      if (!item) return;
+      link.textContent = item[0];
+      link.href = item[1];
+      link.removeAttribute('target');
+      link.removeAttribute('rel');
+    });
+    const setState = open => {
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? '關閉主選單' : '開啟主選單');
+      menu.classList.toggle('is-open', open);
+    };
+    toggle.addEventListener('click', () => setState(!menu.classList.contains('is-open')));
+    menu.addEventListener('click', event => { if (event.target.closest('a')) setState(false); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape') setState(false); });
+  })();
+  </script>
 </body>
 </html>
