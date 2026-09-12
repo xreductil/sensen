@@ -5231,8 +5231,8 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
   .tea-party-hero p { font-size: 15px; line-height: 1.75; }
   .tea-party-hero p br { display: none; }
   .tea-party-hero-rule { height: 56px; margin-top: 30px; }
-  .tea-party-menu-download { top: calc(100% + 34px); width: 142px; min-height: 132px; font-size: 16px; }
-  .tea-party-menu-download::after { bottom: -28px; border-width: 28px; }
+  .tea-party-menu-download { top: auto; width: 100%; min-width: 0; min-height: 58px; font-size: 17px; }
+  .tea-party-menu-download::after { display: none; }
   .tea-party-category { padding: 60px 14px 40px; }
   .tea-party-category + .tea-party-category { padding-top: 68px; }
   .tea-party-category-heading { margin-bottom: 30px; padding-bottom: 22px; }

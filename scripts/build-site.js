@@ -1379,7 +1379,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:url" content="${escapeAttr(canonical)}">
-  <link rel="stylesheet" href="/assets/site.css?v=20260912-catering-mobile-buttons-1">
+  <link rel="stylesheet" href="/assets/site.css?v=20260912-catering-mobile-buttons-2">
   ${checkoutStyle}
 </head>
 <body>
