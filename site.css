@@ -3785,6 +3785,7 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 }
 
 .latest-news-card-image {
+  aspect-ratio: 1528 / 1080;
   min-height: 0;
   margin: 0;
   overflow: hidden;
@@ -3798,9 +3799,8 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 
 .latest-news-card-image img {
   width: 100%;
-  height: auto;
-  min-height: 0;
-  object-fit: contain;
+  height: 100%;
+  object-fit: cover;
   transition: transform .3s ease;
 }
 
