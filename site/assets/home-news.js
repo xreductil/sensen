@@ -16,9 +16,9 @@
       } catch {}
     }
     const localImage = image.match(/^\/?(?:assets\/)?images\/([^?#]+)$/i);
-    if (localImage) return '/assets/images/' + localImage[1];
+    if (localImage) return '/images/' + localImage[1];
     if (/^(https?:|data:|\/)/i.test(image)) return image;
-    return '/assets/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
+    return '/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
   };
   const formatDate = value => {
     const date = new Date(value || 0);
