@@ -6387,7 +6387,6 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 
 /* Emerald Lysk product detail: match the reference product page proportions. */
 @media (min-width: 881px) {
-  body:has(.product-detail-hero) .nav-actions { display: none; }
   body:has(.product-detail-hero) .menu { gap: 16px 38px; }
 }
 
