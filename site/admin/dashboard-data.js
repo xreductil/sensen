@@ -34,6 +34,79 @@
       : '時間未提供';
   };
 
+  const installOrderModalStyles = () => {
+    if (document.getElementById('admin-order-modal-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'admin-order-modal-styles';
+    style.textContent = `
+      .admin-order-row { cursor: pointer; transition: background-color .15s ease; }
+      .admin-order-row:hover, .admin-order-row:focus-visible { background-color: rgba(230, 98, 57, .08); outline: none; }
+      .admin-order-modal { position: fixed; inset: 0; z-index: 1050; display: grid; place-items: center; padding: 1rem; background: rgba(23, 23, 23, .55); }
+      .admin-order-card { position: relative; width: min(100%, 40rem); max-height: min(90vh, 44rem); overflow: auto; padding: 1.5rem; color: var(--bs-body-color, #171717); background: var(--bs-body-bg, #fff); border-radius: .75rem; box-shadow: 0 1rem 3rem rgba(0, 0, 0, .2); }
+      .admin-order-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding-right: 2rem; }
+      .admin-order-close { position: absolute; top: .75rem; right: .75rem; width: 2rem; height: 2rem; border: 0; color: inherit; background: transparent; font-size: 1.5rem; line-height: 1; }
+      .admin-order-meta { display: grid; gap: .5rem; margin: 1rem 0; padding: .875rem 1rem; background: var(--bs-tertiary-bg, #f5f5f5); border-radius: .5rem; }
+      .admin-order-meta p { margin: 0; }
+      .admin-order-items { display: grid; gap: .5rem; }
+      .admin-order-item { display: flex; justify-content: space-between; gap: 1rem; padding: .75rem 0; border-bottom: 1px solid var(--bs-border-color, #e5e5e5); }
+      .admin-order-total { display: flex; justify-content: space-between; gap: 1rem; margin-top: 1rem; padding-top: 1rem; border-top: 2px solid var(--bs-border-color, #e5e5e5); }
+    `;
+    document.head.appendChild(style);
+  };
+
+  const renderOrderModal = order => {
+    if (!order) return;
+    document.querySelector('[data-admin-order-modal]')?.remove();
+    installOrderModalStyles();
+
+    const customer = order.customer || {};
+    const status = String(order.status || 'created').toLowerCase();
+    const address = order.shippingAddress
+      ? [order.shippingAddress.zip, order.shippingAddress.city, order.shippingAddress.address].filter(Boolean).join(' ')
+      : '';
+    const contact = [customer.email, customer.phone].filter(Boolean).join(' · ') || '未提供聯絡資料';
+    const items = Array.isArray(order.items) ? order.items : [];
+    const modal = document.createElement('div');
+    modal.className = 'admin-order-modal';
+    modal.dataset.adminOrderModal = '';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-modal', 'true');
+    modal.setAttribute('aria-labelledby', 'admin-order-modal-title');
+    modal.innerHTML = `
+      <div class="admin-order-card">
+        <button type="button" class="admin-order-close" data-close-order-modal aria-label="關閉訂單明細">&times;</button>
+        <div class="admin-order-head">
+          <span id="admin-order-modal-title">訂單明細</span>
+          <strong>#${escapeHtml(order.id)}</strong>
+        </div>
+        <div class="admin-order-meta">
+          <p><strong>客戶：</strong>${escapeHtml(customer.name || '森森會員')}<br><span class="text-secondary">${escapeHtml(contact)}</span></p>
+          <p><strong>訂單時間：</strong>${escapeHtml(formatOrderDate(order.createdAt))}</p>
+          <p><strong>狀態：</strong>${escapeHtml(statusLabels[status] || status)}</p>
+          <p><strong>取貨方式：</strong>${escapeHtml(order.shippingLabel || '門市自取')}${order.fulfillmentDate ? ` · ${escapeHtml(order.fulfillmentDate)}` : ''}${address ? `<br><span class="text-secondary">${escapeHtml(address)}</span>` : ''}</p>
+        </div>
+        <div class="admin-order-items">
+          ${items.map(item => `<div class="admin-order-item"><span>${escapeHtml(item.title || '商品')} × ${Number(item.qty || 0)}</span><strong>${money(Number(item.priceValue || 0) * Number(item.qty || 0))}</strong></div>`).join('')}
+        </div>
+        <div class="admin-order-total"><strong>合計</strong><strong>${money(order.total)}</strong></div>
+      </div>`;
+    document.body.appendChild(modal);
+
+    const close = () => {
+      document.removeEventListener('keydown', onKeyDown);
+      modal.remove();
+    };
+    const onKeyDown = event => {
+      if (event.key === 'Escape') close();
+    };
+    modal.querySelector('[data-close-order-modal]').addEventListener('click', close);
+    modal.addEventListener('click', event => {
+      if (event.target === modal) close();
+    });
+    document.addEventListener('keydown', onKeyDown);
+    modal.querySelector('[data-close-order-modal]').focus();
+  };
+
   const productImage = value => {
     const source = String(value || '').trim();
     if (!source) return '/images/icon-cake.png';
@@ -124,13 +197,25 @@
       : '<li class="list-group-item text-secondary">目前沒有低庫存商品。</li>';
 
     const recentList = document.querySelector('[data-admin-list="recent-orders"]');
-    if (recentList) recentList.innerHTML = recentOrders.length
-      ? recentOrders.map(order => {
+    if (recentList) {
+      recentList.innerHTML = recentOrders.length
+      ? recentOrders.map((order, index) => {
           const itemCount = (order.items || []).reduce((sum, item) => sum + Math.max(0, Number(item.qty || 0)), 0);
           const status = String(order.status || 'created').toLowerCase();
-          return `<li class="list-group-item d-flex align-items-center gap-3 admin-order-row"><span class="flex-grow-1"><strong>#${escapeHtml(order.id)}</strong><small class="d-block text-secondary">${escapeHtml(order.customer?.name || '森森會員')} · ${itemCount} 件 · ${escapeHtml(formatOrderDate(order.createdAt))}</small></span><span class="badge bg-success-subtle text-success">${escapeHtml(statusLabels[status] || status)}</span><strong>${money(order.total)}</strong></li>`;
+          return `<li class="list-group-item d-flex align-items-center gap-3 admin-order-row" role="button" tabindex="0" data-order-index="${index}" aria-label="查看訂單 #${escapeHtml(order.id)}"><span class="flex-grow-1"><strong>#${escapeHtml(order.id)}</strong><small class="d-block text-secondary">${escapeHtml(order.customer?.name || '森森會員')} · ${itemCount} 件 · ${escapeHtml(formatOrderDate(order.createdAt))}</small></span><span class="badge bg-success-subtle text-success">${escapeHtml(statusLabels[status] || status)}</span><strong>${money(order.total)}</strong></li>`;
         }).join('')
       : '<li class="list-group-item text-secondary">目前沒有訂單。</li>';
+      recentList.querySelectorAll('[data-order-index]').forEach(row => {
+        const open = () => renderOrderModal(recentOrders[Number(row.dataset.orderIndex)]);
+        row.addEventListener('click', open);
+        row.addEventListener('keydown', event => {
+          if (event.key === 'Enter' || event.key === ' ') {
+            event.preventDefault();
+            open();
+          }
+        });
+      });
+    }
   };
 
   const run = () => loadDashboardData().catch(error => {
