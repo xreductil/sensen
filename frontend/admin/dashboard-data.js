@@ -136,7 +136,7 @@
     render();
   };
 
-  const renderCustomerOverview = (activeOrders, summary) => {
+  const renderCustomerOverview = activeOrders => {
     const rangeSelect = document.querySelector('[data-customer-range]');
     const chart = document.getElementById('customerChart');
     if (!chart) return;
@@ -156,7 +156,7 @@
       setText('[data-admin-summary="first-time"]', firstTime);
       setText('[data-admin-summary="returning"]', returning);
       setText('[data-admin-summary="completed-orders"]', completedOrders);
-      setText('[data-admin-summary="customers"]', Math.max(Number(summary?.customerCount || 0), totalCustomers));
+      setText('[data-admin-summary="customers"]', totalCustomers);
       setText('[data-admin-summary="orders"]', scopedOrders.length);
       setText('[data-customer-percent="first"]', `${firstPercent}%`);
       setText('[data-customer-percent="return"]', `${100 - firstPercent}%`);
@@ -335,7 +335,7 @@
     setText('[data-admin-summary="completed-sales"]', money(summary?.completedSales ?? activeOrders.filter(order => ['completed', 'picked_up'].includes(String(order.status || '').toLowerCase())).reduce((sum, order) => sum + Number(order.total || 0), 0)));
     setText('[data-admin-summary="pending-sales"]', money(summary?.pendingSales ?? Math.max(0, activeSales - activeOrders.filter(order => ['completed', 'picked_up'].includes(String(order.status || '').toLowerCase())).reduce((sum, order) => sum + Number(order.total || 0), 0))));
     renderSalesPurchase(activeOrders);
-    renderCustomerOverview(activeOrders, summary);
+    renderCustomerOverview(activeOrders);
     setText('[data-admin-status]', '已連線：客戶訂單與商品庫存');
 
     const topList = document.querySelector('[data-admin-list="top-products"]');
