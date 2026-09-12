@@ -2715,8 +2715,8 @@ body:has(.menu.is-open)::after {
     min-height: 190px;
   }
   .about-photo-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
   .about-photo figcaption {
     bottom: 24px;
@@ -2724,6 +2724,24 @@ body:has(.menu.is-open)::after {
   }
   .about-copy h2 {
     margin-bottom: 30px;
+  }
+  .about-copy p {
+    width: 20em;
+    max-width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .about-copy p br {
+    display: none;
+  }
+  .about-flavor-copy p {
+    width: 20em;
+    max-width: 100%;
+    margin-right: auto;
+    margin-left: auto;
+  }
+  .about-flavor-copy p br {
+    display: none;
   }
   .about-flavor {
     margin-top: 28px;
@@ -2737,6 +2755,9 @@ body:has(.menu.is-open)::after {
   }
   .about-more {
     padding-bottom: 44px;
+  }
+  .about-more::before {
+    background-position: 24px 32px;
   }
   .about-more-mark {
     margin-bottom: 56px;
@@ -5210,6 +5231,9 @@ body:has(.tea-party-page) .menu-item:nth-child(4) > a {
 }
 
 @media (max-width: 560px) {
+  .home-taste > div:last-child { padding-right: 18px; padding-left: 18px; }
+  .home-taste > div:last-child > p:not(.eyebrow) { width: 20em; max-width: 100%; }
+  .home-taste-mobile-break { display: none; }
   .catering-hero-actions,
   .tea-party-hero-actions {
     width: min(320px, 100%);
