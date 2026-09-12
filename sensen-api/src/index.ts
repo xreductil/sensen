@@ -726,6 +726,10 @@ export default {
       if ((request.method === "GET" || request.method === "HEAD") && /^\/latest-news\/article\/?$/.test(url.pathname) && url.searchParams.get("id")) {
         return Response.redirect(`${url.origin}/latest-news/article/${encodeURIComponent(url.searchParams.get("id") || "")}/`, 301);
       }
+      if ((request.method === "GET" || request.method === "HEAD")
+        && /^\/latest-news\/article\/birthday-cake-2026\/?$/i.test(url.pathname)) {
+        return Response.redirect(`${url.origin}/產品介紹/生日蛋糕-下方有dm供下載-264/`, 301);
+      }
 
       if ((request.method === "GET" || request.method === "HEAD")
         && !url.pathname.endsWith("/")

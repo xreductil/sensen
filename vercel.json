@@ -3,6 +3,18 @@
   "buildCommand": "npm run build",
   "outputDirectory": "site",
   "installCommand": "npm install",
+  "redirects": [
+    {
+      "source": "/latest-news/article/birthday-cake-2026/",
+      "destination": "/產品介紹/生日蛋糕-下方有dm供下載-264/",
+      "permanent": true
+    },
+    {
+      "source": "/latest-news/article/birthday-cake-2026",
+      "destination": "/產品介紹/生日蛋糕-下方有dm供下載-264/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
       "source": "/latest-news/article/:path*/",

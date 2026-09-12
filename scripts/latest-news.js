@@ -43,8 +43,11 @@
         ? `<img src="${escapeHtml(image)}" alt="${escapeHtml(article.title)}" loading="lazy">`
         : '<div class="latest-news-card-placeholder" aria-hidden="true">森森點心坊</div>';
       const description = article.excerpt || article.content || '';
+      const articleHref = article.id === 'birthday-cake-2026'
+        ? '/產品介紹/生日蛋糕-下方有dm供下載-264/'
+        : `/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id))}/`;
       return `<article class="latest-news-card" data-news-category="${escapeHtml(normalizeCategory(article.category))}">
-        <a class="latest-news-card-link" href="/latest-news/article/${escapeHtml(encodeURIComponent(article.slug || article.id))}/" aria-label="查看${escapeHtml(article.title)}完整內容">
+        <a class="latest-news-card-link" href="${escapeHtml(articleHref)}" aria-label="查看${escapeHtml(article.title)}完整內容">
           <div class="latest-news-card-media">
             <div class="latest-news-card-image">${imageMarkup}</div>
           </div>

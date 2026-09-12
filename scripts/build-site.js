@@ -36,7 +36,6 @@ const SOURCE_ORIGIN = "https://www.sensen.com.tw";
 const RETIRED_CONTENT_PATHS = new Set([
   "/author/admin",
   "/森森咖啡",
-  "/產品介紹/生日蛋糕-下方有dm供下載-264",
   "/slide-types/index-slider",
   "/產品介紹/page/2",
   "/產品介紹/page/3",
@@ -697,6 +696,7 @@ const NAV_CHILDREN = new Map([
 ]);
 
 const STORE_MODULE_PAGES = [
+  { url: `https://www.sensen.com.tw${BIRTHDAY_CAKE_PATH}/`, title: BIRTHDAY_CAKE_PAGE_TITLE },
   { url: `https://www.sensen.com.tw${ONLINE_LONG_CAKE_PATH}/`, title: "長條蛋糕" },
   { url: `https://www.sensen.com.tw${ONLINE_TEA_PARTY_PATH}/`, title: "點心餐盒" },
   { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "歐式麵包(冷凍)" },
@@ -2584,6 +2584,9 @@ function pageContent(page) {
   if (localPath === PRODUCT_INTRO_PATH) {
     return storefrontCatalogContent("overview");
   }
+  if (localPath === BIRTHDAY_CAKE_PATH) {
+    return birthdayCakeContent();
+  }
   if (localPath === ONLINE_LONG_CAKE_PATH) {
     return onlineLongCakeContent();
   }
@@ -3346,4 +3349,6 @@ function main() {
   console.log(`Built ${pages.length} pages in ${path.relative(ROOT, OUT_DIR)}`);
 }
 
-main();
+if (require.main === module) main();
+
+module.exports = { BIRTHDAY_CAKE_PATH, BIRTHDAY_CAKE_PAGE_TITLE, birthdayCakeContent, layout };
