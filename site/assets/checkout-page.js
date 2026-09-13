@@ -10,6 +10,14 @@
     if (!response.ok) throw new Error(data.error || '操作失敗。');
     return data;
   };
+  const loginUrl = () => '/customer/admin/?return=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+  const requireLogin = async () => {
+    const response = await fetch('/api/me', { credentials: 'include', headers: { Accept: 'application/json' } });
+    const data = await response.json().catch(() => ({}));
+    if (response.ok) return true;
+    if (response.status === 401) { window.location.assign(loginUrl()); return false; }
+    throw new Error(data.error || '目前無法確認會員登入狀態。');
+  };
   const toIsoDate = date => date.getFullYear() + '-' + String(date.getMonth() + 1).padStart(2, '0') + '-' + String(date.getDate()).padStart(2, '0');
   const saved = key => localStorage.getItem(key) || '';
   const setMessage = (selector, text, error = false) => root.querySelectorAll(selector).forEach(element => { element.textContent = text || ''; element.className = 'checkout-form-message' + (text ? (error ? ' is-error' : ' is-success') : ''); });
@@ -24,6 +32,7 @@
     localStorage.setItem('sensen-cart-pickup', fields.pickup.value);
     localStorage.setItem('sensen-cart-pickup-store', fields.pickupStore.value);
     localStorage.setItem('sensen-cart-pickup-time', fields.pickupTime.value);
+    localStorage.setItem('sensen-cart-note', fields.note.value.trim());
   };
   const renderItems = items => {
     root.querySelector('[data-checkout-items]').innerHTML = items.length ? items.map(item => '<div class="checkout-item"><span>' + escapeHtml(item.title || '商品') + ' × ' + Number(item.qty || 0) + '</span><span>' + money(Number(item.priceValue || 0) * Number(item.qty || 0)) + '</span></div>').join('') : '<p>目前購物車是空的。</p>';
@@ -50,6 +59,10 @@
     save();
   };
   const fillProfile = async () => {
+    if (!fields.name.value) fields.name.value = saved('sensen-cart-recipient');
+    if (!fields.phone.value) fields.phone.value = saved('sensen-cart-phone');
+    if (!fields.address.value) fields.address.value = saved('sensen-cart-address');
+    if (!fields.note.value) fields.note.value = saved('sensen-cart-note');
     try {
       const data = await api('/api/me');
       const user = data.user || {};
@@ -79,18 +92,16 @@
     try {
       const customerNote = [fields.shipping.value === 'pickup' ? '取貨門市：' + fields.pickupStore.value : '', fields.shipping.value === 'pickup' ? '取貨時間：' + fields.pickupTime.value : '', fields.note.value.trim()].filter(Boolean).join('\n');
       const data = await api('/api/checkout', { method: 'POST', body: JSON.stringify({ name: fields.name.value.trim(), email: fields.email.value.trim(), phone: fields.phone.value.trim(), fulfillmentDate: fields.pickup.value, couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value, shippingAddress: { fullName: fields.name.value.trim(), phone: fields.phone.value.trim(), address: fields.address?.value.trim() || '', city: fields.city?.value.trim() || '', zip: fields.zip?.value.trim() || '' }, customerNote }) });
-      localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping');
-      const emailText = data.email?.status === 'sent' ? '訂單確認信已寄至 ' + escapeHtml(data.email.recipient) + '。' : data.email?.status === 'pending' ? '訂單已建立；確認信寄送服務尚未設定。' : '';
-      const card = root.querySelector('.checkout-order-card');
-      card.innerHTML = '<div class="checkout-order-success"><h2>訂單已建立</h2><p>訂單編號：<strong>#' + escapeHtml(data.order?.id || '') + '</strong></p><p>' + emailText + '</p><p>目前狀態：訂單已建立。你可以到 <a href="/customer/admin/backup/">會員中心</a> 查看物流狀態。</p></div>';
-      setMessage('[data-checkout-submit-message]', '訂單已建立。', false);
+      localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping'); localStorage.removeItem('sensen-cart-recipient'); localStorage.removeItem('sensen-cart-phone'); localStorage.removeItem('sensen-cart-address'); localStorage.removeItem('sensen-cart-note');
+      window.location.assign('/orders/?order=' + encodeURIComponent(data.order?.id || ''));
     } catch (error) {
       setMessage('[data-checkout-submit-message]', error.message, true);
-      root.querySelectorAll('[data-checkout-submit]').forEach(item => { item.disabled = false; item.textContent = '確認訂單'; });
+      root.querySelectorAll('[data-checkout-submit]').forEach(item => { item.disabled = false; item.textContent = '前往結帳'; });
     }
   };
 
   const load = async () => {
+    if (!await requireLogin()) return;
     const cart = await api('/api/cart');
     if (!cart.items?.length) { root.querySelector('[data-checkout-items]').innerHTML = '<p>目前購物車是空的，請先返回購物車選購商品。</p>'; root.querySelectorAll('[data-checkout-submit]').forEach(button => { button.disabled = true; }); return; }
     renderItems(cart.items);

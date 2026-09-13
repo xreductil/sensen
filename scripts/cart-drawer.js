@@ -15,6 +15,7 @@
   const discountRowEl = drawer.querySelector('[data-cart-discount-row]');
   const discountEl = drawer.querySelector('[data-cart-discount]');
   const totalEl = drawer.querySelector('[data-cart-total]');
+  const checkoutLink = drawer.querySelector('a[href="/checkout/"]');
   const money = (value) => `$${Number(value || 0).toFixed(2)}`;
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
   const toIsoDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -25,6 +26,15 @@
   const showQuoteMessage = (text, error = false) => {
     quoteMessageEl.textContent = text || '';
     quoteMessageEl.className = text ? (error ? 'sensen-cart-quote-message cart-form-error' : 'sensen-cart-quote-message cart-form-success') : 'sensen-cart-quote-message';
+  };
+  const requireLoginForCheckout = async () => {
+    const response = await fetch('/api/me', { credentials: 'include', headers: { Accept: 'application/json' } });
+    if (response.ok) return true;
+    if (response.status === 401) {
+      window.location.assign('/customer/admin/?return=' + encodeURIComponent('/checkout/'));
+      return false;
+    }
+    return true;
   };
   const applyQuote = async (cart) => {
     showQuoteMessage('');
@@ -90,6 +100,15 @@
   drawer.querySelector('.sensen-cart-close').addEventListener('click', () => toggle(false));
   overlay.addEventListener('click', () => toggle(false));
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') toggle(false); });
+  checkoutLink?.addEventListener('click', async (event) => {
+    event.preventDefault();
+    checkoutLink.setAttribute('aria-busy', 'true');
+    try {
+      if (await requireLoginForCheckout()) window.location.assign('/checkout/');
+    } catch (_) {
+      window.location.assign('/checkout/');
+    }
+  });
   drawer.querySelector('[data-cart-apply-coupon]').addEventListener('click', async () => {
     const response = await fetch('/api/cart', { credentials: 'include' });
     if (response.ok) await applyQuote(await response.json());
