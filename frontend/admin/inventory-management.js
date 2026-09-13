@@ -5,15 +5,54 @@
   const money = value => '$' + Number(value || 0).toFixed(2);
   const api = async (path, options = {}) => { const response = await fetch(path, { ...options, credentials: 'include', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || '操作失敗。'); return data; };
   const pageSize = 10;
+  const defaultCategories = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮', '飲品 MENU', '頂家彌月'];
   let products = [];
   let currentPage = 1;
   const dialog = $('#inventory-product-dialog');
 
+  function addCategory(select) {
+    const name = window.prompt('請輸入新的商品分類');
+    const categoryName = String(name || '').trim();
+    if (!categoryName) return;
+    const existing = [...select.options].find(option => option.value === categoryName);
+    if (existing) {
+      select.value = categoryName;
+      return;
+    }
+    select.add(new Option(categoryName, categoryName));
+    select.value = categoryName;
+  }
+
   function renderFilters() {
     const category = $('#inventory-category-filter');
     const current = category.value;
-    category.innerHTML = '<option value="">全部分類</option>' + [...new Set(products.map(item => item.cat).filter(Boolean))].sort().map(item => '<option>' + escapeHtml(item) + '</option>').join('');
+    const categories = [...new Set([...defaultCategories, ...products.map(item => String(item.cat || '').trim()).filter(Boolean)])];
+    category.innerHTML = '<option value="">全部分類</option>' + categories.map(item => '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>').join('');
     category.value = current;
+    const productCategory = $('#inventory-product-form')?.elements.cat;
+    if (productCategory) {
+      const selected = productCategory.value;
+      if (productCategory.tagName !== 'SELECT') {
+        const select = document.createElement('select');
+        select.className = 'form-select';
+        select.name = 'cat';
+        select.required = true;
+        productCategory.replaceWith(select);
+      }
+      const select = $('#inventory-product-form').elements.cat;
+      select.innerHTML = '<option value="">選擇商品分類</option>' + categories.map(item => '<option value="' + escapeHtml(item) + '">' + escapeHtml(item) + '</option>').join('');
+      select.value = selected;
+      const label = select.closest('label');
+      if (label && !label.querySelector('[data-inventory-add-category]')) {
+        const addButton = document.createElement('button');
+        addButton.type = 'button';
+        addButton.className = 'btn btn-sm btn-outline-secondary mt-2';
+        addButton.dataset.inventoryAddCategory = '';
+        addButton.textContent = '新增分類';
+        addButton.addEventListener('click', () => addCategory(select));
+        label.append(addButton);
+      }
+    }
   }
 
   function render() {

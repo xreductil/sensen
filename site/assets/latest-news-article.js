@@ -88,6 +88,7 @@
         const shell = imageContainer.parentElement;
         const allowed = new Set(['date', 'title', 'copy', 'image', 'gallery', 'text']);
         const blocks = article.layout.filter(block => block && allowed.has(block.type));
+        const hasMedia = blocks.some(block => ['image', 'gallery'].includes(block.type));
         const safeLink = value => /^(https?:\/\/|\/)/i.test(String(value || '').trim()) ? String(value).trim() : '';
         const blockHtml = block => ({
           date: '<p class="latest-news-layout-date"><span aria-hidden="true">◷</span>' + escapeHtml(formatDate(article.publishAt || article.createdAt)) + '</p>',
@@ -101,7 +102,8 @@
         shell.innerHTML = blocks.map(block => {
           const markup = blockHtml(block);
           const link = safeLink(block.link);
-          return '<section class="latest-news-layout-block span-' + (Number(block.span) === 6 ? '6' : '12') + '">' + (link ? '<a class="latest-news-layout-link" href="' + escapeHtml(link) + '">' + markup + '</a>' : markup) + '</section>';
+          const role = ['image', 'gallery'].includes(block.type) ? 'media' : ['copy', 'text'].includes(block.type) ? (hasMedia ? 'copy' : 'full') : 'header';
+          return '<section class="latest-news-layout-block is-' + role + '">' + (link ? '<a class="latest-news-layout-link" href="' + escapeHtml(link) + '">' + markup + '</a>' : markup) + '</section>';
         }).join('');
         return;
       }
@@ -111,6 +113,7 @@
         '<img src="' + escapeHtml(imageUrl(image)) + '" alt="' + escapeHtml(article.title) + '－內文圖片 ' + (index + 1) + '" loading="lazy">'
       ).join('');
       imageContainer.hidden = parts.images.length === 0;
+      imageContainer.parentElement.classList.toggle('has-no-images', parts.images.length === 0);
       category.hidden = true;
       const header = document.createElement('header');
       header.className = 'latest-news-article-header';

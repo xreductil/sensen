@@ -382,6 +382,7 @@ const renderNewsArticleShell = (row: Record<string, unknown>) => {
   const layout = parseJson<Record<string, unknown>[] | null>(String(row.layout_json || ""), null);
   if (layout?.length) {
     const blocks = layout.filter(block => ["date", "title", "copy", "image", "gallery", "text"].includes(String(block.type || "")));
+    const hasMedia = blocks.some(block => ["image", "gallery"].includes(String(block.type || "")));
     const blockHtml = (block: Record<string, unknown>) => {
       if (block.type === "date") return `<p class="latest-news-layout-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p>`;
       if (block.type === "title") return `<h1 class="latest-news-layout-title">${escapeMarkup(title)}</h1>`;
@@ -394,12 +395,13 @@ const renderNewsArticleShell = (row: Record<string, unknown>) => {
     return `<div class="latest-news-article-shell is-free-layout">${blocks.map(block => {
       const markup = blockHtml(block);
       const link = /^(https?:\/\/|\/)/i.test(String(block.link || "").trim()) ? String(block.link).trim() : "";
-      return `<section class="latest-news-layout-block span-${Number(block.span) === 6 ? "6" : "12"}">${link ? `<a class="latest-news-layout-link" href="${escapeMarkup(link)}">${markup}</a>` : markup}</section>`;
+      const role = ["image", "gallery"].includes(String(block.type || "")) ? "media" : ["copy", "text"].includes(String(block.type || "")) ? (hasMedia ? "copy" : "full") : "header";
+      return `<section class="latest-news-layout-block is-${role}">${link ? `<a class="latest-news-layout-link" href="${escapeMarkup(link)}">${markup}</a>` : markup}</section>`;
     }).join("")}</div>`;
   }
   const imagePattern = /^(?:https?:\/\/|\/images\/)\S+\.(?:avif|gif|jpe?g|png|webp)(?:\?\S*)?$/i;
   const images = String(row.content || "").split(/\r?\n/).map(line => line.trim()).filter(line => imagePattern.test(line));
-  return `<div class="latest-news-article-shell"><header class="latest-news-article-header"><p class="latest-news-card-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p><h1 id="latest-news-article-title">${escapeMarkup(title)}</h1></header><div class="latest-news-article-image"${images.length ? "" : " hidden"}>${images.map((image, index) => `<img src="${escapeMarkup(newsImageUrl(image))}" alt="${escapeMarkup(title)}－內文圖片 ${index + 1}" loading="lazy">`).join("")}</div><div class="latest-news-article-copy"><div class="latest-news-article-content">${copy}</div></div></div>`;
+  return `<div class="latest-news-article-shell${images.length ? "" : " has-no-images"}"><header class="latest-news-article-header"><p class="latest-news-card-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p><h1 id="latest-news-article-title">${escapeMarkup(title)}</h1></header><div class="latest-news-article-image"${images.length ? "" : " hidden"}>${images.map((image, index) => `<img src="${escapeMarkup(newsImageUrl(image))}" alt="${escapeMarkup(title)}－內文圖片 ${index + 1}" loading="lazy">`).join("")}</div><div class="latest-news-article-copy"><div class="latest-news-article-content">${copy}</div></div></div>`;
 };
 
 const renderNewsArticlePage = (template: string, row: Record<string, unknown>) => {

@@ -209,15 +209,20 @@
                 </div>
 
                 <div class="mb-3">
-                  <label for="productCategory" class="form-label">Category</label>
-                  <select class="form-select" id="productCategory" required>
+                  <div class="d-flex align-items-end gap-2">
+                    <div class="flex-grow-1">
+                      <label for="productCategory" class="form-label">Category</label>
+                      <select class="form-select" id="productCategory" required>
                     <option value="">選擇商品分類</option>
                     <option value="生日蛋糕">生日蛋糕</option>
                     <option value="造型蛋糕">造型蛋糕</option>
                     <option value="冰淇淋蛋糕">冰淇淋蛋糕</option>
                     <option value="伴手禮">伴手禮</option>
                     <option value="飲品 MENU">飲品 MENU</option>
-                  </select>
+                      </select>
+                    </div>
+                    <button type="button" class="btn btn-outline-secondary" id="add-product-category">新增分類</button>
+                  </div>
                 </div>
                 <div class="mb-3">
                   <label for="productImage" class="form-label">Product Image</label>
@@ -278,13 +283,29 @@
       (() => {
         const select = document.getElementById('productCategory');
         if (!select) return;
+        const addButton = document.getElementById('add-product-category');
         const escapeHtml = value => String(value).replace(/[&<>'"]/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character]);
+        addButton?.addEventListener('click', () => {
+          const name = window.prompt('請輸入新的商品分類');
+          const categoryName = String(name || '').trim();
+          if (!categoryName) return;
+          const existing = [...select.options].find(option => option.value === categoryName);
+          if (existing) {
+            select.value = categoryName;
+            return;
+          }
+          select.add(new Option(categoryName, categoryName));
+          select.value = categoryName;
+        });
         const loadCategories = async () => {
           try {
             const response = await fetch('/api/admin/categories', { credentials: 'include', headers: { Accept: 'application/json' } });
             const data = await response.json().catch(() => ({}));
             if (!response.ok || !Array.isArray(data.categories) || !data.categories.length) return;
-            select.innerHTML = '<option value="">選擇商品分類</option>' + data.categories.map(category => `<option value="${escapeHtml(category.name)}">${escapeHtml(category.name)}</option>`).join('');
+            const current = select.value;
+            const categories = [...new Set([...select.options].map(option => option.value).filter(Boolean).concat(data.categories.map(category => category.name).filter(Boolean)))];
+            select.innerHTML = '<option value="">選擇商品分類</option>' + categories.map(category => `<option value="${escapeHtml(category)}">${escapeHtml(category)}</option>`).join('');
+            select.value = current;
           } catch (error) {
             console.warn('無法載入森森商品分類，使用預設分類。', error);
           }

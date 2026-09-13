@@ -91,7 +91,17 @@
     if (!blocks.some(block => block.type === 'title')) blocks.unshift({ id: blockId(), type: 'title', span: 12 });
     if (!blocks.some(block => block.type === 'copy')) blocks.push({ id: blockId(), type: 'copy', span: images.length ? 6 : 12 });
     images.forEach(src => { if (!blocks.some(block => (block.type === 'image' && block.src === src) || (block.type === 'gallery' && block.images.includes(src)))) blocks.push({ id: blockId(), type: 'image', src, span: 6 }); });
-    return blocks;
+    const dateBlock = blocks.find(block => block.type === 'date');
+    const titleBlock = blocks.find(block => block.type === 'title');
+    const mediaBlocks = blocks.filter(block => ['image', 'gallery'].includes(block.type));
+    const copyBlocks = blocks.filter(block => ['copy', 'text'].includes(block.type));
+    const hasMedia = mediaBlocks.length > 0;
+    return [
+      { ...dateBlock, span: 12 },
+      { ...titleBlock, span: 12 },
+      ...mediaBlocks.map(block => ({ ...block, span: hasMedia ? 6 : 12 })),
+      ...copyBlocks.map(block => ({ ...block, span: hasMedia ? 6 : 12 }))
+    ];
   };
 
   const safeLink = value => {
@@ -179,6 +189,7 @@
   }
 
   function renderPreview() {
+    layout = normalizeLayout(layout, contentImages);
     const title = form.elements.title.value.trim() || '文章標題預覽';
     const excerpt = form.elements.excerpt.value.trim() || form.elements.content.value.trim() || '內容摘要會顯示在這裡。';
     const image = imageUrl(form.elements.image.value);
@@ -197,7 +208,9 @@
       gallery: `<div class="news-layout-gallery">${(Array.isArray(block.images) ? block.images : []).map((src, imageIndex) => `<figure class="news-layout-gallery-item" data-gallery-src="${escapeHtml(src)}"><div class="news-gallery-toolbar"><button type="button" data-gallery-delete="${imageIndex}" aria-label="刪除群組內照片">刪除</button><button type="button" data-gallery-move="${imageIndex}" data-direction="-1">↑</button><button type="button" data-gallery-move="${imageIndex}" data-direction="1">↓</button></div><img src="${escapeHtml(imageUrl(src))}" alt="內文圖片"></figure>`).join('')}</div>`,
       image: `<figure><img src="${escapeHtml(imageUrl(block.src))}" alt="內文圖片"></figure>`
     }[block.type]);
-    $('[data-live-canvas]').innerHTML = layout.map((block, index) => `<section class="news-layout-block span-${block.span}${selectedImageIds.has(block.id) ? ' is-selected' : ''}" data-layout-index="${index}" data-layout-id="${escapeHtml(block.id)}">
+    const hasMedia = layout.some(block => ['image', 'gallery'].includes(block.type));
+    const blockRole = block => ['image', 'gallery'].includes(block.type) ? 'media' : ['copy', 'text'].includes(block.type) ? (hasMedia ? 'copy' : 'full') : 'header';
+    $('[data-live-canvas]').innerHTML = layout.map((block, index) => `<section class="news-layout-block is-${blockRole(block)}${selectedImageIds.has(block.id) ? ' is-selected' : ''}" data-layout-index="${index}" data-layout-id="${escapeHtml(block.id)}">
       <div class="news-layout-toolbar"><button type="button" data-layout-drag="${index}" aria-label="按住並拖曳此區塊">⠿ 拖移</button><button type="button" data-layout-move="${index}" data-direction="-1">↑</button><button type="button" data-layout-move="${index}" data-direction="1">↓</button><button type="button" data-layout-span="${index}">${block.span === 12 ? '半寬' : '全寬'}</button><button type="button" data-layout-link="${index}">${block.link ? '改連結' : '連結'}</button>${block.type === 'image' ? `<button type="button" data-layout-select="${index}">${selectedImageIds.has(block.id) ? '取消選取' : '選取'}</button><button type="button" data-layout-replace="${index}">更換</button>` : ''}${block.type === 'gallery' ? `<button type="button" data-gallery-add="${index}">＋群組圖片</button><button type="button" data-layout-ungroup="${index}">取消群組</button>` : ''}<button type="button" data-layout-add-text="${index}">＋文字</button><button type="button" data-layout-add-image="${index}">＋圖片</button>${['image', 'gallery', 'text'].includes(block.type) ? `<button type="button" data-layout-delete="${index}">刪除</button>` : ''}</div>
       ${block.link ? `<div class="news-layout-link" title="連結：${escapeHtml(safeLink(block.link))}">${blockContent(block, index)}</div>` : blockContent(block, index)}
     </section>`).join('');
