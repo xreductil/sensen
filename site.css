@@ -2678,6 +2678,10 @@ body:has(.menu.is-open)::after {
     justify-items: center;
     gap: 24px;
     text-align: center;
+    top: 0;
+    margin-bottom: 0;
+    height: auto;
+    min-height: 0;
   }
   .cake-dm-link {
     justify-self: center;
@@ -6695,7 +6699,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
   .emerald-product-image { min-height: 320px; }
   .emerald-product-image img { width: min(100%, 300px); }
-  .emerald-product-copy { padding-top: 0; font-size: 16px; }
+  .emerald-product-copy { padding: 0 14px; font-size: 16px; }
   .emerald-product-copy h2 { font-size: 24px; }
   .emerald-product-note { margin-left: 0; }
   .emerald-product-badge { margin-left: 0; }
@@ -6711,7 +6715,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .bean-tart-product-page { width: calc(100% - 28px); }
   .bean-tart-feature { grid-template-columns: 1fr; gap: 26px; padding: 28px 0 38px; }
   .bean-tart-gallery { gap: 36px; }
-  .bean-tart-copy { padding-top: 0; font-size: 16px; }
+  .bean-tart-copy { padding: 0 14px; font-size: 16px; }
   .bean-tart-copy h2 { font-size: 24px; }
   .bean-tart-copy hr { margin: 30px 0 24px; }
   .bean-tart-specs > div { grid-template-columns: 100px minmax(0, 1fr); gap: 8px; margin: 16px 0; }
