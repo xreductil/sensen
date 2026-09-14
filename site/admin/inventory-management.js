@@ -23,6 +23,52 @@
     select.value = categoryName;
   }
 
+  function productPriceOptions(product) {
+    const variantSizes = product?.variants?.sizes || {};
+    const sizes = Object.keys(variantSizes).length ? variantSizes : product?.priceOptions || {};
+    return Object.entries(sizes).filter(([label, value]) => String(label).trim() && Number.isFinite(Number(value)) && Number(value) > 0);
+  }
+
+  function ensurePriceOptionsEditor() {
+    const form = $('#inventory-product-form');
+    if (!form || form.querySelector('[data-inventory-price-options]')) return form?.querySelector('[data-inventory-price-options]');
+    const priceInput = form.elements.priceValue;
+    const priceColumn = priceInput?.closest('.col-md-4');
+    if (!priceColumn) return null;
+    const field = document.createElement('div');
+    field.className = 'col-12';
+    field.innerHTML = '<label class="form-label mb-1">多組售價（可選）</label><div class="small text-secondary mb-2">同一商品可依尺寸、口味或包裝設定不同售價。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
+    priceColumn.parentElement.insertAdjacentElement('afterend', field);
+    field.querySelector('[data-inventory-add-price-option]').addEventListener('click', () => addPriceOptionRow());
+    return field.querySelector('[data-inventory-price-options]');
+  }
+
+  function addPriceOptionRow(option = {}) {
+    const container = ensurePriceOptionsEditor();
+    if (!container) return;
+    const row = document.createElement('div');
+    row.className = 'row g-2 align-items-end mb-2 inventory-price-option';
+    row.innerHTML = `<div class="col-sm-5"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-label placeholder="例如：6 吋"></label></div><div class="col-sm-5"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
+    row.querySelector('[data-price-option-label]').value = option[0] || '';
+    row.querySelector('[data-price-option-value]').value = option[1] ?? '';
+    row.querySelector('[data-remove-price-option]').addEventListener('click', () => row.remove());
+    container.append(row);
+  }
+
+  function collectPriceOptions() {
+    const container = ensurePriceOptionsEditor();
+    const sizes = {};
+    for (const row of container?.querySelectorAll('.inventory-price-option') || []) {
+      const label = row.querySelector('[data-price-option-label]').value.trim();
+      const value = Number(row.querySelector('[data-price-option-value]').value);
+      if (!label && !row.querySelector('[data-price-option-value]').value) continue;
+      if (!label || !Number.isFinite(value) || value <= 0) throw new Error('每組規格售價都需要填寫名稱與有效價格。');
+      if (sizes[label]) throw new Error(`規格「${label}」不可重複。`);
+      sizes[label] = Number(value.toFixed(2));
+    }
+    return sizes;
+  }
+
   function renderFilters() {
     const category = $('#inventory-category-filter');
     const current = category.value;
@@ -59,12 +105,12 @@
     const query = $('#inventory-product-search').value.trim().toLowerCase();
     const category = $('#inventory-category-filter').value;
     const visibility = $('#inventory-visibility-filter').value;
-    const filtered = products.filter(item => (!query || [item.title, item.sku, item.spec, item.cat].join(' ').toLowerCase().includes(query)) && (!category || item.cat === category) && (!visibility || (visibility === 'published' ? item.published !== false : item.published === false)));
+    const filtered = products.filter(item => (!query || [item.title, item.sku, item.spec, item.cat, ...productPriceOptions(item).flat()].join(' ').toLowerCase().includes(query)) && (!category || item.cat === category) && (!visibility || (visibility === 'published' ? item.published !== false : item.published === false)));
     const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
     currentPage = Math.min(Math.max(1, currentPage), totalPages);
     const start = (currentPage - 1) * pageSize;
     const visible = filtered.slice(start, start + pageSize);
-    $('[data-sensen-table="inventory"]').innerHTML = visible.length ? visible.map(item => `<tr class="align-middle"><td><div class="d-flex align-items-center gap-3"><img src="${escapeHtml(item.img || '/images/admin/product-1.webp')}" alt="${escapeHtml(item.title)}" class="avatar avatar-md rounded object-fit-cover" style="width:48px;height:48px;" onerror="this.onerror=null;this.src='/images/admin/product-1.webp';"><div><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">${escapeHtml(item.day || '')} 天製作</small></div></div></td><td>${escapeHtml(item.sku || item.id)}</td><td>${escapeHtml(item.cat || '')}</td><td>${escapeHtml(item.spec || '—')}</td><td>${money(item.priceValue)}</td><td class="${Number(item.quantity || 0) < 10 ? 'text-danger fw-bold' : ''}">${Number(item.quantity || 0)}</td><td><span class="badge ${item.published === false ? 'text-bg-secondary' : 'text-bg-success'}">${item.published === false ? '下架' : '上架'}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary me-1" data-inventory-edit="${escapeHtml(item.id)}">編輯</button><button type="button" class="btn btn-sm btn-outline-secondary me-1" data-inventory-toggle="${escapeHtml(item.id)}">${item.published === false ? '上架' : '下架'}</button><button type="button" class="btn btn-sm btn-outline-danger" data-inventory-delete="${escapeHtml(item.id)}">刪除</button></td></tr>`).join('') : '<tr><td colspan="8" class="text-secondary py-4">沒有符合條件的商品。</td></tr>';
+    $('[data-sensen-table="inventory"]').innerHTML = visible.length ? visible.map(item => { const options = productPriceOptions(item); const priceMarkup = options.length ? `<div>${money(item.priceValue)} <small class="text-secondary">預設</small></div>${options.map(([label, value]) => `<small class="d-block text-secondary">${escapeHtml(label)}：${money(value)}</small>`).join('')}` : money(item.priceValue); return `<tr class="align-middle"><td><div class="d-flex align-items-center gap-3"><img src="${escapeHtml(item.img || '/images/admin/product-1.webp')}" alt="${escapeHtml(item.title)}" class="avatar avatar-md rounded object-fit-cover" style="width:48px;height:48px;" onerror="this.onerror=null;this.src='/images/admin/product-1.webp';"><div><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">${escapeHtml(item.day || '')} 天製作</small></div></div></td><td>${escapeHtml(item.sku || item.id)}</td><td>${escapeHtml(item.cat || '')}</td><td>${escapeHtml(item.spec || '—')}</td><td>${priceMarkup}</td><td class="${Number(item.quantity || 0) < 10 ? 'text-danger fw-bold' : ''}">${Number(item.quantity || 0)}</td><td><span class="badge ${item.published === false ? 'text-bg-secondary' : 'text-bg-success'}">${item.published === false ? '下架' : '上架'}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary me-1" data-inventory-edit="${escapeHtml(item.id)}">編輯</button><button type="button" class="btn btn-sm btn-outline-secondary me-1" data-inventory-toggle="${escapeHtml(item.id)}">${item.published === false ? '上架' : '下架'}</button><button type="button" class="btn btn-sm btn-outline-danger" data-inventory-delete="${escapeHtml(item.id)}">刪除</button></td></tr>`; }).join('') : '<tr><td colspan="8" class="text-secondary py-4">沒有符合條件的商品。</td></tr>';
     const label = $('[data-inventory-page-label]');
     if (label) label.textContent = filtered.length ? `商品 ${start + 1}-${Math.min(start + pageSize, filtered.length)}／共 ${filtered.length} 項` : '商品 0-0／共 0 項';
     const pagination = $('[data-inventory-pagination]');
@@ -80,6 +126,8 @@
   function open(product = null) {
     const form = $('#inventory-product-form');
     form.reset();
+    const priceOptions = ensurePriceOptionsEditor();
+    if (priceOptions) priceOptions.innerHTML = '';
     $('#inventory-dialog-title').textContent = product ? '編輯商品' : '新增商品';
     form.elements.id.value = product?.id || '';
     form.elements.title.value = product?.title || '';
@@ -96,13 +144,14 @@
     form.elements.desc.value = product?.desc || '';
     form.elements.published.checked = product?.published !== false;
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
+    productPriceOptions(product).forEach(option => addPriceOptionRow(option));
     $('#inventory-product-message').textContent = '';
     dialog.showModal();
   }
 
   async function load() { const data = await api('/api/admin/products'); products = data.products || []; renderFilters(); render(); }
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: Object.keys(sizes).length ? { sizes } : null, published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();

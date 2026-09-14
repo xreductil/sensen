@@ -619,8 +619,8 @@ const CAKE_SECTIONS = [
   },
 ];
 
-// New photos supplied in the repository's 圖片 folder.  They are displayed as
-// image galleries until product names, prices, and ordering details are provided.
+// New photos supplied in the repository's 圖片 folder.  Their inventory rows and
+// detail snapshots are generated from these source images.
 const NEW_PRODUCT_IMAGE_GALLERIES = {
   souvenirs: [
     "S__293707786.jpg",
@@ -646,16 +646,6 @@ const NEW_PRODUCT_IMAGE_GALLERIES = {
   ],
 };
 
-function newProductImageGalleryContent({ id, eyebrow, title, label, images }) {
-  const cards = images.map((image, index) => {
-    const itemLabel = `${label} ${String(index + 1).padStart(2, "0")}`;
-    const product = NEW_IMAGE_PRODUCT_RECORDS.find((record) => record.image === image);
-    const imageMarkup = `<img src="/images/${escapeAttr(image)}" alt="${escapeAttr(itemLabel)}" loading="lazy">`;
-    return `<figure class="new-product-image-card">${product ? `<a href="${escapeAttr(product.path)}" aria-label="查看${escapeAttr(itemLabel)}詳細介紹">${imageMarkup}</a>` : imageMarkup}<figcaption>${escapeHtml(itemLabel)}</figcaption></figure>`;
-  }).join("");
-  return `<section class="new-product-image-gallery" aria-labelledby="${escapeAttr(id)}"><div class="new-product-image-gallery-heading"><p>${escapeHtml(eyebrow)}</p><h2 id="${escapeAttr(id)}">${escapeHtml(title)}</h2></div><div class="new-product-image-grid">${cards}</div></section>`;
-}
-
 const NEW_IMAGE_PRODUCT_RECORDS = [
   ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => ({
     id: `new-souvenir-image-${String(index + 1).padStart(2, "0")}`,
@@ -675,6 +665,9 @@ const NEW_IMAGE_PRODUCT_RECORDS = [
   })),
 ];
 const NEW_IMAGE_PRODUCT_BY_ID = new Map(NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record]));
+const NEW_BIRTHDAY_CAKE_PRODUCT_ROWS = NEW_IMAGE_PRODUCT_RECORDS
+  .filter((record) => record.kind === "cake")
+  .map((record) => [record.title, "0", record.image, record.path]);
 
 function readAutomaticProductDetailRecords() {
   const products = [];
@@ -1723,9 +1716,10 @@ function birthdayCakeContent() {
           <a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${name}</span></a>
         </div>
       </article>`;
+    const extraBirthdayCakeProducts = index === 0 ? NEW_BIRTHDAY_CAKE_PRODUCT_ROWS : [];
     const cards = section.products.map(cardHtml).join("");
-    const loadMoreCards = (section.loadMoreProducts || []).map(cardHtml).join("");
-    const loadMore = section.loadMore
+    const loadMoreCards = [...(section.loadMoreProducts || []), ...extraBirthdayCakeProducts].map(cardHtml).join("");
+    const loadMore = section.loadMore || extraBirthdayCakeProducts.length
       ? `<div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>`
       : "";
     const headingText = index === 0
@@ -1745,7 +1739,6 @@ function birthdayCakeContent() {
 
   return `<section class="cake-page">
     ${sectionHtml}
-    ${newProductImageGalleryContent({ id: "new-birthday-cake-images-title", eyebrow: "NEW BIRTHDAY CAKE PHOTOS", title: "新品生日蛋糕圖片", label: "生日蛋糕新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes })}
     <section class="cake-dm" id="cake-dm">
       <a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a>
       <a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a>
@@ -2448,10 +2441,7 @@ function syncAutomaticProductDetailSnapshots() {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  const newImages = view === "cakes"
-      ? newProductImageGalleryContent({ id: "new-birthday-cake-images-title", eyebrow: "NEW BIRTHDAY CAKE PHOTOS", title: "新品生日蛋糕圖片", label: "生日蛋糕新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes })
-      : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${newImages}${dm}</section><script src="/assets/storefront-products.js?v=20260908-menu-sections-1"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260914-birthday-inventory-1"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -3179,11 +3169,8 @@ function syncNewProductImageGalleries() {
   const birthdayFile = htmlFileForLocalPath(BIRTHDAY_CAKE_PATH);
   if (fs.existsSync(birthdayFile)) {
     const html = fs.readFileSync(birthdayFile, "utf8");
-    if (!html.includes("new-birthday-cake-images-title")) {
-      const gallery = newProductImageGalleryContent({ id: "new-birthday-cake-images-title", eyebrow: "NEW BIRTHDAY CAKE PHOTOS", title: "新品生日蛋糕圖片", label: "生日蛋糕新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes });
-      const updated = html.replace('<section class="cake-dm"', `${gallery}<section class="cake-dm"`);
-      if (updated !== html) fs.writeFileSync(birthdayFile, updated);
-    }
+    const updated = html.replace(/<section class="new-product-image-gallery" aria-labelledby="new-birthday-cake-images-title">[\s\S]*?<\/section>/, "");
+    if (updated !== html) fs.writeFileSync(birthdayFile, updated);
   }
 
   const souvenirFile = htmlFileForLocalPath("/產品介紹/伴手禮");

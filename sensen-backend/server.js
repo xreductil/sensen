@@ -940,7 +940,7 @@ async function handleApi(req, res) {
       const published = body.published == null ? product.published !== false : body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? product.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || product.price).replace(/[^0-9.]/g, ''));
-      const variants = body.variants == null ? product.variants : normalizeProductVariants(body.variants, priceValue);
+      const variants = body.variants === null ? null : body.variants === undefined ? product.variants : normalizeProductVariants(body.variants, priceValue);
       const newArrival = body.newArrival == null ? product.newArrival === true : body.newArrival === true;
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
