@@ -33,6 +33,7 @@ type ProductRow = {
 type StoreProduct = {
   id: string;
   title: string;
+  url: string;
   cat: string;
   price: string;
   priceValue: number;
@@ -492,6 +493,7 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   return {
     id: row.slug,
     title: row.title,
+    url: `/product-item/${encodeURIComponent(String(row.slug || ""))}/`,
     cat: row.category || String(metadata.cat || "未分類"),
     price: `$${priceValue.toFixed(2)}`,
     priceValue,

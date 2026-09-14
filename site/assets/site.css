@@ -3189,7 +3189,9 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   width: 88%;
   margin: 0 auto;
   aspect-ratio: 1 / 1;
-  object-fit: cover;
+  object-fit: contain;
+  object-position: center top;
+  transform: translateY(-8px);
   transition: transform .25s ease;
 }
 
@@ -3203,7 +3205,19 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 
 .souvenir-card-link:hover img,
 .souvenir-card-link:focus-visible img {
-  transform: scale(1.025);
+  transform: translateY(-10px) scale(1.025);
+}
+
+/* New inventory souvenir cards use the shared cake card markup. Keep the
+   complete package visible and lift it slightly inside the thumbnail frame. */
+.souvenir-card .cake-product-image img {
+  object-position: center top;
+  transform: translateY(-8px);
+}
+
+.souvenir-card .cake-product-card-link:hover .cake-product-image img,
+.souvenir-card .cake-product-card-link:focus-visible .cake-product-image img {
+  transform: translateY(-10px) scale(1.025);
 }
 
 .souvenir-card-link {

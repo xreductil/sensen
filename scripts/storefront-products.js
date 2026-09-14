@@ -101,7 +101,7 @@
   const pathMap = (() => {
     try { return JSON.parse(root.dataset.productPaths || '{}'); } catch (error) { return {}; }
   })();
-  const detailPath = product => product.url || pathMap[product.id] || pathMap[normalizeTitle(product.title)] || '';
+  const detailPath = product => pathMap[product.id] || pathMap[normalizeTitle(product.title)] || product.url || '';
   const imagePath = product => product.img || '/images/icon-cake.png';
   const available = product => product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
 

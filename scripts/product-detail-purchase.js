@@ -122,10 +122,12 @@
   };
   const imagePath = value => String(value || '').trim();
   const productPath = product => {
+    if (pathMap[product.id]) return pathMap[product.id];
+    if (pathMap[normalize(product.title)]) return pathMap[normalize(product.title)];
     if (product.url) {
       try { return new URL(product.url, window.location.origin).pathname; } catch { /* use the local route map */ }
     }
-    return pathMap[product.id] || pathMap[normalize(product.title)] || '';
+    return '';
   };
   const formatDate = value => String(value || '').slice(0, 10);
 

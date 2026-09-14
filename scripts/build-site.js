@@ -5,6 +5,10 @@ const ROOT = path.join(__dirname, "..");
 const OUT_DIR = path.join(ROOT, "site");
 const IMAGE_DATA_DIR = path.join(ROOT, "data", "images");
 const IMAGE_MAP_FILE = path.join(IMAGE_DATA_DIR, "image-map.json");
+const PRODUCT_DATA_FILES = [
+  path.join(ROOT, "sensen-backend", "data", "sensen-products.json"),
+  path.join(ROOT, "sensen-backend", "data", "db.json"),
+];
 const CRAWL_FILE = path.join(ROOT, ".firecrawl", "sensen-full-crawl.json");
 const FALLBACK_FILE = path.join(ROOT, "data", "crawl", "crawl-results.json");
 const WP_FILES = [
@@ -671,6 +675,45 @@ const NEW_IMAGE_PRODUCT_RECORDS = [
   })),
 ];
 const NEW_IMAGE_PRODUCT_BY_ID = new Map(NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record]));
+
+function readAutomaticProductDetailRecords() {
+  const products = [];
+  for (const filePath of PRODUCT_DATA_FILES) {
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const payload = readJson(filePath);
+      const entries = Array.isArray(payload) ? payload : payload.productAdditions;
+      if (Array.isArray(entries)) products.push(...entries);
+    } catch {
+      // An optional local product source should not prevent the static site build.
+    }
+  }
+  const records = new Map();
+  for (const product of products) {
+    const id = String(product.id || product.slug || "").trim();
+    const title = String(product.title || product.name || "").trim();
+    if (!id || !title) continue;
+    const safeId = id.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "-");
+    if (!safeId) continue;
+    const category = String(product.cat || product.category || "產品介紹").trim() || "產品介紹";
+    const image = String(product.img || product.image || "").trim()
+      .replace(/^\/assets\/images\//i, "/images/")
+      .replace(/^\/data\/images\//i, "/images/");
+    records.set(id, {
+      id,
+      title,
+      path: `/product-item/${safeId}`,
+      image,
+      kind: category.includes("伴手禮") ? "souvenir" : "cake",
+      category,
+      description: String(product.desc || product.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。"),
+    });
+  }
+  return [...records.values()];
+}
+
+const AUTOMATIC_PRODUCT_DETAIL_RECORDS = readAutomaticProductDetailRecords();
+const AUTOMATIC_PRODUCT_DETAIL_BY_ID = new Map(AUTOMATIC_PRODUCT_DETAIL_RECORDS.map((record) => [record.id, record]));
 
 const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
   ...CAKE_SECTIONS[0].products,
@@ -2010,7 +2053,8 @@ function productIdForDetailPath(localPath) {
     if (TOP_HOUSE_PRODUCT_BY_ID.has(topHouseId)) return topHouseId;
   }
   const match = Object.entries(STOREFRONT_PRODUCT_ID_PATHS).find(([, productPath]) => productPath === localPath);
-  return match?.[0] || "";
+  if (match?.[0]) return match[0];
+  return AUTOMATIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id || "";
 }
 
 function productDetailTitleForPath(localPath) {
@@ -2023,6 +2067,8 @@ function productDetailTitleForPath(localPath) {
   if (souvenir) return stripTags(souvenir[0]);
   const newImageProduct = NEW_IMAGE_PRODUCT_BY_ID.get(topHouseId);
   if (newImageProduct) return newImageProduct.title;
+  const automaticProduct = AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(topHouseId);
+  if (automaticProduct) return automaticProduct.title;
   const cake = CAKE_PRODUCT_RECORDS.find((product) => product.path === localPath);
   return cake?.title || "商品";
 }
@@ -2030,9 +2076,9 @@ function productDetailTitleForPath(localPath) {
 function productDetailDataAttributes(localPath) {
   const includeTopHouseProducts = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
   const productId = productIdForDetailPath(localPath);
-  const fallback = NEW_IMAGE_PRODUCT_BY_ID.get(productId);
+  const fallback = NEW_IMAGE_PRODUCT_BY_ID.get(productId) || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId);
   const fallbackAttributes = fallback
-    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}" data-product-fallback-image="${escapeAttr(`/images/${fallback.image}`)}" data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr("商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"`
+    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"`
     : "";
   return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"${fallbackAttributes}`;
 }
@@ -2363,6 +2409,9 @@ function storeInfoContent() {
 }
 function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
   const map = { ...STOREFRONT_PRODUCT_ID_PATHS };
+  AUTOMATIC_PRODUCT_DETAIL_RECORDS.forEach((record) => {
+    if (!map[record.id]) map[record.id] = record.path;
+  });
   const normalize = value => String(value || "").replace(/<br\s*\/?\s*>/gi, "").replace(/\s+/g, "").replace(/[（(]季節限定[）)]/g, "（季節限定）");
   CAKE_SECTIONS.forEach(section => [...section.products, ...(section.loadMoreProducts || [])].forEach(([title, likes, image, href]) => { map[normalize(title)] = href; }));
   SOUVENIR_PRODUCTS.forEach(([title, href]) => { map[normalize(title)] = href; });
@@ -2373,10 +2422,15 @@ function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
   return map;
 }
 
-function syncNewImageProductDetailSnapshots() {
-  for (const product of NEW_IMAGE_PRODUCT_RECORDS) {
+function syncAutomaticProductDetailSnapshots() {
+  const mappedIds = new Set(Object.keys(STOREFRONT_PRODUCT_ID_PATHS));
+  const records = [...new Map([
+    ...AUTOMATIC_PRODUCT_DETAIL_RECORDS,
+    ...NEW_IMAGE_PRODUCT_RECORDS,
+  ].map((record) => [record.id, record])).values()];
+  for (const product of records) {
+    if ((mappedIds.has(product.id) && !NEW_IMAGE_PRODUCT_BY_ID.has(product.id)) || !product.image) continue;
     const filePath = htmlFileForLocalPath(product.path);
-    if (fs.existsSync(filePath)) continue;
     ensureDir(filePath);
     const content = normalizeHeadingStructure(productDetailShell({ localPath: product.path, kind: product.kind }), product.path);
     fs.writeFileSync(filePath, layout({
@@ -3235,7 +3289,7 @@ function syncAdminFrontendSnapshot() {
 
 function syncProductDetailSnapshot() {
   fs.copyFileSync(path.join(__dirname, "product-detail-purchase.js"), path.join(OUT_DIR, "assets", "product-detail-purchase.js"));
-  syncNewImageProductDetailSnapshots();
+  syncAutomaticProductDetailSnapshots();
   const replaceProductSection = (html, replacement) => {
     const start = html.indexOf('<section class="emerald-product-page');
     if (start < 0) return html;

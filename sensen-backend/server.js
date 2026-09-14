@@ -390,6 +390,7 @@ function productsFromData() {
       quantity: Math.max(0, Number(product.quantity ?? 25)),
       day: String(product.day || '5')
     };
+    normalized.url = normalized.url || '/product-item/' + encodeURIComponent(normalized.id) + '/';
     if (product.variants || product.priceOptions) {
       normalized.variants = normalizeProductVariants(product.variants || { sizes: product.priceOptions }, priceValue);
     }
@@ -428,6 +429,7 @@ function productsWithOverrides(db) {
   return baseProducts.filter(product => !deleted.has(product.id)).map(product => {
     const edited = overrides[product.id] || {};
     const merged = { ...product, ...edited, id: product.id };
+    merged.url = merged.url || '/product-item/' + encodeURIComponent(merged.id) + '/';
     merged.img = normalizeProductImage(merged.img);
     merged.priceValue = Number(merged.priceValue || String(merged.price || '').replace(/[^0-9.]/g, '')) || 0;
     merged.price = merged.price || ('$' + merged.priceValue.toFixed(2));
@@ -896,6 +898,7 @@ async function handleApi(req, res) {
 
       const product = {
         id: uniqueProductId(title, db),
+        url: '',
         source: 'admin',
         title,
         sku,
@@ -916,6 +919,7 @@ async function handleApi(req, res) {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+      product.url = '/product-item/' + encodeURIComponent(product.id) + '/';
       if (variants) product.variants = variants;
       db.productAdditions ||= [];
       db.productAdditions.push(product);
