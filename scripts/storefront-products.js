@@ -5,32 +5,6 @@
   const content = root.querySelector('[data-storefront-catalog-content]');
   const status = root.querySelector('[data-storefront-catalog-status]');
   const view = root.dataset.storefrontView || 'overview';
-  const newSouvenirImages = [
-    'S__293707786.jpg',
-    'S__294150148_0.jpg',
-    'S__294150149_0.jpg',
-    'S__294150150_0.jpg',
-    'S__294150152_0.jpg',
-    'S__294150153_0.jpg',
-    'S__294150154_0.jpg',
-    'S__294150155_0.jpg',
-    'S__294150156_0.jpg',
-    'S__294150157_0.jpg',
-    'S__294150158_0.jpg'
-  ];
-  const newSouvenirImagePaths = [
-    '/product-item/伴手禮新品圖片-01',
-    '/product-item/伴手禮新品圖片-02',
-    '/product-item/伴手禮新品圖片-03',
-    '/product-item/伴手禮新品圖片-04',
-    '/product-item/伴手禮新品圖片-05',
-    '/product-item/伴手禮新品圖片-06',
-    '/product-item/伴手禮新品圖片-07',
-    '/product-item/伴手禮新品圖片-08',
-    '/product-item/伴手禮新品圖片-09',
-    '/product-item/伴手禮新品圖片-10',
-    '/product-item/伴手禮新品圖片-11'
-  ];
   const categoryRoutes = {
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
@@ -76,6 +50,15 @@
   const hotProductFallback = ['oreo-ice-cream', 'colorful-world', 'macaron-forest', 'caramel-party', 'passion-pear', 'berry-melody'];
   const newProductFallback = ['emerald-lysk', 'strawberry-lysk'];
   const birthdayCakeCategories = new Set(['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕']);
+  const liftedThumbnailProductIds = new Set([
+    'new-birthday-cake-image-05',
+    'new-souvenir-image-02',
+    'new-souvenir-image-03',
+    'new-souvenir-image-04',
+    'new-souvenir-image-05',
+    'new-souvenir-image-06',
+    'new-souvenir-image-07'
+  ]);
   const birthdayProductOrder = [
     'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',
     'passion-pear', 'colorful-world', 'mocha', 'hazelnut-crunch',
@@ -116,7 +99,8 @@
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;
     const meta = `<span class="cake-product-title">${title}</span>`;
-    return `<article class="${articleClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
+    const thumbnailClass = liftedThumbnailProductIds.has(product.id) ? ' product-thumbnail-lifted' : '';
+    return `<article class="${articleClass}${thumbnailClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
   };
 
   const productIntroCard = (product, badge = '') => storefrontProductCard(product, { articleClass: 'product-intro-card cake-product-card', badge });
@@ -126,13 +110,6 @@
   };
 
   const souvenirCard = product => storefrontProductCard(product, { articleClass: 'souvenir-card cake-product-card' });
-
-  const souvenirImageCard = (image, index) => {
-    const label = `伴手禮圖片 ${String(index + 1).padStart(2, '0')}`;
-    const href = newSouvenirImagePaths[index];
-    const imageMarkup = `<img src="/images/${escapeHtml(image)}" alt="${escapeHtml(label)}" loading="lazy">`;
-    return `<article class="souvenir-card souvenir-image-card"><a class="souvenir-card-link" href="${escapeHtml(href)}">${imageMarkup}<div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(label)}</h2></div></div></a></article>`;
-  };
 
   const heading = (category, icon = true) => {
     const meta = categoryMeta[category] || { eyebrow: category, icon: '/images/icon-cake.png' };
@@ -189,8 +166,7 @@
 
   const renderSouvenirs = products => {
     const items = products.filter(product => product.cat === '伴手禮');
-    const imageCards = newSouvenirImages.map(souvenirImageCard).join('');
-    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}${imageCards}</div>${items.length || imageCards ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
+    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
   };
 
   const bindInteractions = () => {

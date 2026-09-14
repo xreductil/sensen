@@ -240,6 +240,15 @@ const RETIRED_CONTENT_PATHS = new Set([
   "/new-arrival/葡萄圓舞曲",
   "/new-arrival/戀戀草莓季",
 ]);
+for (const index of [1, 8, 9, 10]) {
+  RETIRED_CONTENT_PATHS.add(`/product-item/伴手禮新品圖片-${String(index).padStart(2, "0")}`);
+}
+const RETIRED_SOUVENIR_IMAGE_FILES = [
+  "S__293707786.jpg",
+  "S__294150155_0.jpg",
+  "S__294150156_0.jpg",
+  "S__294150157_0.jpg",
+];
 const HOME_SLIDES = [
   ["/images/image-photo-4.jpg", "SenSen Bakery bread promotion"],
   ["/images/image-photo-6.jpg", "SenSen Bakery coffee promotion"],
@@ -623,16 +632,12 @@ const CAKE_SECTIONS = [
 // detail snapshots are generated from these source images.
 const NEW_PRODUCT_IMAGE_GALLERIES = {
   souvenirs: [
-    "S__293707786.jpg",
     "S__294150148_0.jpg",
     "S__294150149_0.jpg",
     "S__294150150_0.jpg",
     "S__294150152_0.jpg",
     "S__294150153_0.jpg",
     "S__294150154_0.jpg",
-    "S__294150155_0.jpg",
-    "S__294150156_0.jpg",
-    "S__294150157_0.jpg",
     "S__294150158_0.jpg",
   ],
   birthdayCakes: [
@@ -654,16 +659,21 @@ const NEW_SOUVENIR_PRODUCT_TITLES = {
   7: "玫瑰鹽菠蘿蛋黃酥禮盒",
   11: "月光禮盒",
 };
+const NEW_SOUVENIR_PRODUCT_NUMBERS = [2, 3, 4, 5, 6, 7, 11];
 
 const NEW_IMAGE_PRODUCT_RECORDS = [
-  ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => ({
-    id: `new-souvenir-image-${String(index + 1).padStart(2, "0")}`,
-    title: NEW_SOUVENIR_PRODUCT_TITLES[index + 1] || `伴手禮圖片 ${String(index + 1).padStart(2, "0")}`,
-    path: `/product-item/伴手禮新品圖片-${String(index + 1).padStart(2, "0")}`,
-    image,
-    kind: "souvenir",
-    category: "伴手禮",
-  })),
+  ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => {
+    const number = NEW_SOUVENIR_PRODUCT_NUMBERS[index];
+    const paddedNumber = String(number).padStart(2, "0");
+    return {
+      id: `new-souvenir-image-${paddedNumber}`,
+      title: NEW_SOUVENIR_PRODUCT_TITLES[number],
+      path: `/product-item/伴手禮新品圖片-${paddedNumber}`,
+      image,
+      kind: "souvenir",
+      category: "伴手禮",
+    };
+  }),
   ...NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes.map((image, index) => ({
     id: `new-birthday-cake-image-${String(index + 1).padStart(2, "0")}`,
     title: `生日蛋糕新品圖片 ${String(index + 1).padStart(2, "0")}`,
@@ -3184,6 +3194,10 @@ function syncNewProductImageGalleries() {
     const source = path.join(IMAGE_DATA_DIR, image);
     const target = path.join(OUT_DIR, "assets", "images", image);
     if (fs.existsSync(source)) fs.copyFileSync(source, target);
+  }
+  for (const image of RETIRED_SOUVENIR_IMAGE_FILES) {
+    const target = path.join(OUT_DIR, "assets", "images", image);
+    if (fs.existsSync(target)) fs.rmSync(target, { force: true });
   }
 
   const birthdayFile = htmlFileForLocalPath(BIRTHDAY_CAKE_PATH);
