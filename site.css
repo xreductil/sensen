@@ -3193,6 +3193,14 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   transition: transform .25s ease;
 }
 
+.souvenir-image-card > img {
+  display: block;
+  width: 88%;
+  margin: 0 auto;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+}
+
 .souvenir-card-link:hover img,
 .souvenir-card-link:focus-visible img {
   transform: scale(1.025);

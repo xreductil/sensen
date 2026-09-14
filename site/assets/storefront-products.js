@@ -5,6 +5,19 @@
   const content = root.querySelector('[data-storefront-catalog-content]');
   const status = root.querySelector('[data-storefront-catalog-status]');
   const view = root.dataset.storefrontView || 'overview';
+  const newSouvenirImages = [
+    'S__293707786.jpg',
+    'S__294150148_0.jpg',
+    'S__294150149_0.jpg',
+    'S__294150150_0.jpg',
+    'S__294150152_0.jpg',
+    'S__294150153_0.jpg',
+    'S__294150154_0.jpg',
+    'S__294150155_0.jpg',
+    'S__294150156_0.jpg',
+    'S__294150157_0.jpg',
+    'S__294150158_0.jpg'
+  ];
   const categoryRoutes = {
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
@@ -100,6 +113,11 @@
 
   const souvenirCard = product => storefrontProductCard(product, { articleClass: 'souvenir-card cake-product-card' });
 
+  const souvenirImageCard = (image, index) => {
+    const label = `伴手禮圖片 ${String(index + 1).padStart(2, '0')}`;
+    return `<article class="souvenir-card souvenir-image-card"><img src="/images/${escapeHtml(image)}" alt="${escapeHtml(label)}" loading="lazy"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(label)}</h2></div></div></article>`;
+  };
+
   const heading = (category, icon = true) => {
     const meta = categoryMeta[category] || { eyebrow: category, icon: '/images/icon-cake.png' };
     return `<div class="product-intro-section-heading"><div><p>${escapeHtml(meta.eyebrow)}</p><h2>${icon ? `<img src="${escapeHtml(meta.icon)}" alt="" aria-hidden="true">` : ''}${escapeHtml(category)}</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div>`;
@@ -155,7 +173,8 @@
 
   const renderSouvenirs = products => {
     const items = products.filter(product => product.cat === '伴手禮');
-    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
+    const imageCards = newSouvenirImages.map(souvenirImageCard).join('');
+    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}${imageCards}</div>${items.length || imageCards ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
   };
 
   const bindInteractions = () => {
