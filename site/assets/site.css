@@ -3226,9 +3226,26 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   transform: translateY(-16px);
 }
 
+/* Let the lifted portrait photos extend into the card's top padding instead
+   of clipping their upper edge inside the thumbnail frame. */
+.cake-product-card.product-thumbnail-lifted .cake-product-image {
+  overflow: visible;
+}
+
 .cake-product-card.product-thumbnail-lifted .cake-product-card-link:hover .cake-product-image img,
 .cake-product-card.product-thumbnail-lifted .cake-product-card-link:focus-visible .cake-product-image img {
   transform: translateY(-18px) scale(1.025);
+}
+
+@media (max-width: 700px) {
+  .cake-product-card.product-thumbnail-lifted .cake-product-image img {
+    transform: translateY(-8px);
+  }
+
+  .cake-product-card.product-thumbnail-lifted .cake-product-card-link:hover .cake-product-image img,
+  .cake-product-card.product-thumbnail-lifted .cake-product-card-link:focus-visible .cake-product-image img {
+    transform: translateY(-10px) scale(1.025);
+  }
 }
 
 .souvenir-card-link {

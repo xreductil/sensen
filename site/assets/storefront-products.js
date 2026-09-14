@@ -51,13 +51,21 @@
   const newProductFallback = ['emerald-lysk', 'strawberry-lysk'];
   const birthdayCakeCategories = new Set(['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕']);
   const liftedThumbnailProductIds = new Set([
+    'new-birthday-cake-image-01',
+    'new-birthday-cake-image-02',
+    'new-birthday-cake-image-03',
+    'new-birthday-cake-image-04',
     'new-birthday-cake-image-05',
+    'new-birthday-cake-image-06',
+    'new-birthday-cake-image-07',
     'new-souvenir-image-02',
     'new-souvenir-image-03',
     'new-souvenir-image-04',
     'new-souvenir-image-05',
     'new-souvenir-image-06',
-    'new-souvenir-image-07'
+    'new-souvenir-image-07',
+    'new-souvenir-image-08',
+    'new-souvenir-image-11'
   ]);
   const birthdayProductOrder = [
     'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',

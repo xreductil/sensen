@@ -240,12 +240,11 @@ const RETIRED_CONTENT_PATHS = new Set([
   "/new-arrival/葡萄圓舞曲",
   "/new-arrival/戀戀草莓季",
 ]);
-for (const index of [1, 8, 9, 10]) {
+for (const index of [1, 9, 10]) {
   RETIRED_CONTENT_PATHS.add(`/product-item/伴手禮新品圖片-${String(index).padStart(2, "0")}`);
 }
 const RETIRED_SOUVENIR_IMAGE_FILES = [
   "S__293707786.jpg",
-  "S__294150155_0.jpg",
   "S__294150156_0.jpg",
   "S__294150157_0.jpg",
 ];
@@ -638,6 +637,7 @@ const NEW_PRODUCT_IMAGE_GALLERIES = {
     "S__294150152_0.jpg",
     "S__294150153_0.jpg",
     "S__294150154_0.jpg",
+    "S__294150155_0.jpg",
     "S__294150158_0.jpg",
   ],
   birthdayCakes: [
@@ -657,9 +657,10 @@ const NEW_SOUVENIR_PRODUCT_TITLES = {
   5: "經典奶油餅禮盒",
   6: "經典禮盒",
   7: "玫瑰鹽菠蘿蛋黃酥禮盒",
+  8: "純綠豆椪禮盒",
   11: "月光禮盒",
 };
-const NEW_SOUVENIR_PRODUCT_NUMBERS = [2, 3, 4, 5, 6, 7, 11];
+const NEW_SOUVENIR_PRODUCT_NUMBERS = [2, 3, 4, 5, 6, 7, 8, 11];
 
 const NEW_IMAGE_PRODUCT_RECORDS = [
   ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => {
