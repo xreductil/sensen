@@ -3260,12 +3260,23 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   max-height: none;
   object-fit: contain;
   object-position: center;
-  transform: none;
+  transform: translateY(-16px);
 }
 
 .cake-product-card.product-thumbnail-reference .cake-product-card-link:hover .cake-product-image img,
 .cake-product-card.product-thumbnail-reference .cake-product-card-link:focus-visible .cake-product-image img {
-  transform: scale(1.025);
+  transform: translateY(-18px) scale(1.025);
+}
+
+@media (max-width: 700px) {
+  .cake-product-card.product-thumbnail-reference .cake-product-image img {
+    transform: translateY(-8px);
+  }
+
+  .cake-product-card.product-thumbnail-reference .cake-product-card-link:hover .cake-product-image img,
+  .cake-product-card.product-thumbnail-reference .cake-product-card-link:focus-visible .cake-product-image img {
+    transform: translateY(-10px) scale(1.025);
+  }
 }
 
 .souvenir-card-link {
