@@ -51,13 +51,6 @@
   const newProductFallback = ['emerald-lysk', 'strawberry-lysk'];
   const birthdayCakeCategories = new Set(['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕']);
   const liftedThumbnailProductIds = new Set([
-    'new-birthday-cake-image-01',
-    'new-birthday-cake-image-02',
-    'new-birthday-cake-image-03',
-    'new-birthday-cake-image-04',
-    'new-birthday-cake-image-05',
-    'new-birthday-cake-image-06',
-    'new-birthday-cake-image-07',
     'new-souvenir-image-02',
     'new-souvenir-image-03',
     'new-souvenir-image-04',
@@ -66,6 +59,15 @@
     'new-souvenir-image-07',
     'new-souvenir-image-08',
     'new-souvenir-image-11'
+  ]);
+  const referenceThumbnailProductIds = new Set([
+    'new-birthday-cake-image-01',
+    'new-birthday-cake-image-02',
+    'new-birthday-cake-image-03',
+    'new-birthday-cake-image-04',
+    'new-birthday-cake-image-05',
+    'new-birthday-cake-image-06',
+    'new-birthday-cake-image-07'
   ]);
   const birthdayProductOrder = [
     'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',
@@ -107,7 +109,9 @@
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;
     const meta = `<span class="cake-product-title">${title}</span>`;
-    const thumbnailClass = liftedThumbnailProductIds.has(product.id) ? ' product-thumbnail-lifted' : '';
+    const thumbnailClass = referenceThumbnailProductIds.has(product.id)
+      ? ' product-thumbnail-reference'
+      : liftedThumbnailProductIds.has(product.id) ? ' product-thumbnail-lifted' : '';
     return `<article class="${articleClass}${thumbnailClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
   };
 

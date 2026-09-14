@@ -7,7 +7,8 @@
   const api = async (path, options = {}) => { const response = await fetch(path, { ...options, credentials: 'include', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || '操作失敗。'); return data; };
   const topHouseCategories = [
     '頂家彌月｜波士頓派系列',
-    '頂家彌月｜大熊／小熊禮盒',
+    '頂家彌月｜大熊禮盒',
+    '頂家彌月｜小熊禮盒',
     '頂家彌月｜圓圓派',
     '頂家彌月｜鄉村乳酪禮盒',
     '頂家彌月｜彌月長條蛋糕',
