@@ -15,6 +15,10 @@
     const categoryBlock = document.getElementById('productCategory')?.closest('.mb-3');
     if (!priceRow) return null;
     priceColumn.hidden = true;
+    // The visible price is now collected from the multi-price rows below.
+    // Keep the legacy input available for the API payload, but do not let its
+    // empty hidden value block the form's native submit event.
+    priceInput.required = false;
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'mb-3';
