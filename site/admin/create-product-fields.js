@@ -9,12 +9,17 @@
     const existing = form.querySelector('[data-create-price-options]');
     if (existing) return existing;
     const priceInput = document.getElementById('productPrice');
-    const priceRow = priceInput?.closest('.col-md-6')?.parentElement;
+    const priceColumn = priceInput?.closest('.col-md-6');
+    const priceRow = priceColumn?.parentElement;
+    const sizeColumn = document.getElementById('productSize')?.closest('.col-md-6');
+    const categoryBlock = document.getElementById('productCategory')?.closest('.mb-3');
     if (!priceRow) return null;
+    priceColumn.hidden = true;
+    if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'mb-3';
-    field.innerHTML = '<label class="form-label mb-1">多組售價（可選）</label><div class="small text-secondary mb-2">可依尺寸、口味或包裝設定不同售價。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
-    priceRow.insertAdjacentElement('afterend', field);
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
+    (categoryBlock || priceRow).insertAdjacentElement('afterend', field);
     field.querySelector('[data-create-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-create-price-options]');
   };
@@ -46,6 +51,7 @@
   };
 
   ensurePriceOptionsEditor();
+  addPriceOptionRow();
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -61,6 +67,9 @@
 
     try {
       const sizes = collectPriceOptions();
+      if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
+      document.getElementById('productPrice').value = Object.values(sizes)[0];
+      document.getElementById('productSize').value = Object.keys(sizes).join('、');
       const response = await fetch('/api/admin/products', {
         method: 'POST',
         credentials: 'include',
@@ -84,6 +93,7 @@
       form.reset();
       const priceOptions = form.querySelector('[data-create-price-options]');
       if (priceOptions) priceOptions.innerHTML = '';
+      addPriceOptionRow();
       status.className = 'small mt-3 mb-0 text-success';
       status.textContent = `${data.product?.title || title} 已加入前台菜單與 Inventory。`;
     } catch (error) {

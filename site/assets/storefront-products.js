@@ -31,28 +31,6 @@
     '/product-item/伴手禮新品圖片-10',
     '/product-item/伴手禮新品圖片-11'
   ];
-  const newBirthdayCakeProducts = [
-    'S__294150160_0.jpg',
-    'S__294150161_0.jpg',
-    'S__294150162_0.jpg',
-    'S__294150163_0.jpg',
-    'S__294150164_0.jpg',
-    'S__294150165_0.jpg',
-    'S__294150166_0.jpg'
-  ].map((image, index) => {
-    const number = String(index + 1).padStart(2, '0');
-    return {
-      id: `new-birthday-cake-image-${number}`,
-      title: `生日蛋糕新品圖片 ${number}`,
-      cat: '生日蛋糕',
-      img: `/images/${image}`,
-      url: `/product-item/生日蛋糕新品圖片-${number}`,
-      published: false,
-      priceValue: 0,
-      quantity: 0
-    };
-  });
-  const newBirthdayCakeIds = new Set(newBirthdayCakeProducts.map(product => product.id));
   const categoryRoutes = {
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
@@ -125,7 +103,7 @@
     try { return JSON.parse(root.dataset.productPaths || '{}'); } catch (error) { return {}; }
   })();
   const detailPath = product => pathMap[product.id] || pathMap[normalizeTitle(product.title)] || product.url || '';
-  const imagePath = product => product.img || '/images/icon-cake.png';
+  const imagePath = product => String(product.img || '/images/icon-cake.png').replace(/^\/assets\/images\//i, '/images/');
   const available = product => product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
 
   const productLink = (product, className, body) => {
@@ -246,13 +224,7 @@
       const response = await fetch('/api/products', { credentials: 'include', headers: { Accept: 'application/json' } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
-      const apiProducts = Array.isArray(data.products) ? data.products : [];
-      const apiProductIds = new Set(apiProducts.map(product => product.id));
-      const products = orderProducts([
-        ...apiProducts.filter(product => product.published !== false && !newBirthdayCakeIds.has(product.id)),
-        ...apiProducts.filter(product => newBirthdayCakeIds.has(product.id)),
-        ...newBirthdayCakeProducts.filter(product => !apiProductIds.has(product.id))
-      ]);
+      const products = orderProducts((Array.isArray(data.products) ? data.products : []).filter(product => product.published !== false));
       const storefrontProducts = products.filter(product => !birthdayCakeCategories.has(product.cat));
       if (view === 'overview') {
         const hotProducts = selectFeaturedProducts(storefrontProducts, 'salesCount', hotProductFallback, 5);

@@ -34,11 +34,17 @@
     if (!form || form.querySelector('[data-inventory-price-options]')) return form?.querySelector('[data-inventory-price-options]');
     const priceInput = form.elements.priceValue;
     const priceColumn = priceInput?.closest('.col-md-4');
+    const specColumn = form.elements.spec?.closest('.col-md-6');
+    const sizeColumn = form.elements.size?.closest('.col-md-6');
+    const categoryColumn = form.elements.cat?.closest('.col-md-6');
     if (!priceColumn) return null;
+    priceColumn.hidden = true;
+    if (specColumn) specColumn.hidden = true;
+    if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'col-12';
-    field.innerHTML = '<label class="form-label mb-1">多組售價（可選）</label><div class="small text-secondary mb-2">同一商品可依尺寸、口味或包裝設定不同售價。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
-    priceColumn.parentElement.insertAdjacentElement('afterend', field);
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
+    (categoryColumn || priceColumn).insertAdjacentElement('afterend', field);
     field.querySelector('[data-inventory-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-inventory-price-options]');
   }
@@ -144,14 +150,15 @@
     form.elements.desc.value = product?.desc || '';
     form.elements.published.checked = product?.published !== false;
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
-    productPriceOptions(product).forEach(option => addPriceOptionRow(option));
+    const options = productPriceOptions(product);
+    (options.length ? options : product ? [[product.spec || product.size || '預設', product.priceValue]] : [[]]).forEach(option => addPriceOptionRow(option));
     $('#inventory-product-message').textContent = '';
     dialog.showModal();
   }
 
   async function load() { const data = await api('/api/admin/products'); products = data.products || []; renderFilters(); render(); }
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: Object.keys(sizes).length ? { sizes } : null, published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();

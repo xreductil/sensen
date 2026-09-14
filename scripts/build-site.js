@@ -645,11 +645,20 @@ const NEW_PRODUCT_IMAGE_GALLERIES = {
     "S__294150166_0.jpg",
   ],
 };
+const NEW_SOUVENIR_PRODUCT_TITLES = {
+  2: "鐵觀音土鳳梨酥",
+  3: "綜合土鳳梨酥",
+  4: "土鳳梨酥禮盒",
+  5: "經典奶油餅禮盒",
+  6: "經典禮盒",
+  7: "玫瑰鹽菠蘿蛋黃酥禮盒",
+  11: "月光禮盒",
+};
 
 const NEW_IMAGE_PRODUCT_RECORDS = [
   ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => ({
     id: `new-souvenir-image-${String(index + 1).padStart(2, "0")}`,
-    title: `伴手禮新品圖片 ${String(index + 1).padStart(2, "0")}`,
+    title: NEW_SOUVENIR_PRODUCT_TITLES[index + 1] || `伴手禮圖片 ${String(index + 1).padStart(2, "0")}`,
     path: `/product-item/伴手禮新品圖片-${String(index + 1).padStart(2, "0")}`,
     image,
     kind: "souvenir",
@@ -1702,6 +1711,10 @@ function birthdayCakeLoadMoreScript() {
 }
 
 function birthdayCakeContent() {
+  return storefrontCatalogContent("cakes");
+}
+
+function legacyBirthdayCakeContent() {
   const sectionHtml = CAKE_SECTIONS.map((section, index) => {
     const iconHtml = section.icon
       ? `<img class="cake-section-icon" src="${escapeAttr(section.icon)}" alt="" aria-hidden="true">`
@@ -2441,7 +2454,7 @@ function syncAutomaticProductDetailSnapshots() {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260914-birthday-inventory-1"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260914-souvenir-products-1"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -3114,6 +3127,7 @@ function extractSnapshotSection(html, sectionClass) {
 function syncStaticSnapshotContent() {
   const pages = [
     { localPath: BIRTHDAY_CAKE_PATH, sectionClass: "cake-page", content: birthdayCakeContent() },
+    { localPath: "/產品介紹/伴手禮", sectionClass: "souvenir-page", content: storefrontCatalogContent("souvenir") },
     { localPath: CATERING_PATH, sectionClass: "catering-page", content: cateringContent() },
     { localPath: TEA_PARTY_PATH, sectionClass: "tea-party-page", content: teaPartyContent() },
     { localPath: BOSTON_PIE_PATH, sectionClass: "boston-page", content: bostonPieContent() },
@@ -3132,9 +3146,15 @@ function syncStaticSnapshotContent() {
     let updated = replaceSnapshotSection(html, page.sectionClass, page.content);
     if (page.localPath === BIRTHDAY_CAKE_PATH) {
       updated = updated.replace(/<script(?:\s[^>]*)?>[\s\S]*?toggleCakeProducts[\s\S]*?<\/script>/g, "");
-      updated = updated.replace("</main>", `${birthdayCakeLoadMoreScript()}\n</main>`);
-      updated = updated.replace(/(?:\n[ \t]*){2,}[ \t]*(?=<script id="cake-load-more-script">)/, "\n\n");
+      updated = updated.replace(/<script id="cake-load-more-script">[\s\S]*?<\/script>/g, "");
     }
+    if (page.localPath === BIRTHDAY_CAKE_PATH || page.localPath === "/產品介紹/伴手禮") {
+      updated = updated.replace(/\s*<script[^>]*src="\/assets\/storefront-products\.js(?:\?[^"']*)?"[^>]*><\/script>/g, "");
+      if (updated.includes("data-storefront-catalog")) {
+        updated = updated.replace("</main>", '<script src="/assets/storefront-products.js?v=20260914-souvenir-products-1"></script>\n</main>');
+      }
+    }
+    updated = updated.replace(/\/assets\/storefront-products\.js(?:\?[^"']*)?/g, "/assets/storefront-products.js?v=20260914-souvenir-products-1");
     if (TOP_HOUSE_PAGE_PATHS.has(page.localPath) && !updated.includes('/assets/top-house-purchase.js')) {
       updated = updated.replace('</body>', '  <script src="/assets/top-house-purchase.js"></script>\n</body>');
     }
