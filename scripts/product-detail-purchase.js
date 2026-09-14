@@ -375,6 +375,24 @@
     productPage.prepend(status);
   };
 
+  const fallbackProduct = () => {
+    const title = productPage.dataset.productFallbackTitle || '';
+    const image = productPage.dataset.productFallbackImage || '';
+    if (!title || !image) return null;
+    return {
+      id: productId,
+      title,
+      cat: productPage.dataset.productFallbackCategory || '產品介紹',
+      desc: productPage.dataset.productFallbackDescription || '商品詳細資料整理中。',
+      img: image,
+      images: [image],
+      published: false,
+      quantity: 0,
+      priceValue: 0,
+      likes: 0
+    };
+  };
+
   fetch('/api/products', { credentials: 'include', headers: { Accept: 'application/json' } })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('無法載入商品資料。')))
     .then(data => {
@@ -393,6 +411,14 @@
     })
     .catch(error => {
       console.warn(error);
-      showError(error.message || '商品資料載入失敗。');
+      const fallback = fallbackProduct();
+      if (!fallback) {
+        showError(error.message || '商品資料載入失敗。');
+        return;
+      }
+      syncProductDetails(fallback);
+      renderPurchase(fallback);
+      renderRelated(fallback, []);
+      productPage.dataset.productLoaded = 'true';
     });
 })();

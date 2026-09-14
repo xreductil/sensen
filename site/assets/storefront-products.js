@@ -18,6 +18,19 @@
     'S__294150157_0.jpg',
     'S__294150158_0.jpg'
   ];
+  const newSouvenirImagePaths = [
+    '/product-item/伴手禮新品圖片-01',
+    '/product-item/伴手禮新品圖片-02',
+    '/product-item/伴手禮新品圖片-03',
+    '/product-item/伴手禮新品圖片-04',
+    '/product-item/伴手禮新品圖片-05',
+    '/product-item/伴手禮新品圖片-06',
+    '/product-item/伴手禮新品圖片-07',
+    '/product-item/伴手禮新品圖片-08',
+    '/product-item/伴手禮新品圖片-09',
+    '/product-item/伴手禮新品圖片-10',
+    '/product-item/伴手禮新品圖片-11'
+  ];
   const categoryRoutes = {
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
@@ -115,7 +128,9 @@
 
   const souvenirImageCard = (image, index) => {
     const label = `伴手禮圖片 ${String(index + 1).padStart(2, '0')}`;
-    return `<article class="souvenir-card souvenir-image-card"><img src="/images/${escapeHtml(image)}" alt="${escapeHtml(label)}" loading="lazy"><div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(label)}</h2></div></div></article>`;
+    const href = newSouvenirImagePaths[index];
+    const imageMarkup = `<img src="/images/${escapeHtml(image)}" alt="${escapeHtml(label)}" loading="lazy">`;
+    return `<article class="souvenir-card souvenir-image-card"><a class="souvenir-card-link" href="${escapeHtml(href)}">${imageMarkup}<div class="souvenir-card-meta"><div class="souvenir-card-title"><h2>${escapeHtml(label)}</h2></div></div></a></article>`;
   };
 
   const heading = (category, icon = true) => {

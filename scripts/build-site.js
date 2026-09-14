@@ -645,10 +645,32 @@ const NEW_PRODUCT_IMAGE_GALLERIES = {
 function newProductImageGalleryContent({ id, eyebrow, title, label, images }) {
   const cards = images.map((image, index) => {
     const itemLabel = `${label} ${String(index + 1).padStart(2, "0")}`;
-    return `<figure class="new-product-image-card"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(itemLabel)}" loading="lazy"><figcaption>${escapeHtml(itemLabel)}</figcaption></figure>`;
+    const product = NEW_IMAGE_PRODUCT_RECORDS.find((record) => record.image === image);
+    const imageMarkup = `<img src="/images/${escapeAttr(image)}" alt="${escapeAttr(itemLabel)}" loading="lazy">`;
+    return `<figure class="new-product-image-card">${product ? `<a href="${escapeAttr(product.path)}" aria-label="查看${escapeAttr(itemLabel)}詳細介紹">${imageMarkup}</a>` : imageMarkup}<figcaption>${escapeHtml(itemLabel)}</figcaption></figure>`;
   }).join("");
   return `<section class="new-product-image-gallery" aria-labelledby="${escapeAttr(id)}"><div class="new-product-image-gallery-heading"><p>${escapeHtml(eyebrow)}</p><h2 id="${escapeAttr(id)}">${escapeHtml(title)}</h2></div><div class="new-product-image-grid">${cards}</div></section>`;
 }
+
+const NEW_IMAGE_PRODUCT_RECORDS = [
+  ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => ({
+    id: `new-souvenir-image-${String(index + 1).padStart(2, "0")}`,
+    title: `伴手禮新品圖片 ${String(index + 1).padStart(2, "0")}`,
+    path: `/product-item/伴手禮新品圖片-${String(index + 1).padStart(2, "0")}`,
+    image,
+    kind: "souvenir",
+    category: "伴手禮",
+  })),
+  ...NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes.map((image, index) => ({
+    id: `new-birthday-cake-image-${String(index + 1).padStart(2, "0")}`,
+    title: `生日蛋糕新品圖片 ${String(index + 1).padStart(2, "0")}`,
+    path: `/product-item/生日蛋糕新品圖片-${String(index + 1).padStart(2, "0")}`,
+    image,
+    kind: "cake",
+    category: "生日蛋糕",
+  })),
+];
+const NEW_IMAGE_PRODUCT_BY_ID = new Map(NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record]));
 
 const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
   ...CAKE_SECTIONS[0].products,
@@ -1978,6 +2000,7 @@ const STOREFRONT_PRODUCT_ID_PATHS = {
   "souvenir-dacquoise": "/product-item/鳳梨酥禮盒",
   "souvenir-pineapple-cake": "/product-item/土鳳梨酥禮盒",
   "souvenir-daifuku": "/product-item/日式大福禮盒",
+  ...Object.fromEntries(NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record.path])),
 };
 
 function productIdForDetailPath(localPath) {
@@ -1998,13 +2021,20 @@ function productDetailTitleForPath(localPath) {
   }
   const souvenir = SOUVENIR_PRODUCTS.find(([, href]) => href === localPath);
   if (souvenir) return stripTags(souvenir[0]);
+  const newImageProduct = NEW_IMAGE_PRODUCT_BY_ID.get(topHouseId);
+  if (newImageProduct) return newImageProduct.title;
   const cake = CAKE_PRODUCT_RECORDS.find((product) => product.path === localPath);
   return cake?.title || "商品";
 }
 
 function productDetailDataAttributes(localPath) {
   const includeTopHouseProducts = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
-  return `data-product-id="${escapeAttr(productIdForDetailPath(localPath))}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"`;
+  const productId = productIdForDetailPath(localPath);
+  const fallback = NEW_IMAGE_PRODUCT_BY_ID.get(productId);
+  const fallbackAttributes = fallback
+    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}" data-product-fallback-image="${escapeAttr(`/images/${fallback.image}`)}" data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr("商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"`
+    : "";
+  return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"${fallbackAttributes}`;
 }
 
 function productDetailShell({ localPath, kind = "cake" }) {
@@ -2341,6 +2371,24 @@ function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
     map[normalize(title)] = topHouseProductPath(id);
   });
   return map;
+}
+
+function syncNewImageProductDetailSnapshots() {
+  for (const product of NEW_IMAGE_PRODUCT_RECORDS) {
+    const filePath = htmlFileForLocalPath(product.path);
+    if (fs.existsSync(filePath)) continue;
+    ensureDir(filePath);
+    const content = normalizeHeadingStructure(productDetailShell({ localPath: product.path, kind: product.kind }), product.path);
+    fs.writeFileSync(filePath, layout({
+      title: `${product.title} – 森森點心坊`,
+      pathLabel: product.path,
+      content,
+      isCakeProduct: product.kind === "cake",
+      isSouvenirProduct: product.kind === "souvenir",
+      heroCategoryLabel: product.category,
+      hasBrandedHero: true,
+    }));
+  }
 }
 
 function storefrontCatalogContent(view) {
@@ -3187,6 +3235,7 @@ function syncAdminFrontendSnapshot() {
 
 function syncProductDetailSnapshot() {
   fs.copyFileSync(path.join(__dirname, "product-detail-purchase.js"), path.join(OUT_DIR, "assets", "product-detail-purchase.js"));
+  syncNewImageProductDetailSnapshots();
   const replaceProductSection = (html, replacement) => {
     const start = html.indexOf('<section class="emerald-product-page');
     if (start < 0) return html;
