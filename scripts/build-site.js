@@ -615,6 +615,41 @@ const CAKE_SECTIONS = [
   },
 ];
 
+// New photos supplied in the repository's 圖片 folder.  They are displayed as
+// image galleries until product names, prices, and ordering details are provided.
+const NEW_PRODUCT_IMAGE_GALLERIES = {
+  souvenirs: [
+    "S__293707786.jpg",
+    "S__294150148_0.jpg",
+    "S__294150149_0.jpg",
+    "S__294150150_0.jpg",
+    "S__294150152_0.jpg",
+    "S__294150153_0.jpg",
+    "S__294150154_0.jpg",
+    "S__294150155_0.jpg",
+    "S__294150156_0.jpg",
+    "S__294150157_0.jpg",
+    "S__294150158_0.jpg",
+  ],
+  birthdayCakes: [
+    "S__294150160_0.jpg",
+    "S__294150161_0.jpg",
+    "S__294150162_0.jpg",
+    "S__294150163_0.jpg",
+    "S__294150164_0.jpg",
+    "S__294150165_0.jpg",
+    "S__294150166_0.jpg",
+  ],
+};
+
+function newProductImageGalleryContent({ id, eyebrow, title, label, images }) {
+  const cards = images.map((image, index) => {
+    const itemLabel = `${label} ${String(index + 1).padStart(2, "0")}`;
+    return `<figure class="new-product-image-card"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(itemLabel)}" loading="lazy"><figcaption>${escapeHtml(itemLabel)}</figcaption></figure>`;
+  }).join("");
+  return `<section class="new-product-image-gallery" aria-labelledby="${escapeAttr(id)}"><div class="new-product-image-gallery-heading"><p>${escapeHtml(eyebrow)}</p><h2 id="${escapeAttr(id)}">${escapeHtml(title)}</h2></div><div class="new-product-image-grid">${cards}</div></section>`;
+}
+
 const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
   ...CAKE_SECTIONS[0].products,
   ...(CAKE_SECTIONS[0].loadMoreProducts || []),
@@ -1625,6 +1660,7 @@ function birthdayCakeContent() {
 
   return `<section class="cake-page">
     ${sectionHtml}
+    ${newProductImageGalleryContent({ id: "new-birthday-cake-images-title", eyebrow: "NEW BIRTHDAY CAKE PHOTOS", title: "新品生日蛋糕圖片", label: "生日蛋糕新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes })}
     <section class="cake-dm" id="cake-dm">
       <a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a>
       <a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a>
@@ -1889,8 +1925,8 @@ const PRODUCT_PRICE_LABEL = "價格洽詢";
 
 const SOUVENIR_PRODUCTS = [
   ["豆塔禮盒", "/product-item/豆塔禮盒", "photo-2.jpg", 9],
-  ["森森肉鬆餅", "/product-item/森森肉鬆餅", "pork-floss-pastry-4.jpg", 17],
-  ["法式蝴蝶酥", "/product-item/法式蝴蝶酥-1657", "palmiers-2.jpg", 8],
+  ["肉鬆餅禮盒", "/product-item/森森肉鬆餅", "pork-floss-pastry-4.jpg", 17],
+  ["蝴蝶酥禮盒", "/product-item/法式蝴蝶酥-1657", "palmiers-2.jpg", 8],
   ["杏仁千層酥", "/product-item/鈕扣牛軋餅", "almond-layer-pastry.jpg", 10],
   ["經典奶油餅禮盒", "/product-item/太陽餅禮盒", "sun-cake-thumbnail-copy.jpg", 6],
   ["手工蛋捲", "/product-item/手工蛋捲", "egg-roll-2.jpg", 4],
@@ -2307,7 +2343,12 @@ function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260908-menu-sections-1"></script>`;
+  const newImages = view === "souvenir"
+    ? newProductImageGalleryContent({ id: "new-souvenir-images-title", eyebrow: "NEW SOUVENIR PHOTOS", title: "新品伴手禮圖片", label: "伴手禮新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.souvenirs })
+    : view === "cakes"
+      ? newProductImageGalleryContent({ id: "new-birthday-cake-images-title", eyebrow: "NEW BIRTHDAY CAKE PHOTOS", title: "新品生日蛋糕圖片", label: "生日蛋糕新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes })
+      : "";
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${newImages}${dm}</section><script src="/assets/storefront-products.js?v=20260908-menu-sections-1"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -3019,6 +3060,35 @@ function syncStaticSnapshotContent() {
   }
 }
 
+function syncNewProductImageGalleries() {
+  for (const image of [...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs, ...NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes]) {
+    const source = path.join(IMAGE_DATA_DIR, image);
+    const target = path.join(OUT_DIR, "assets", "images", image);
+    if (fs.existsSync(source)) fs.copyFileSync(source, target);
+  }
+
+  const birthdayFile = htmlFileForLocalPath(BIRTHDAY_CAKE_PATH);
+  if (fs.existsSync(birthdayFile)) {
+    const html = fs.readFileSync(birthdayFile, "utf8");
+    if (!html.includes("new-birthday-cake-images-title")) {
+      const gallery = newProductImageGalleryContent({ id: "new-birthday-cake-images-title", eyebrow: "NEW BIRTHDAY CAKE PHOTOS", title: "新品生日蛋糕圖片", label: "生日蛋糕新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes });
+      const updated = html.replace('<section class="cake-dm"', `${gallery}<section class="cake-dm"`);
+      if (updated !== html) fs.writeFileSync(birthdayFile, updated);
+    }
+  }
+
+  const souvenirFile = htmlFileForLocalPath("/產品介紹/伴手禮");
+  if (fs.existsSync(souvenirFile)) {
+    const html = fs.readFileSync(souvenirFile, "utf8");
+    if (!html.includes("new-souvenir-images-title")) {
+      const gallery = newProductImageGalleryContent({ id: "new-souvenir-images-title", eyebrow: "NEW SOUVENIR PHOTOS", title: "新品伴手禮圖片", label: "伴手禮新品圖片", images: NEW_PRODUCT_IMAGE_GALLERIES.souvenirs });
+      const marker = '</section><script src="/assets/storefront-products.js';
+      const updated = html.replace(marker, `${gallery}</section><script src="/assets/storefront-products.js`);
+      if (updated !== html) fs.writeFileSync(souvenirFile, updated);
+    }
+  }
+}
+
 function rewriteStaticSnapshotNavigation() {
   const htmlFiles = [];
   const walk = (directory) => {
@@ -3185,6 +3255,7 @@ function main() {
     syncAdminFrontendSnapshot();
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
+    syncNewProductImageGalleries();
     rewriteStaticSnapshotNavigation();
     rewriteR2ImagePaths();
     process.stdout.write("No crawler/export sources found; preserving the committed static site snapshot.\n");
