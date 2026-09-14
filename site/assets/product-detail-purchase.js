@@ -395,7 +395,7 @@
     };
   };
 
-  fetch('/api/products', { credentials: 'include', headers: { Accept: 'application/json' } })
+  fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('無法載入商品資料。')))
     .then(data => {
       const products = Array.isArray(data.products) ? data.products : [];

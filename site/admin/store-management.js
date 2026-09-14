@@ -5,6 +5,15 @@
   const money = value => '$' + Number(value || 0).toFixed(2);
   const statusLabels = { created: '訂單已建立', pending_payment: '待付款', processing: '處理中', shipped: '已出貨', ready_for_pickup: '待取貨', completed: '已完成', picked_up: '已取貨', cancelled: '取消' };
   const api = async (path, options = {}) => { const response = await fetch(path, { ...options, credentials: 'include', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || '操作失敗。'); return data; };
+  const topHouseCategories = [
+    '頂家彌月｜波士頓派系列',
+    '頂家彌月｜大熊／小熊禮盒',
+    '頂家彌月｜圓圓派',
+    '頂家彌月｜鄉村乳酪禮盒',
+    '頂家彌月｜彌月長條蛋糕',
+    '頂家彌月｜搭配單品',
+  ];
+  const defaultCategories = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮', '飲品 MENU', ...topHouseCategories];
   let products = [], orders = [], customers = [];
 
   const productDialog = $('#product-dialog');
@@ -15,7 +24,7 @@
   function renderProductFilters() {
     const category = $('#product-category-filter');
     const current = category.value;
-    category.innerHTML = '<option value="">全部分類</option>' + [...new Set(products.map(item => item.cat).filter(Boolean))].sort().map(value => '<option>' + escapeHtml(value) + '</option>').join('');
+    category.innerHTML = '<option value="">全部分類</option>' + [...new Set([...defaultCategories, ...products.map(item => item.cat).filter(Boolean)])].sort().map(value => '<option>' + escapeHtml(value) + '</option>').join('');
     category.value = current;
   }
 

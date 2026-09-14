@@ -197,7 +197,7 @@
 
   const load = async () => {
     try {
-      const response = await fetch('/api/products', { credentials: 'include', headers: { Accept: 'application/json' } });
+      const response = await fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
       const products = orderProducts((Array.isArray(data.products) ? data.products : []).filter(product => product.published !== false));

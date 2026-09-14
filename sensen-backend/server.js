@@ -32,6 +32,44 @@ const DATA_DIR = path.join(ROOT, 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-products.json');
 const TOP_HOUSE_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-top-house-products.json');
+const TOP_HOUSE_CATEGORY_BY_ID = new Map([
+  ['top-house-boston-classic', '頂家彌月｜波士頓派系列'],
+  ['top-house-boston-new', '頂家彌月｜波士頓派系列'],
+  ['top-house-pa1-boston-gift', '頂家彌月｜波士頓派系列'],
+  ['top-house-pa2-boston-gift', '頂家彌月｜波士頓派系列'],
+  ['top-house-pa3-boston-gift', '頂家彌月｜波士頓派系列'],
+  ['top-house-pa4-boston-gift', '頂家彌月｜波士頓派系列'],
+  ['top-house-c1-big-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-c2-big-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-c3-big-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-c4-big-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-b1-little-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-b2-little-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-b3-little-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-b4-little-bear', '頂家彌月｜大熊／小熊禮盒'],
+  ['top-house-l1-country-cheese', '頂家彌月｜鄉村乳酪禮盒'],
+  ['top-house-l2-country-cheese', '頂家彌月｜鄉村乳酪禮盒'],
+  ['top-house-l3-country-cheese', '頂家彌月｜鄉村乳酪禮盒'],
+  ['top-house-k1-creme-brulee', '頂家彌月｜圓圓派'],
+  ['top-house-k2-pistachio-marble', '頂家彌月｜圓圓派'],
+  ['top-house-k3-cheesecake', '頂家彌月｜圓圓派'],
+  ['top-house-k4-light-cheesecake', '頂家彌月｜圓圓派'],
+  ['top-house-k5-belgian-chocolate', '頂家彌月｜圓圓派'],
+  ['top-house-k6-lemon-cheesecake', '頂家彌月｜圓圓派'],
+  ['top-house-a1-strawberry-marble', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a2-honey-cake', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a3-blueberry-angel', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a4-lemon-love', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a5-classic-chocolate', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a6-left-bank-coffee-roll', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a7-vanilla-napoleon', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a7-chocolate-napoleon', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a8-earl-grey-roll', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a9-mocha-chocolate', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a10-violet', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a11-japanese-layer', '頂家彌月｜彌月長條蛋糕'],
+  ['top-house-a12-osmanthus-oolong', '頂家彌月｜彌月長條蛋糕'],
+]);
 const DRINK_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-drink-products.json');
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 8081);
@@ -376,15 +414,18 @@ function productsFromData() {
     .flatMap(filePath => JSON.parse(fs.readFileSync(filePath, 'utf8')));
   return products.map(product => {
     const priceValue = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
+    const productId = product.id || slug(product.title);
     const normalized = {
       ...product,
       img: normalizeProductImage(product.img),
-      id: product.id || slug(product.title),
+      id: productId,
       source: product.source || 'static',
       sku: String(product.sku || product.id || '').trim(),
       spec: String(product.spec || '').trim(),
       published: product.published !== false,
-      cat: product.cat || 'NOODLES',
+      cat: TOP_HOUSE_CATEGORY_BY_ID.get(productId)
+        || (productId.startsWith('top-house-pairing-') ? '頂家彌月｜搭配單品' : null)
+        || product.cat || 'NOODLES',
       priceValue,
       price: product.price || ('$' + priceValue.toFixed(2)),
       quantity: Math.max(0, Number(product.quantity ?? 25)),
@@ -725,7 +766,7 @@ async function handleApi(req, res) {
     if (url.pathname.startsWith('/api/admin/') && !requireAdmin(res, auth)) return;
     if (req.method === 'GET' && url.pathname === '/api/products') {
       const salesCounts = productSalesCounts(db, products);
-      return send(res, 200, { products: products.map(product => ({ ...product, salesCount: salesCounts.get(product.id) || 0 })) });
+      return send(res, 200, { products: products.map(product => ({ ...product, salesCount: salesCounts.get(product.id) || 0 })) }, { 'Cache-Control': 'no-store, max-age=0' });
     }
 
     if (req.method === 'GET' && url.pathname === '/api/news') {

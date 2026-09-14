@@ -100,6 +100,12 @@ const json = (request: Request, body: unknown, status = 200, guestId?: string, s
   return new Response(JSON.stringify(body), { status, headers });
 };
 
+const noStoreJson = (request: Request, body: unknown, status = 200) => {
+  const response = json(request, body, status);
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+  return response;
+};
+
 const parseBody = async (request: Request) => {
   try {
     return await request.json() as Record<string, unknown>;
@@ -753,7 +759,7 @@ export default {
         const result = await env.DB.prepare(`${productSelect}
           LEFT JOIN categories c ON c.id = p.category_id
           WHERE p.is_active = 1 ORDER BY p.id DESC`).all<ProductRow>();
-        return json(request, { products: result.results.map(productFromRow) });
+        return noStoreJson(request, { products: result.results.map(productFromRow) });
       }
 
       if (url.pathname === "/api/news" && request.method === "GET") {
