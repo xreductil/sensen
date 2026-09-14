@@ -3,6 +3,8 @@
   const $$ = selector => [...document.querySelectorAll(selector)];
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const money = value => '$' + Number(value || 0).toFixed(2);
+  const productUpdateSignalKey = 'sensen-products-updated';
+  const productUpdateChannelName = 'sensen-products-updated';
   const api = async (path, options = {}) => { const response = await fetch(path, { ...options, credentials: 'include', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || '操作失敗。'); return data; };
   const pageSize = 10;
   const topHouseCategories = [
@@ -117,6 +119,16 @@
     return String(value || '').trim().replace(/^\/assets\/images\//i, '/images/');
   }
 
+  function notifyProductUpdate(productId) {
+    const message = { productId: String(productId || ''), updatedAt: Date.now() };
+    try { window.localStorage.setItem(productUpdateSignalKey, JSON.stringify(message)); } catch (error) { /* storage may be disabled */ }
+    if ('BroadcastChannel' in window) {
+      const channel = new BroadcastChannel(productUpdateChannelName);
+      channel.postMessage(message);
+      channel.close();
+    }
+  }
+
   function thumbnailPresetOffsetY(product, settings) {
     // These offsets are the legacy framing rules used by the public product
     // cards. Keep the editor preview on the same visual baseline.
@@ -221,8 +233,8 @@
       pagination.querySelectorAll('[data-inventory-page]').forEach(button => button.addEventListener('click', event => { event.preventDefault(); if (button.closest('.page-item').classList.contains('disabled')) return; const target = button.dataset.inventoryPage; currentPage = target === 'next' ? currentPage + 1 : target === 'prev' ? currentPage - 1 : Number(target); render(); }));
     }
     $$('[data-inventory-edit]').forEach(button => button.addEventListener('click', () => open(products.find(item => item.id === button.dataset.inventoryEdit))));
-    $$('[data-inventory-toggle]').forEach(button => button.addEventListener('click', async () => { const item = products.find(product => product.id === button.dataset.inventoryToggle); if (!item) return; await api('/api/admin/products', { method: 'PATCH', body: JSON.stringify({ id: item.id, published: item.published === false }) }); await load(); }));
-    $$('[data-inventory-delete]').forEach(button => button.addEventListener('click', async () => { const item = products.find(product => product.id === button.dataset.inventoryDelete); if (!item || !window.confirm(`確定刪除「${item.title}」？`)) return; await api('/api/admin/products', { method: 'DELETE', body: JSON.stringify({ id: item.id }) }); await load(); }));
+    $$('[data-inventory-toggle]').forEach(button => button.addEventListener('click', async () => { const item = products.find(product => product.id === button.dataset.inventoryToggle); if (!item) return; await api('/api/admin/products', { method: 'PATCH', body: JSON.stringify({ id: item.id, published: item.published === false }) }); notifyProductUpdate(item.id); await load(); }));
+    $$('[data-inventory-delete]').forEach(button => button.addEventListener('click', async () => { const item = products.find(product => product.id === button.dataset.inventoryDelete); if (!item || !window.confirm(`確定刪除「${item.title}」？`)) return; await api('/api/admin/products', { method: 'DELETE', body: JSON.stringify({ id: item.id }) }); notifyProductUpdate(item.id); await load(); }));
   }
 
   function open(product = null) {
@@ -265,7 +277,7 @@
   async function load() { const data = await api('/api/admin/products'); products = data.products || []; renderFilters(); render(); }
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
   ensureThumbnailEditor();
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; const result = await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); notifyProductUpdate(result.product?.id || data.id); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();

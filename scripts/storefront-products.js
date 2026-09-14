@@ -5,6 +5,8 @@
   const content = root.querySelector('[data-storefront-catalog-content]');
   const status = root.querySelector('[data-storefront-catalog-status]');
   const view = root.dataset.storefrontView || 'overview';
+  const productUpdateSignalKey = 'sensen-products-updated';
+  const productUpdateChannelName = 'sensen-products-updated';
   const categoryRoutes = {
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
@@ -201,24 +203,27 @@
       const track = button.closest('[data-storefront-section]')?.querySelector('[data-storefront-track]');
       if (track) track.scrollBy({ left: (button.hasAttribute('data-storefront-previous') ? -1 : 1) * Math.max(track.clientWidth * .82, 260), behavior: 'smooth' });
     }));
-    content.addEventListener('click', event => {
-      const button = event.target.closest('[data-cake-load-more]');
-      if (!button || !content.contains(button)) return;
-      event.preventDefault();
-      const items = button.closest('.cake-category')?.querySelector('[data-cake-load-more-items]');
-      if (!items) return;
-      const expanded = button.getAttribute('aria-expanded') === 'true';
-      items.classList.toggle('is-expanded', !expanded);
-      items.hidden = expanded;
-      button.setAttribute('aria-expanded', String(!expanded));
-      button.textContent = expanded ? '▪▪ Load more' : '▪▪ 收起商品';
-    });
-    content.addEventListener('click', event => {
-      if (event.target.closest('a, button')) return;
-      const card = event.target.closest('.cake-product-card');
-      const link = card?.querySelector('a[href]:not([href="#"])');
-      if (link) link.click();
-    });
+    if (!content.dataset.storefrontInteractionsBound) {
+      content.addEventListener('click', event => {
+        const button = event.target.closest('[data-cake-load-more]');
+        if (!button || !content.contains(button)) return;
+        event.preventDefault();
+        const items = button.closest('.cake-category')?.querySelector('[data-cake-load-more-items]');
+        if (!items) return;
+        const expanded = button.getAttribute('aria-expanded') === 'true';
+        items.classList.toggle('is-expanded', !expanded);
+        items.hidden = expanded;
+        button.setAttribute('aria-expanded', String(!expanded));
+        button.textContent = expanded ? '▪▪ Load more' : '▪▪ 收起商品';
+      });
+      content.addEventListener('click', event => {
+        if (event.target.closest('a, button')) return;
+        const card = event.target.closest('.cake-product-card');
+        const link = card?.querySelector('a[href]:not([href="#"])');
+        if (link) link.click();
+      });
+      content.dataset.storefrontInteractionsBound = 'true';
+    }
     content.querySelectorAll('[data-product-no-detail]').forEach(link => link.addEventListener('click', event => event.preventDefault()));
   };
 
@@ -260,6 +265,22 @@
       status.className = 'storefront-catalog-error';
     }
   };
+
+  let refreshTimer = null;
+  const requestRefresh = () => {
+    if (refreshTimer) window.clearTimeout(refreshTimer);
+    refreshTimer = window.setTimeout(() => {
+      refreshTimer = null;
+      load();
+    }, 80);
+  };
+  window.addEventListener('storage', event => {
+    if (event.key === productUpdateSignalKey) requestRefresh();
+  });
+  if (typeof BroadcastChannel !== 'undefined') {
+    const productUpdateChannel = new BroadcastChannel(productUpdateChannelName);
+    productUpdateChannel.addEventListener('message', requestRefresh);
+  }
 
   load();
 })();
