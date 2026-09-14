@@ -661,6 +661,15 @@ const NEW_SOUVENIR_PRODUCT_TITLES = {
   11: "月光禮盒",
 };
 const NEW_SOUVENIR_PRODUCT_NUMBERS = [2, 3, 4, 5, 6, 7, 8, 11];
+const NEW_BIRTHDAY_CAKE_PRODUCT_TITLES = {
+  1: "暮色芝麻",
+  2: "芭梨甜心",
+  3: "芋馨",
+  4: "OREO交響曲",
+  5: "芒果好忙",
+  6: "草莓雙重奏",
+  7: "生日蛋糕新品圖片 07",
+};
 
 const NEW_IMAGE_PRODUCT_RECORDS = [
   ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => {
@@ -677,7 +686,7 @@ const NEW_IMAGE_PRODUCT_RECORDS = [
   }),
   ...NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes.map((image, index) => ({
     id: `new-birthday-cake-image-${String(index + 1).padStart(2, "0")}`,
-    title: `生日蛋糕新品圖片 ${String(index + 1).padStart(2, "0")}`,
+    title: NEW_BIRTHDAY_CAKE_PRODUCT_TITLES[index + 1] || `生日蛋糕新品圖片 ${String(index + 1).padStart(2, "0")}`,
     path: `/product-item/生日蛋糕新品圖片-${String(index + 1).padStart(2, "0")}`,
     image,
     kind: "cake",

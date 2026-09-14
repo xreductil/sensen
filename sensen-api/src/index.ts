@@ -54,6 +54,13 @@ type StoreProduct = {
   dietary: string;
   dietaryImage: string;
   published: boolean;
+  thumbnail: ThumbnailSettings;
+};
+
+type ThumbnailSettings = {
+  offsetX: number;
+  offsetY: number;
+  scale: number;
 };
 
 type UserRow = {
@@ -175,6 +182,21 @@ const publicUser = (user: UserRow) => ({
 
 const parseJson = <T>(value: string | null | undefined, fallback: T): T => {
   try { return value ? JSON.parse(value) as T : fallback; } catch { return fallback; }
+};
+
+const normalizeThumbnailSettings = (value: unknown): ThumbnailSettings => {
+  const source = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const number = (candidate: unknown, fallback: number) => {
+    const parsed = Number(candidate);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  return {
+    offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
+    offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
+    scale: Math.max(25, Math.min(300, number(source.scale, 100))),
+  };
 };
 
 const slugify = (value: string) => {
@@ -523,6 +545,7 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     dietary: String(metadata.dietary || metadata.dietaryLabel || ""),
     dietaryImage: imagePathFromKey(metadata.dietaryImage || metadata.badgeImage || ""),
     published: row.is_active === 1,
+    thumbnail: normalizeThumbnailSettings(metadata.thumbnail),
   };
 };
 
@@ -915,6 +938,7 @@ export default {
             other,
             day: String(body.day ?? existingMetadata.day ?? "5").trim(),
             img: imageValue,
+            thumbnail: normalizeThumbnailSettings(body.thumbnail ?? existingMetadata.thumbnail),
             ...(body.variants !== undefined ? { variants: body.variants } : {}),
           });
 

@@ -84,6 +84,60 @@
     return sizes;
   }
 
+  function thumbnailSettings(product) {
+    const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
+    const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    return {
+      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
+      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
+      scale: Math.max(25, Math.min(300, number(source.scale, 100))),
+    };
+  }
+
+  function thumbnailImagePath(value) {
+    return String(value || '').trim().replace(/^\/assets\/images\//i, '/images/');
+  }
+
+  function ensureThumbnailEditor() {
+    const form = $('#inventory-product-form');
+    if (!form) return null;
+    const existing = form.querySelector('[data-inventory-thumbnail-editor]');
+    if (existing) return existing;
+    const imageColumn = form.elements.img?.closest('.col-12');
+    if (!imageColumn) return null;
+    const field = document.createElement('div');
+    field.className = 'col-12';
+    field.dataset.inventoryThumbnailEditor = '';
+    field.innerHTML = '<label class="form-label mb-1">縮圖顯示區塊</label><div class="small text-secondary mb-2">可用正負像素調整圖片位置，縮放比例以百分比設定。</div><div class="row g-2"><div class="col-sm-4"><label class="form-label small mb-1">水平位置（px）<input class="form-control" name="thumbnailOffsetX" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">垂直位置（px）<input class="form-control" name="thumbnailOffsetY" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">縮放比例（%）<input class="form-control" name="thumbnailScale" type="number" min="25" max="300" step="1" value="100"></label></div></div><div class="inventory-thumbnail-preview mt-3" data-thumbnail-preview style="height:220px;max-width:360px;border:1px solid #e5e7eb;border-radius:10px;background:#f8f9fa;display:flex;align-items:center;justify-content:center;overflow:hidden"><img data-thumbnail-preview-image alt="縮圖預覽" style="width:100%;height:100%;object-fit:contain;transform-origin:center;transition:transform .15s ease"></div>';
+    imageColumn.insertAdjacentElement('afterend', field);
+    const update = () => {
+      const settings = thumbnailSettings({ thumbnail: {
+        offsetX: form.elements.thumbnailOffsetX.value,
+        offsetY: form.elements.thumbnailOffsetY.value,
+        scale: form.elements.thumbnailScale.value,
+      }});
+      const image = field.querySelector('[data-thumbnail-preview-image]');
+      image.style.transform = `translate(${settings.offsetX}px, ${settings.offsetY}px) scale(${settings.scale / 100})`;
+    };
+    [form.elements.thumbnailOffsetX, form.elements.thumbnailOffsetY, form.elements.thumbnailScale, form.elements.img].forEach(input => input?.addEventListener('input', () => {
+      const image = field.querySelector('[data-thumbnail-preview-image]');
+      if (input === form.elements.img) image.src = thumbnailImagePath(input.value);
+      update();
+    }));
+    update();
+    return field;
+  }
+
+  function collectThumbnailSettings() {
+    const form = $('#inventory-product-form');
+    ensureThumbnailEditor();
+    return thumbnailSettings({ thumbnail: {
+      offsetX: form.elements.thumbnailOffsetX?.value,
+      offsetY: form.elements.thumbnailOffsetY?.value,
+      scale: form.elements.thumbnailScale?.value,
+    }});
+  }
+
   function renderFilters() {
     const category = $('#inventory-category-filter');
     const current = category.value;
@@ -140,6 +194,7 @@
 
   function open(product = null) {
     const form = $('#inventory-product-form');
+    const thumbnailEditor = ensureThumbnailEditor();
     form.reset();
     const priceOptions = ensurePriceOptionsEditor();
     if (priceOptions) priceOptions.innerHTML = '';
@@ -157,6 +212,14 @@
     form.elements.day.value = product?.day || 5;
     form.elements.img.value = product?.img || '';
     form.elements.desc.value = product?.desc || '';
+    const thumbnail = thumbnailSettings(product);
+    if (form.elements.thumbnailOffsetX) form.elements.thumbnailOffsetX.value = thumbnail.offsetX;
+    if (form.elements.thumbnailOffsetY) form.elements.thumbnailOffsetY.value = thumbnail.offsetY;
+    if (form.elements.thumbnailScale) form.elements.thumbnailScale.value = thumbnail.scale;
+    if (thumbnailEditor) {
+      thumbnailEditor.querySelector('[data-thumbnail-preview-image]').src = thumbnailImagePath(product?.img || form.elements.img.value);
+      thumbnailEditor.querySelector('[data-thumbnail-preview-image]').style.transform = `translate(${thumbnail.offsetX}px, ${thumbnail.offsetY}px) scale(${thumbnail.scale / 100})`;
+    }
     form.elements.published.checked = product?.published !== false;
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
     const options = productPriceOptions(product);
@@ -167,7 +230,8 @@
 
   async function load() { const data = await api('/api/admin/products'); products = data.products || []; renderFilters(); render(); }
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
+  ensureThumbnailEditor();
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();

@@ -463,6 +463,19 @@ function normalizeProductImage(image) {
   return match ? '/assets/images/' + match[1] : value;
 }
 
+function normalizeThumbnailSettings(value) {
+  const source = value && typeof value === 'object' && !Array.isArray(value) ? value : {};
+  const number = (candidate, fallback) => {
+    const parsed = Number(candidate);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  return {
+    offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
+    offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
+    scale: Math.max(25, Math.min(300, number(source.scale, 100)))
+  };
+}
+
 function productsWithOverrides(db) {
   const overrides = db.productOverrides || {};
   const deleted = new Set(db.deletedProducts || []);
@@ -479,6 +492,7 @@ function productsWithOverrides(db) {
     }
     merged.sku = String(merged.sku || merged.id || '').trim();
     merged.spec = String(merged.spec || '').trim();
+    merged.thumbnail = normalizeThumbnailSettings(merged.thumbnail);
     merged.published = merged.published !== false;
     merged.quantity = Math.max(0, Number(merged.quantity ?? 0));
     return merged;
@@ -933,6 +947,7 @@ async function handleApi(req, res) {
       const priceValue = Number(body.priceValue || String(body.price || '').replace(/[^0-9.]/g, ''));
       const variants = body.variants ? normalizeProductVariants(body.variants, priceValue) : undefined;
       const newArrival = body.newArrival == null ? true : body.newArrival === true;
+      const thumbnail = normalizeThumbnailSettings(body.thumbnail);
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
       if (!Number.isFinite(quantity)) return send(res, 400, { error: 'Product quantity is invalid.' });
@@ -950,6 +965,7 @@ async function handleApi(req, res) {
         quantity,
         published,
         newArrival,
+        thumbnail,
         day,
         img,
         desc,
@@ -983,6 +999,7 @@ async function handleApi(req, res) {
       const priceValue = Number(body.priceValue || String(body.price || product.price).replace(/[^0-9.]/g, ''));
       const variants = body.variants === null ? null : body.variants === undefined ? product.variants : normalizeProductVariants(body.variants, priceValue);
       const newArrival = body.newArrival == null ? product.newArrival === true : body.newArrival === true;
+      const thumbnail = normalizeThumbnailSettings(body.thumbnail === undefined ? product.thumbnail : body.thumbnail);
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
       if (!Number.isFinite(quantity)) return send(res, 400, { error: 'Product quantity is invalid.' });
@@ -999,6 +1016,7 @@ async function handleApi(req, res) {
         day,
         published,
         newArrival,
+        thumbnail,
         priceValue: Number(priceValue.toFixed(2)),
         price: '$' + Number(priceValue).toFixed(2),
         variants,

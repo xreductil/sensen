@@ -97,6 +97,15 @@
   })();
   const detailPath = product => pathMap[product.id] || pathMap[normalizeTitle(product.title)] || product.url || '';
   const imagePath = product => String(product.img || '/images/icon-cake.png').replace(/^\/assets\/images\//i, '/images/');
+  const thumbnailSettings = product => {
+    const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
+    const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    return {
+      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
+      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
+      scale: Math.max(25, Math.min(300, number(source.scale, 100))),
+    };
+  };
   const available = product => product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
 
   const productLink = (product, className, body) => {
@@ -107,12 +116,18 @@
   const storefrontProductCard = (product, { articleClass, badge = '' } = {}) => {
     const name = String(product.title || '商品');
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
+    const thumbnail = thumbnailSettings(product);
+    const thumbnailStyle = `--product-thumbnail-x:${thumbnail.offsetX}px;--product-thumbnail-y:${thumbnail.offsetY}px;--product-thumbnail-scale:${thumbnail.scale / 100};`;
+    const adjustableClass = thumbnail.offsetX !== 0 || thumbnail.offsetY !== 0 || thumbnail.scale !== 100
+      ? ' product-thumbnail-adjustable'
+      : '';
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;
     const meta = `<span class="cake-product-title">${title}</span>`;
     const thumbnailClass = referenceThumbnailProductIds.has(product.id)
       ? ' product-thumbnail-reference'
       : liftedThumbnailProductIds.has(product.id) ? ' product-thumbnail-lifted' : '';
-    return `<article class="${articleClass}${thumbnailClass}${badge ? ' product-intro-featured-card' : ''}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
+    const desktopStaticClass = product.id === 'new-birthday-cake-image-03' ? ' product-thumbnail-static-desktop' : '';
+    return `<article class="${articleClass}${thumbnailClass}${desktopStaticClass}${adjustableClass}${badge ? ' product-intro-featured-card' : ''}" style="${thumbnailStyle}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
   };
 
   const productIntroCard = (product, badge = '') => storefrontProductCard(product, { articleClass: 'product-intro-card cake-product-card', badge });

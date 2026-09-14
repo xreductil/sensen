@@ -211,7 +211,10 @@
       ? (titleElement.textContent.trim() || apiTitle)
       : apiTitle;
     titleElement.textContent = title;
-    setText(productPage.querySelector('[data-product-hero-title]'), title, '商品');
+    // The banner is always the product's current name from the product data.
+    // Keep the legacy top-house body heading fallback, but do not let it leave
+    // the banner showing a stale route title.
+    setText(productPage.querySelector('[data-product-hero-title]'), apiTitle, '商品');
     setText(productPage.querySelector('[data-product-hero-category]'), product.cat ? `▱ ${product.cat}` : '▱ 產品介紹');
     setText(productPage.querySelector('[data-product-description-value]'), product.desc, '尚未提供商品說明。');
     updateSpec(['商品尺寸', '蛋糕吋數', '規格'], product.size);
