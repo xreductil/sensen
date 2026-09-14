@@ -3223,7 +3223,7 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 /* Keep supplied souvenir photos slightly lifted without changing their card
    proportions. */
 .cake-product-card.product-thumbnail-lifted .cake-product-image img {
-  transform: translateY(-30px);
+  transform: translateY(-150px);
 }
 
 /* Keep lifted portrait photos inside the thumbnail frame so they never cover
@@ -3234,17 +3234,17 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 
 .cake-product-card.product-thumbnail-lifted .cake-product-card-link:hover .cake-product-image img,
 .cake-product-card.product-thumbnail-lifted .cake-product-card-link:focus-visible .cake-product-image img {
-  transform: translateY(-32px) scale(1.025);
+  transform: translateY(-152px) scale(1.025);
 }
 
 @media (max-width: 700px) {
   .cake-product-card.product-thumbnail-lifted .cake-product-image img {
-    transform: translateY(-20px);
+    transform: translateY(-60px);
   }
 
   .cake-product-card.product-thumbnail-lifted .cake-product-card-link:hover .cake-product-image img,
   .cake-product-card.product-thumbnail-lifted .cake-product-card-link:focus-visible .cake-product-image img {
-    transform: translateY(-22px) scale(1.025);
+    transform: translateY(-62px) scale(1.025);
   }
 }
 
@@ -3260,22 +3260,22 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   max-height: none;
   object-fit: contain;
   object-position: center;
-  transform: translateY(-30px);
+  transform: translateY(-150px);
 }
 
 .cake-product-card.product-thumbnail-reference .cake-product-card-link:hover .cake-product-image img,
 .cake-product-card.product-thumbnail-reference .cake-product-card-link:focus-visible .cake-product-image img {
-  transform: translateY(-32px) scale(1.025);
+  transform: translateY(-152px) scale(1.025);
 }
 
 @media (max-width: 700px) {
   .cake-product-card.product-thumbnail-reference .cake-product-image img {
-    transform: translateY(-20px);
+    transform: translateY(-60px);
   }
 
   .cake-product-card.product-thumbnail-reference .cake-product-card-link:hover .cake-product-image img,
   .cake-product-card.product-thumbnail-reference .cake-product-card-link:focus-visible .cake-product-image img {
-    transform: translateY(-22px) scale(1.025);
+    transform: translateY(-62px) scale(1.025);
   }
 }
 
