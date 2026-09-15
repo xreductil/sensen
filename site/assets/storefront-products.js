@@ -227,12 +227,16 @@
     content.querySelectorAll('[data-product-no-detail]').forEach(link => link.addEventListener('click', event => event.preventDefault()));
   };
 
-  const load = async () => {
+  let lastProductSignature = '';
+  const load = async (force = false) => {
     try {
       const response = await fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
       const products = orderProducts((Array.isArray(data.products) ? data.products : []).filter(product => product.published !== false));
+      const productSignature = JSON.stringify(products.map(product => [product.id, product.title, product.cat, product.img, product.priceValue, product.quantity, product.newArrival, product.salesCount, product.thumbnail]));
+      if (!force && productSignature === lastProductSignature) return;
+      lastProductSignature = productSignature;
       const storefrontProducts = products.filter(product => !birthdayCakeCategories.has(product.cat));
       if (view === 'overview') {
         const hotProducts = selectFeaturedProducts(storefrontProducts, 'salesCount', hotProductFallback, 5);
@@ -281,6 +285,14 @@
     const productUpdateChannel = new BroadcastChannel(productUpdateChannelName);
     productUpdateChannel.addEventListener('message', requestRefresh);
   }
+  window.addEventListener('focus', requestRefresh);
+  window.addEventListener('pageshow', requestRefresh);
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'visible') requestRefresh();
+  });
+  window.setInterval(() => {
+    if (document.visibilityState === 'visible') load();
+  }, 3000);
 
   load();
 })();
