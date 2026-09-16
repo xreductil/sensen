@@ -60,7 +60,11 @@
     'new-souvenir-image-06',
     'new-souvenir-image-07',
     'new-souvenir-image-08',
-    'new-souvenir-image-11'
+    'new-souvenir-image-11',
+    'rose-salt-red-bean-egg-yolk-gift',
+    'rose-salt-taro-egg-yolk-gift',
+    'rose-salt-matcha-egg-yolk-gift',
+    'rose-salt-date-egg-yolk-gift'
   ]);
   const referenceThumbnailProductIds = new Set([
     'new-birthday-cake-image-01',

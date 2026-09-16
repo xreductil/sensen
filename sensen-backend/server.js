@@ -29,6 +29,7 @@ loadEnvFile(ENV_PATH);
 
 const ROOT = __dirname;
 const DATA_DIR = path.join(ROOT, 'data');
+const IMAGE_UPLOAD_ROOT = path.resolve(ROOT, '..', 'data', 'images');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 const PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-products.json');
 const TOP_HOUSE_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-top-house-products.json');
@@ -197,6 +198,68 @@ function readBody(req) {
       try { resolve(JSON.parse(body)); } catch (err) { reject(err); }
     });
     req.on('error', reject);
+  });
+}
+
+function readMultipartImage(req) {
+  const contentType = String(req.headers['content-type'] || '');
+  const boundaryMatch = contentType.match(/boundary=(?:"([^"]+)"|([^;]+))/i);
+  const boundary = boundaryMatch?.[1] || boundaryMatch?.[2]?.trim();
+  if (!boundary) {
+    const error = new Error('圖片上傳格式不正確。');
+    error.status = 400;
+    return Promise.reject(error);
+  }
+  const maxBodySize = 9 * 1024 * 1024;
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    let total = 0;
+    let settled = false;
+    req.on('data', chunk => {
+      total += chunk.length;
+      if (total > maxBodySize) {
+        settled = true;
+        const error = new Error('圖片不可超過 8 MB。');
+        error.status = 413;
+        reject(error);
+        req.resume();
+        return;
+      }
+      chunks.push(chunk);
+    });
+    req.on('end', () => {
+      if (settled) return;
+      const buffer = Buffer.concat(chunks);
+      const marker = Buffer.from(`--${boundary}`);
+      const headerSeparator = Buffer.from('\r\n\r\n');
+      const fields = {};
+      let file = null;
+      let cursor = buffer.indexOf(marker);
+      while (cursor >= 0) {
+        const partStart = cursor + marker.length;
+        if (buffer.subarray(partStart, partStart + 2).toString() === '--') break;
+        const headersStart = buffer.subarray(partStart, partStart + 2).toString() === '\r\n' ? partStart + 2 : partStart;
+        const headersEnd = buffer.indexOf(headerSeparator, headersStart);
+        if (headersEnd < 0) break;
+        const nextBoundary = buffer.indexOf(marker, headersEnd + headerSeparator.length);
+        if (nextBoundary < 0) break;
+        const headers = buffer.subarray(headersStart, headersEnd).toString('utf8');
+        const disposition = headers.match(/content-disposition:[^\r\n]*\bname="([^"]+)"[^\r\n]*/i);
+        if (disposition) {
+          const name = disposition[1];
+          const dataEnd = Math.max(headersEnd + headerSeparator.length, nextBoundary - 2);
+          const data = buffer.subarray(headersEnd + headerSeparator.length, dataEnd);
+          const partType = headers.match(/content-type:\s*([^\r\n]+)/i)?.[1]?.trim() || '';
+          if (name === 'image' && /filename="[^"]*"/i.test(headers)) file = { data, contentType: partType };
+          else fields[name] = data.toString('utf8');
+        }
+        cursor = nextBoundary;
+      }
+      resolve({ file, fields });
+    });
+    req.on('error', error => {
+      if (!settled) reject(error);
+    });
   });
 }
 
@@ -775,9 +838,34 @@ async function handleApi(req, res) {
   const guestId = getGuestId(req, res);
 
   try {
-    const body = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) ? await readBody(req) : {};
     if (!checkRateLimit(req, res, url.pathname)) return;
     if (url.pathname.startsWith('/api/admin/') && !requireAdmin(res, auth)) return;
+    if (req.method === 'POST' && url.pathname === '/api/admin/images') {
+      try {
+        const upload = await readMultipartImage(req);
+        const file = upload.file;
+        const extensions = {
+          'image/avif': 'avif',
+          'image/gif': 'gif',
+          'image/jpeg': 'jpg',
+          'image/png': 'png',
+          'image/webp': 'webp'
+        };
+        const extension = extensions[file?.contentType];
+        if (!file || !file.data.length) return send(res, 400, { error: '請選擇圖片檔案。' });
+        if (!extension) return send(res, 415, { error: '僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。' });
+        if (file.data.length > 8 * 1024 * 1024) return send(res, 413, { error: '圖片不可超過 8 MB。' });
+        const folder = String(upload.fields.folder || 'news').trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/^-+|-+$/g, '') || 'news';
+        const filename = `${Date.now()}-${crypto.randomUUID()}.${extension}`;
+        const folderPath = path.join(IMAGE_UPLOAD_ROOT, folder);
+        fs.mkdirSync(folderPath, { recursive: true });
+        fs.writeFileSync(path.join(folderPath, filename), file.data);
+        return send(res, 201, { image: `/images/${folder}/${filename}` });
+      } catch (error) {
+        return send(res, error.status || 400, { error: error.message || '圖片上傳失敗。' });
+      }
+    }
+    const body = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method) ? await readBody(req) : {};
     if (req.method === 'GET' && url.pathname === '/api/products') {
       const salesCounts = productSalesCounts(db, products);
       return send(res, 200, { products: products.map(product => ({ ...product, salesCount: salesCounts.get(product.id) || 0 })) }, { 'Cache-Control': 'no-store, max-age=0' });

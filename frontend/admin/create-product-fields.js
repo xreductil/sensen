@@ -4,6 +4,34 @@
   if (!form || !status) return;
 
   const value = id => document.getElementById(id)?.value.trim() || '';
+  const imageInput = document.getElementById('productImage');
+  const imagePreview = form.querySelector('[data-product-image-preview]');
+  let imagePreviewUrl = '';
+
+  imageInput?.addEventListener('change', () => {
+    const file = imageInput.files?.[0];
+    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
+    imagePreviewUrl = file ? URL.createObjectURL(file) : '';
+    if (!imagePreview) return;
+    imagePreview.src = imagePreviewUrl;
+    imagePreview.classList.toggle('d-none', !imagePreviewUrl);
+  });
+
+  const uploadProductImage = async file => {
+    const body = new FormData();
+    body.append('image', file);
+    body.append('folder', 'products');
+    const response = await fetch('/api/admin/images', {
+      method: 'POST',
+      credentials: 'include',
+      headers: { Accept: 'application/json' },
+      body,
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || '商品圖片上傳失敗。');
+    if (!data.image) throw new Error('商品圖片上傳後沒有取得圖片路徑。');
+    return data.image;
+  };
 
   const ensurePriceOptionsEditor = () => {
     const existing = form.querySelector('[data-create-price-options]');
@@ -61,8 +89,7 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     const button = form.querySelector('[type="submit"]');
-    const file = document.getElementById('productImage')?.files?.[0];
-    const imagePath = file ? `img/menu/${file.name}` : '';
+    const file = imageInput?.files?.[0];
     const title = value('productName');
     button.disabled = true;
     button.textContent = '儲存中…';
@@ -70,10 +97,14 @@
     status.textContent = '';
 
     try {
+      if (!file) throw new Error('請先選擇商品圖片。');
       const sizes = collectPriceOptions();
       if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
       document.getElementById('productPrice').value = Object.values(sizes)[0];
       document.getElementById('productSize').value = Object.keys(sizes).join('、');
+      status.textContent = '圖片上傳中…';
+      const imagePath = await uploadProductImage(file);
+      status.textContent = '圖片已上傳，正在儲存商品…';
       const response = await fetch('/api/admin/products', {
         method: 'POST',
         credentials: 'include',

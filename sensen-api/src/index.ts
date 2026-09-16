@@ -875,7 +875,11 @@ export default {
           if (!extension) return json(request, { error: "僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。" }, 415);
           if (file.size > 8 * 1024 * 1024) return json(request, { error: "圖片不可超過 8 MB。" }, 413);
 
-          const key = `news/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+          const requestedFolder = form.get("folder");
+          const folder = typeof requestedFolder === "string"
+            ? requestedFolder.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "news"
+            : "news";
+          const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
           await env.BUCKET.put(`images/${key}`, file.stream(), {
             httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
           });
