@@ -69,6 +69,9 @@
     const categoryColumn = form.elements.cat?.closest('.col-md-6');
     if (!priceColumn) return null;
     priceColumn.hidden = true;
+    // The visible price is collected from the multi-price rows below. The
+    // hidden legacy input must not block the form's native submit event.
+    priceInput.required = false;
     if (specColumn) specColumn.hidden = true;
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
@@ -277,7 +280,7 @@
   async function load() { const data = await api('/api/admin/products'); products = data.products || []; renderFilters(); render(); }
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
   ensureThumbnailEditor();
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const data = Object.fromEntries(new FormData(form)); try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; const result = await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); notifyProductUpdate(result.product?.id || data.id); dialog.close(); await load(); } catch (error) { $('#inventory-product-message').textContent = error.message; $('#inventory-product-message').className = 'text-danger small'; } });
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const message = $('#inventory-product-message'); const data = Object.fromEntries(new FormData(form)); button.disabled = true; button.textContent = '儲存中…'; message.textContent = ''; message.className = 'small'; try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; const result = await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked }) }); notifyProductUpdate(result.product?.id || data.id); dialog.close(); await load(); } catch (error) { message.textContent = error.message; message.className = 'text-danger small'; } finally { button.disabled = false; button.textContent = '儲存商品'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();

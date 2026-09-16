@@ -108,6 +108,17 @@
       scale: Math.max(25, Math.min(300, number(source.scale, 100))),
     };
   };
+  const thumbnailLegacyOffset = (product, settings) => {
+    const usesLiftedFrame = referenceThumbnailProductIds.has(product?.id) || liftedThumbnailProductIds.has(product?.id);
+    if (usesLiftedFrame && product?.id !== 'new-birthday-cake-image-03') {
+      return { desktop: -120, mobile: -100 };
+    }
+    // Keep the legacy souvenir baseline only when the backend has not set a
+    // custom position. Once an editor value exists, that value is authoritative.
+    const isDefault = settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100;
+    if (product?.cat === '伴手禮' && isDefault) return { desktop: -8, mobile: -8 };
+    return { desktop: 0, mobile: 0 };
+  };
   const available = product => product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
 
   const productLink = (product, className, body) => {
@@ -119,7 +130,8 @@
     const name = String(product.title || '商品');
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
     const thumbnail = thumbnailSettings(product);
-    const thumbnailStyle = `--product-thumbnail-x:${thumbnail.offsetX}px;--product-thumbnail-y:${thumbnail.offsetY}px;--product-thumbnail-scale:${thumbnail.scale / 100};`;
+    const legacyOffset = thumbnailLegacyOffset(product, thumbnail);
+    const thumbnailStyle = `--product-thumbnail-x:${thumbnail.offsetX}px;--product-thumbnail-y:${thumbnail.offsetY}px;--product-thumbnail-scale:${thumbnail.scale / 100};--product-thumbnail-legacy-y:${legacyOffset.desktop}px;--product-thumbnail-legacy-y-mobile:${legacyOffset.mobile}px;`;
     const adjustableClass = thumbnail.offsetX !== 0 || thumbnail.offsetY !== 0 || thumbnail.scale !== 100
       ? ' product-thumbnail-adjustable'
       : '';
@@ -129,7 +141,7 @@
       ? ' product-thumbnail-reference'
       : liftedThumbnailProductIds.has(product.id) ? ' product-thumbnail-lifted' : '';
     const desktopStaticClass = product.id === 'new-birthday-cake-image-03' ? ' product-thumbnail-static-desktop' : '';
-    return `<article class="${articleClass}${thumbnailClass}${desktopStaticClass}${adjustableClass}${badge ? ' product-intro-featured-card' : ''}" style="${thumbnailStyle}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
+    return `<article class="${articleClass}${thumbnailClass}${desktopStaticClass}${adjustableClass} product-thumbnail-managed${badge ? ' product-intro-featured-card' : ''}" style="${thumbnailStyle}">${badge ? `<span class="product-intro-featured-badge">${escapeHtml(badge)}</span>` : ''}<div>${productLink(product, 'cake-product-card-link', body)}</div><div class="cake-product-meta">${productLink(product, 'cake-product-title-link', meta)}</div></article>`;
   };
 
   const productIntroCard = (product, badge = '') => storefrontProductCard(product, { articleClass: 'product-intro-card cake-product-card', badge });

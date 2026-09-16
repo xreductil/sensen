@@ -3312,6 +3312,29 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   }
 }
 
+/* Backend thumbnail settings are the final source of truth for storefront
+   cards. The legacy offset is kept as a per-product fallback so existing
+   portrait assets retain their framing until an editor value is saved. */
+.cake-product-card.product-thumbnail-managed .cake-product-image img {
+  transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y, 0px))) scale(var(--product-thumbnail-scale, 1));
+}
+
+.cake-product-card.product-thumbnail-managed .cake-product-card-link:hover .cake-product-image img,
+.cake-product-card.product-thumbnail-managed .cake-product-card-link:focus-visible .cake-product-image img {
+  transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y, 0px))) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
+}
+
+@media (max-width: 700px) {
+  .cake-product-card.product-thumbnail-managed .cake-product-image img {
+    transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(var(--product-thumbnail-scale, 1));
+  }
+
+  .cake-product-card.product-thumbnail-managed .cake-product-card-link:hover .cake-product-image img,
+  .cake-product-card.product-thumbnail-managed .cake-product-card-link:focus-visible .cake-product-image img {
+    transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
+  }
+}
+
 .souvenir-card-link {
   display: block;
   color: inherit;
