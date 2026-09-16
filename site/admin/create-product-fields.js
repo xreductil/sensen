@@ -120,6 +120,7 @@
           size: value('productSize'),
           storage: value('productStorage'),
           other: value('productOther'),
+          published: true,
           variants: Object.keys(sizes).length ? { sizes } : null,
         }),
       });

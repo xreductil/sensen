@@ -916,7 +916,11 @@ export default {
           const categoryName = String(body.cat ?? existing?.category ?? "未分類").trim();
           const price = Math.max(0, Math.round(Number(body.priceValue ?? body.price ?? existing?.price ?? 0)));
           const stock = Math.max(0, Math.round(Number(body.quantity ?? existing?.stock ?? 0)));
-          const published = body.published !== undefined ? body.published !== false : existing?.is_active === 1;
+          const published = body.published !== undefined
+            ? body.published !== false
+            : request.method === "POST"
+              ? true
+              : existing?.is_active === 1;
           const description = String(body.desc ?? existing?.description ?? existingMetadata.desc ?? existingMetadata.description ?? "").trim();
           const size = String(body.size ?? body.spec ?? existingMetadata.size ?? existingMetadata.productSize ?? existingMetadata.spec ?? "").trim();
           const storage = String(body.storage ?? body.storageMethod ?? existingMetadata.storage ?? existingMetadata.storageMethod ?? "").trim();
