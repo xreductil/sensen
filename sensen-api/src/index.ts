@@ -166,6 +166,82 @@ const getCookie = (request: Request, name: string) => {
 
 const bytesToHex = (bytes: Uint8Array) => Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
 
+const LINE_PAY_API_PATH = "/v3/payments";
+const LINE_PAY_PRODUCTION_ORIGIN = "https://api-pay.line.me";
+const LINE_PAY_SANDBOX_ORIGIN = "https://sandbox-api-pay.line.me";
+const PAYMENT_SITE_ORIGIN = "https://sensen-three.vercel.app";
+
+const linePayConfig = (env: Env) => {
+  const bindings = env as unknown as Record<string, unknown>;
+  const channelId = String(bindings.LINE_PAY_CHANNEL_ID || "").trim();
+  const channelSecret = String(bindings.LINE_PAY_CHANNEL_SECRET || "").trim();
+  const environment = String(bindings.LINE_PAY_ENV || "production").trim().toLowerCase();
+  const siteOrigin = String(bindings.LINE_PAY_SITE_ORIGIN || PAYMENT_SITE_ORIGIN).trim().replace(/\/+$/, "");
+  return {
+    channelId,
+    channelSecret,
+    apiOrigin: environment === "sandbox" ? LINE_PAY_SANDBOX_ORIGIN : LINE_PAY_PRODUCTION_ORIGIN,
+    siteOrigin,
+  };
+};
+
+const base64FromBytes = (bytes: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
+
+const linePayAuthorization = async (channelSecret: string, message: string) => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(channelSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  return base64FromBytes(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message)));
+};
+
+const parseLinePayResponse = (text: string) => {
+  // LINE Pay transaction IDs can exceed JavaScript's safe integer range.
+  const safeText = text.replace(/:\s*(\d{16,})(\b)/g, ': "$1"$2');
+  try {
+    return JSON.parse(safeText) as Record<string, unknown>;
+  } catch {
+    return { returnCode: "9000", returnMessage: "LINE Pay 回應格式無法解析。" };
+  }
+};
+
+const callLinePay = async (env: Env, apiPath: string, data: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  const config = linePayConfig(env);
+  if (!config.channelId || !config.channelSecret) {
+    return { configured: false, returnCode: "CONFIG_MISSING", returnMessage: "LINE Pay 尚未完成正式環境設定。" };
+  }
+  const body = JSON.stringify(data);
+  const nonce = crypto.randomUUID();
+  const authorization = await linePayAuthorization(config.channelSecret, config.channelSecret + apiPath + body + nonce);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 40000);
+  try {
+    const response = await fetch(`${config.apiOrigin}${apiPath}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-LINE-Authorization": authorization,
+        "X-LINE-Authorization-Nonce": nonce,
+        "X-LINE-ChannelId": config.channelId,
+      },
+      body,
+      signal: controller.signal,
+    });
+    return { configured: true, httpStatus: response.status, ...parseLinePayResponse(await response.text()) };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const paymentRedirect = (env: Env, orderId: string, result: string) => {
+  const { siteOrigin } = linePayConfig(env);
+  const params = new URLSearchParams({ order: orderId, payment: result });
+  return Response.redirect(`${siteOrigin}/orders/?${params.toString()}`, 302);
+};
+
 const randomToken = () => bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
 
 const derivePasswordHash = async (password: string, salt: string) => {
@@ -509,6 +585,9 @@ const orderFromRow = (row: Record<string, unknown>, items: Record<string, unknow
     updatedAt: utcDateString(row.updated_at),
     status,
     statusHistory: [{ status, at: utcDateString(row.updated_at || row.created_at) }],
+    paymentMethod: row.payment_method || "",
+    paymentStatus: row.payment_status || "unpaid",
+    paidAt: utcDateString(row.paid_at),
     total,
     subtotal: Number((total - shippingFee + discount).toFixed(2)),
     shippingFee,
@@ -1581,7 +1660,7 @@ export default {
             user_id, order_number, total_amount, status, customer_name, customer_email,
             customer_phone, shipping_method, shipping_address, fulfillment_date,
             customer_note, shipping_fee, discount_amount
-          ) VALUES (?1, ?2, ?3, 'pending', ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
+          ) VALUES (?1, ?2, ?3, 'pending_payment', ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
         `).bind(
           sessionUser?.id || null,
           orderNumber,
@@ -1635,6 +1714,96 @@ export default {
           order: { ...order, id: orderNumber, total },
           email: { status: "pending", recipient: email },
         }, 201, guestId);
+      }
+
+      if (url.pathname === "/api/line-pay/request" && request.method === "POST") {
+        const sessionUser = await getSessionUser(env, request);
+        if (!sessionUser) return json(request, { error: "請先登入會員，再使用 LINE Pay 付款。" }, 401);
+        const body = await parseBody(request);
+        const orderId = String(body.orderId || "").trim();
+        if (!orderId) return json(request, { error: "找不到待付款訂單。" }, 400);
+
+        const row = await env.DB.prepare(`
+          SELECT * FROM orders WHERE order_number = ?1 AND user_id = ?2 LIMIT 1
+        `).bind(orderId, sessionUser.id).first<Record<string, unknown>>();
+        if (!row) return json(request, { error: "找不到待付款訂單。" }, 404);
+        if (String(row.payment_status || "") === "paid") return json(request, { error: "此訂單已完成付款。" }, 409);
+        if (String(row.payment_status || "") === "pending" && String(row.payment_url || "").trim()) {
+          return json(request, { orderId, paymentUrl: String(row.payment_url) });
+        }
+
+        const config = linePayConfig(env);
+        if (!config.channelId || !config.channelSecret) {
+          return json(request, { error: "LINE Pay 正式環境尚未設定，請聯絡店家。" }, 503);
+        }
+        const amount = Math.round(Number(row.total_amount || 0));
+        if (!Number.isFinite(amount) || amount <= 0) return json(request, { error: "訂單金額無效。" }, 400);
+        const paymentRequestId = `${orderId}-${randomToken().slice(0, 12)}`;
+        const paymentBody = {
+          amount,
+          currency: "TWD",
+          orderId: paymentRequestId,
+          packages: [{
+            id: paymentRequestId,
+            amount,
+            products: [{ id: orderId, name: `森森點心坊訂單 ${orderId}`, quantity: 1, price: amount }],
+          }],
+          redirectUrls: {
+            confirmUrl: `${config.siteOrigin}/api/line-pay/confirm`,
+            cancelUrl: `${config.siteOrigin}/api/line-pay/cancel`,
+          },
+        };
+        const result = await callLinePay(env, `${LINE_PAY_API_PATH}/request`, paymentBody);
+        const returnCode = String(result.returnCode || "");
+        const info = (result.info || {}) as Record<string, unknown>;
+        const paymentUrl = String(((info.paymentUrl || {}) as Record<string, unknown>).web || "").trim();
+        const transactionId = String(info.transactionId || "").trim();
+        if (returnCode !== "0000" || !paymentUrl || !transactionId) {
+          console.error("LINE Pay request failed", { returnCode, message: result.returnMessage || result.statusMessage });
+          return json(request, { error: "目前無法連線到 LINE Pay，請稍後再試。" }, 502);
+        }
+        await env.DB.prepare(`
+          UPDATE orders
+          SET payment_method = 'linepay', payment_status = 'pending', payment_transaction_id = ?1,
+              payment_request_id = ?2, payment_url = ?3, status = 'pending_payment', updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?4
+        `).bind(transactionId, paymentRequestId, paymentUrl, row.id).run();
+        return json(request, { orderId, paymentUrl });
+      }
+
+      if (url.pathname === "/api/line-pay/confirm" && request.method === "GET") {
+        const paymentRequestId = String(url.searchParams.get("orderId") || "").trim();
+        const transactionId = String(url.searchParams.get("transactionId") || "").trim();
+        const row = paymentRequestId
+          ? await env.DB.prepare("SELECT * FROM orders WHERE payment_request_id = ?1 LIMIT 1").bind(paymentRequestId).first<Record<string, unknown>>()
+          : null;
+        if (!row || !transactionId || String(row.payment_transaction_id || "") !== transactionId) {
+          return paymentRedirect(env, String(row?.order_number || ""), "failed");
+        }
+        if (String(row.payment_status || "") === "paid") return paymentRedirect(env, String(row.order_number), "success");
+
+        const amount = Math.round(Number(row.total_amount || 0));
+        const result = await callLinePay(env, `${LINE_PAY_API_PATH}/${encodeURIComponent(transactionId)}/confirm`, { amount, currency: "TWD" });
+        if (String(result.returnCode || "") !== "0000") {
+          console.error("LINE Pay confirmation failed", { returnCode: result.returnCode, message: result.returnMessage || result.statusMessage });
+          await env.DB.prepare("UPDATE orders SET payment_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?1").bind(row.id).run();
+          return paymentRedirect(env, String(row.order_number), "failed");
+        }
+        await env.DB.prepare(`
+          UPDATE orders
+          SET status = 'processing', payment_status = 'paid', paid_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?1
+        `).bind(row.id).run();
+        return paymentRedirect(env, String(row.order_number), "success");
+      }
+
+      if (url.pathname === "/api/line-pay/cancel" && request.method === "GET") {
+        const paymentRequestId = String(url.searchParams.get("orderId") || "").trim();
+        const row = paymentRequestId
+          ? await env.DB.prepare("SELECT id, order_number FROM orders WHERE payment_request_id = ?1 LIMIT 1").bind(paymentRequestId).first<{ id: number; order_number: string }>()
+          : null;
+        if (row) await env.DB.prepare("UPDATE orders SET payment_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?1 AND payment_status != 'paid'").bind(row.id).run();
+        return paymentRedirect(env, String(row?.order_number || ""), "cancelled");
       }
 
       if (url.pathname.startsWith("/images/") && request.method === "GET") {

@@ -96,8 +96,9 @@
     try {
       const customerNote = [fields.shipping.value === 'pickup' ? '取貨門市：' + fields.pickupStore.value : '', fields.shipping.value === 'pickup' ? '取貨時間：' + fields.pickupTime.value : '', fields.note.value.trim()].filter(Boolean).join('\n');
       const data = await api('/api/checkout', { method: 'POST', body: JSON.stringify({ name: fields.name.value.trim(), email: fields.email.value.trim(), phone: fields.phone.value.trim(), fulfillmentDate: fields.pickup.value, couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value, shippingAddress: { fullName: fields.name.value.trim(), phone: fields.phone.value.trim(), address: fields.address?.value.trim() || '', city: fields.city?.value.trim() || '', zip: fields.zip?.value.trim() || '' }, customerNote }) });
+      const payment = await api('/api/line-pay/request', { method: 'POST', body: JSON.stringify({ orderId: data.order?.id || '' }) });
       localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping'); localStorage.removeItem('sensen-cart-recipient'); localStorage.removeItem('sensen-cart-phone'); localStorage.removeItem('sensen-cart-address'); localStorage.removeItem('sensen-cart-note');
-      window.location.assign('/orders/?order=' + encodeURIComponent(data.order?.id || ''));
+      window.location.assign(payment.paymentUrl);
     } catch (error) {
       setMessage('[data-checkout-submit-message]', error.message, true);
       root.querySelectorAll('[data-checkout-submit]').forEach(item => { item.disabled = false; item.textContent = '前往結帳'; });

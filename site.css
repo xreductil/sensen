@@ -725,6 +725,8 @@ a { color: inherit; text-decoration: none; }
 .order-confirmation-message .eyebrow { margin: 0 0 8px; }
 .order-confirmation-message h2 { margin: 0 0 10px; color: var(--brown); }
 .order-confirmation-message p { margin: 8px 0 0; }
+.order-payment-success { color: #47704e; font-weight: 700; }
+.order-payment-cancelled, .order-payment-error { color: #a3463d; font-weight: 700; }
 .order-detail-head { display:flex; align-items:flex-start; justify-content:space-between; gap:18px; }
 .order-detail-head div { display:grid; gap:4px; }
 .order-detail-head small, .order-tracking { color:var(--muted); }
