@@ -3322,7 +3322,8 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
    same thing on the overview and category pages. */
 .cake-product-card.product-thumbnail-managed .cake-product-image img {
   width: 100%;
-  height: 100%;
+  height: auto;
+  aspect-ratio: 1 / 1;
   max-height: none;
   object-fit: contain;
   object-position: center;
