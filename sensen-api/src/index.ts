@@ -549,6 +549,30 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   };
 };
 
+const renderProductDetailTemplate = (template: string, product: StoreProduct) => {
+  const title = String(product.title || "商品").trim() || "商品";
+  const description = String(product.desc || `${title}｜森森點心坊商品介紹與訂購資訊。`)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 155);
+  const canonical = `${SITE_ORIGIN}/product-item/${encodeURIComponent(product.id)}/`;
+  const image = product.img
+    ? (/^https?:\/\//i.test(product.img) ? product.img : `${SITE_ORIGIN}${product.img}`)
+    : "";
+  const attributes = `data-product-id="${escapeMarkup(product.id)}" data-product-fallback-title="${escapeMarkup(title)}" data-product-fallback-image="${escapeMarkup(product.img)}" data-product-fallback-category="${escapeMarkup(product.cat)}" data-product-fallback-description="${escapeMarkup(description)}"`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeMarkup(title)} – 森森點心坊</title>`)
+    .replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${escapeMarkup(description)}">`)
+    .replace(/<link rel="canonical"[^>]*>/i, `<link rel="canonical" href="${escapeMarkup(canonical)}">`)
+    .replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeMarkup(title)} – 森森點心坊">`)
+    .replace(/<meta property="og:description"[^>]*>/i, `<meta property="og:description" content="${escapeMarkup(description)}">`)
+    .replace(/<meta property="og:url"[^>]*>/i, `<meta property="og:url" content="${escapeMarkup(canonical)}">`)
+    .replace(/(<meta property="og:type"[^>]*>)/i, `$1${image ? `\n  <meta property="og:image" content="${escapeMarkup(image)}">` : ""}`)
+    .replace('data-product-kind="cake" data-product-id=""', `data-product-kind="cake" ${attributes}`)
+    .replace(/data-product-hero-title>商品<\/h1>/i, `data-product-hero-title>${escapeMarkup(title)}</h1>`)
+    .replace(/data-product-title>商品<\/h2>/i, `data-product-title>${escapeMarkup(title)}</h2>`);
+};
+
 const productSizeOptions = (product: StoreProduct) => {
   const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
   const sizes = variants.sizes && typeof variants.sizes === "object" && !Array.isArray(variants.sizes)
@@ -972,7 +996,12 @@ export default {
               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
             `).bind(category.id, title, slug, description, price, stock, imageKey, published ? 1 : 0, metadata).run();
             const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(Number(result.meta.last_row_id)).first<ProductRow>();
-            return json(request, { product: row ? adminProductFromRow(row) : null }, 201);
+            const product = row ? adminProductFromRow(row) : null;
+            return json(request, {
+              product,
+              pageUrl: product?.url || null,
+              pageTemplate: "product-detail",
+            }, 201);
           }
 
           await env.DB.prepare(`
@@ -1502,7 +1531,11 @@ export default {
       const articlePathMatch = url.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/);
       if (articlePathMatch && request.method === "GET") {
         const articleKey = decodeURIComponent(articlePathMatch[1] || "").trim();
-        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/latest-news/article/index.html`, request));
+        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/latest-news/article/`, {
+          method: "GET",
+          headers: request.headers,
+          redirect: "follow",
+        }));
         const template = await templateResponse.text();
         const row = articleKey
           ? await env.DB.prepare(`
@@ -1524,6 +1557,36 @@ export default {
         }
         return new Response(renderNewsArticlePage(template, row), {
           headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60, s-maxage=300" },
+        });
+      }
+
+      const productPathMatch = decodedPathname.match(/^\/product-item\/([^/]+)\/?$/);
+      if (productPathMatch && request.method === "GET" && productPathMatch[1] !== "_template") {
+        const productAssetPath = decodedPathname.endsWith("/") ? decodedPathname : `${decodedPathname}/`;
+        const existingAsset = await env.ASSETS.fetch(new Request(`${url.origin}${productAssetPath}`, {
+          method: "GET",
+          headers: request.headers,
+          redirect: "follow",
+        }));
+        if (existingAsset.status !== 404) return existingAsset;
+
+        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/product-item/_template/`, {
+          method: "GET",
+          headers: request.headers,
+          redirect: "follow",
+        }));
+        if (!templateResponse.ok) return new Response("商品頁模板不存在。", { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
+        const template = await templateResponse.text();
+        const product = await findProduct(env, decodeURIComponent(productPathMatch[1] || ""));
+        if (!product) {
+          const missing = template
+            .replace(/<title>[\s\S]*?<\/title>/i, "<title>找不到商品 – 森森點心坊</title>")
+            .replace(/<meta name="robots"[^>]*>/i, '<meta name="robots" content="noindex, nofollow">')
+            .replace(/商品資料載入中…/g, "找不到此商品，可能已下架或不存在。");
+          return new Response(missing, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" } });
+        }
+        return new Response(renderProductDetailTemplate(template, productFromRow(product)), {
+          headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store, max-age=0" },
         });
       }
 

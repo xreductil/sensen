@@ -5,7 +5,7 @@
   const copy = productPage.querySelector('.emerald-product-copy');
   const titleElement = copy?.querySelector('[data-product-title]');
   if (!copy || !titleElement) return;
-  const isCakeDetail = ['cake', 'emerald'].includes(productPage.dataset.productKind);
+  let isCakeDetail = ['cake', 'emerald'].includes(productPage.dataset.productKind);
 
   const normalize = value => String(value || '')
     .normalize('NFKC')
@@ -131,7 +131,9 @@
     if (pathMap[product.id]) return pathMap[product.id];
     if (pathMap[normalize(product.title)]) return pathMap[normalize(product.title)];
     if (product.url) {
-      try { return new URL(product.url, window.location.origin).pathname; } catch { /* use the local route map */ }
+      try {
+        return decodeURI(new URL(product.url, window.location.origin).pathname).replace(/\/$/, '');
+      } catch { /* use the local route map */ }
     }
     return '';
   };
@@ -244,6 +246,11 @@
 
   const syncProductDetails = product => {
     const apiTitle = String(product.title || '商品');
+    isCakeDetail = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕'].includes(String(product.cat || '').trim());
+    productPage.dataset.productKind = isCakeDetail ? 'cake' : 'souvenir';
+    productPage.classList.toggle('cake-product-page', isCakeDetail);
+    productPage.classList.toggle('bean-tart-product-page', !isCakeDetail);
+    productPage.classList.toggle('souvenir-product-page', !isCakeDetail);
     const title = productPage.dataset.productId?.startsWith('top-house-')
       ? (titleElement.textContent.trim() || apiTitle)
       : apiTitle;

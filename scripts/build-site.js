@@ -23,7 +23,7 @@ const WORDPRESS_EXPORT_FILES = [
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20260917-thumbnail-sync-3";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260917-thumbnail-sync-2";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260917-product-template-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -2506,6 +2506,19 @@ function syncAutomaticProductDetailSnapshots() {
   }
 }
 
+function syncProductDetailTemplate() {
+  const filePath = htmlFileForLocalPath("/product-item/_template");
+  ensureDir(filePath);
+  const content = normalizeHeadingStructure(productDetailShell({ localPath: "/product-item/_template", kind: "cake" }), "/product-item/_template");
+  fs.writeFileSync(filePath, layout({
+    title: "商品 – 森森點心坊",
+    pathLabel: "/product-item/_template",
+    content,
+    isCakeProduct: true,
+    hasBrandedHero: true,
+  }));
+}
+
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
@@ -3424,6 +3437,7 @@ function main() {
     fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
     fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
     fs.copyFileSync(path.join(__dirname, "home-news.js"), path.join(OUT_DIR, "assets", "home-news.js"));
+    syncProductDetailTemplate();
     syncProductDetailSnapshot();
     syncAdminFrontendSnapshot();
     rewriteEmptyCatalogPages();
@@ -3488,6 +3502,7 @@ function main() {
   fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
   fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
   fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
+  syncProductDetailTemplate();
   syncProductDetailSnapshot();
   fs.copyFileSync(path.join(__dirname, "drink-menu-modal.js"), path.join(OUT_DIR, "assets", "drink-menu-modal.js"));
   fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));

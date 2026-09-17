@@ -3,7 +3,7 @@
   if (!status) return;
 
   const observer = new MutationObserver(() => {
-    if (status.textContent.includes('已加入前台菜單與 Inventory')) {
+    if (status.textContent.includes('已加入前台菜單、Inventory')) {
       observer.disconnect();
       window.location.assign('inventory.html');
     }

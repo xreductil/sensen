@@ -11,6 +11,20 @@ const IncomingRequest = Request<unknown, IncomingRequestCfProperties>;
 
 describe("sensen-api Worker", () => {
   beforeAll(async () => {
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS categories (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, slug TEXT NOT NULL UNIQUE,
+        created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS products (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, category_id INTEGER, name TEXT NOT NULL, slug TEXT NOT NULL UNIQUE,
+        description TEXT, price INTEGER NOT NULL, stock INTEGER NOT NULL DEFAULT 0, image_key TEXT,
+        is_active INTEGER DEFAULT 1, metadata_json TEXT, created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+        updated_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS product_images (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, product_id INTEGER NOT NULL, image_key TEXT NOT NULL,
+        sort_order INTEGER DEFAULT 0, is_primary INTEGER DEFAULT 0, created_at TEXT DEFAULT CURRENT_TIMESTAMP
+      )`).run();
     await env.DB.prepare(`CREATE TABLE IF NOT EXISTS news (
         id TEXT PRIMARY KEY, title TEXT NOT NULL, slug TEXT NOT NULL,
         category TEXT, excerpt TEXT, content TEXT, image_key TEXT,
@@ -76,6 +90,21 @@ describe("sensen-api Worker", () => {
     const idResponse = await SELF.fetch(`https://example.com/latest-news/article/${encodeURIComponent(id)}/`, { redirect: "manual" });
     expect(idResponse.status).toBe(301);
     expect(idResponse.headers.get("location")).toBe(`https://example.com/latest-news/article/${encodeURIComponent(`${id}-slug`)}/`);
+  });
+
+  it("renders a new product through the static detail template", async () => {
+    const slug = `template-product-${crypto.randomUUID()}`;
+    await env.DB.prepare(`
+      INSERT INTO products (name, slug, description, price, stock, image_key, is_active, metadata_json)
+      VALUES ('模板測試商品', ?1, '模板商品描述。', 400, 10, 'images/template-product.png', 1, ?2)
+    `).bind(slug, JSON.stringify({ cat: "伴手禮", img: "/images/template-product.png" })).run();
+
+    const response = await SELF.fetch(`https://example.com/product-item/${encodeURIComponent(slug)}/`);
+    const html = await response.text();
+    expect(response.status).toBe(200);
+    expect(html).toContain("<title>模板測試商品 – 森森點心坊</title>");
+    expect(html).toContain('data-product-id="');
+    expect(html).toContain("模板商品描述。");
   });
 
   it("redirects duplicate page URL variants to one trailing-slash URL", async () => {

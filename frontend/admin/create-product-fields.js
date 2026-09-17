@@ -131,7 +131,7 @@
       if (priceOptions) priceOptions.innerHTML = '';
       addPriceOptionRow();
       status.className = 'small mt-3 mb-0 text-success';
-      status.textContent = `${data.product?.title || title} 已加入前台菜單與 Inventory。`;
+      status.textContent = `${data.product?.title || title} 已加入前台菜單、Inventory 與商品頁模板。`;
     } catch (error) {
       status.className = 'small mt-3 mb-0 text-danger';
       status.textContent = error.message;
