@@ -6924,7 +6924,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .bean-tart-specs dd { color: #6a6663; }
 .bean-tart-badge { display: grid; width: 66px; height: 66px; margin: 28px 0 0; place-items: center; border: 2px solid #b9dc82; border-radius: 50%; }
 .bean-tart-badge img { display: block; width: 58px; height: 58px; object-fit: contain; }
-.souvenir-related .emerald-related-card img { height: 235px; object-fit: cover; }
+.souvenir-related .emerald-related-card:not(.product-thumbnail-managed) img { height: 235px; object-fit: cover; }
 
 /* Shared product detail template: every online-store product uses the same data order. */
 .product-detail-template .emerald-product-feature {
@@ -6984,8 +6984,16 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .emerald-related-control { width: 24px; height: 44px; font-size: 22px; }
   .emerald-related-grid { gap: 16px; }
   .emerald-related-card { flex-basis: calc((100% - 16px) / 2); }
-  .emerald-related-card img { height: auto; aspect-ratio: 1; }
-  .emerald-related-card .emerald-related-image { height: auto; aspect-ratio: 1; }
+  .emerald-related-card:not(.product-thumbnail-managed) img { height: auto; aspect-ratio: 1; }
+  .emerald-related-card:not(.product-thumbnail-managed) .emerald-related-image { height: auto; aspect-ratio: 1; }
+  .emerald-related-card.product-thumbnail-managed .emerald-related-image { height: auto; aspect-ratio: 1; }
+  .emerald-related-card.product-thumbnail-managed .emerald-related-image img {
+    width: 100%;
+    height: 100%;
+    max-height: none;
+    object-fit: contain;
+    transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(var(--product-thumbnail-scale, 1));
+  }
   .emerald-related-card h3 { min-height: 0; font-size: 17px; }
   .bean-tart-product-page { width: calc(100% - 28px); }
   .bean-tart-feature { grid-template-columns: 1fr; gap: 26px; padding: 28px 0 38px; }
@@ -6994,7 +7002,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .bean-tart-copy h2 { font-size: 24px; }
   .bean-tart-copy hr { margin: 30px 0 24px; }
   .bean-tart-specs > div { grid-template-columns: 100px minmax(0, 1fr); gap: 8px; margin: 16px 0; }
-  .souvenir-related .emerald-related-card img { height: auto; aspect-ratio: 1; object-fit: cover; }
+  .souvenir-related .emerald-related-card:not(.product-thumbnail-managed) img { height: auto; aspect-ratio: 1; object-fit: cover; }
   .product-detail-template .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
   .product-detail-template .product-detail-gallery { min-height: 0; gap: 36px; }
   .product-detail-template .product-detail-gallery img { width: min(100%, 300px); }
