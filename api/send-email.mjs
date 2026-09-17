@@ -4,6 +4,11 @@ const json = (response, body, status = 200) => response.status(status).json(body
 
 const text = value => String(value ?? "").trim();
 
+const detailValue = (message, label) => {
+  const escapedLabel = label.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  return text(message.match(new RegExp(`^${escapedLabel}：?(.*)$`, "m"))?.[1]);
+};
+
 export default async function handler(request, response) {
   if (request.method !== "POST") return json(response, { error: "只接受 POST 請求。" }, 405);
 
@@ -45,6 +50,28 @@ export default async function handler(request, response) {
     "",
     message,
   ].filter(Boolean).join("\n");
+  const isTasteApplication = subject === "彌月試吃申請";
+  const produced = detailValue(message, "是否已生產");
+  const deliveryMethod = detailValue(message, "領取方式");
+  const tasteMail = [
+    "郵件內容來自 森森官網-彌月試吃申請",
+    "===== 以下為內容 ====",
+    `媽咪姓名: ${name}`,
+    `電子信箱: ${email}`,
+    `連絡電話: ${phone}`,
+    "======",
+    `寶寶性別: ${detailValue(message, "寶寶性別")}`,
+    `是否已生產: ${produced}`,
+    `媽媽預產期／請輸入寶寶的滿月日期: ${produced === "是" ? detailValue(message, "滿月日期") : detailValue(message, "預產期")}`,
+    `產檢醫院／生產醫院: ${produced === "是" ? detailValue(message, "生產醫院") : detailValue(message, "產檢醫院")}`,
+    "======",
+    `彌月試吃領取方式: ${deliveryMethod}`,
+    `宅配地址／自取門市: ${deliveryMethod === "宅配" ? detailValue(message, "宅配地址") : detailValue(message, "自取門市")}`,
+    `宅配日期／自取日期: ${deliveryMethod === "宅配" ? detailValue(message, "到貨日期") : detailValue(message, "自取日期")}`,
+    "----完畢----",
+    "",
+    "這封電子郵件由《森森點心坊》\"彌月試吃申請表單\"傳送，網站網址為 https://www.sensen.com.tw",
+  ].join("\n");
   const storeSubject = subject === "彌月試吃申請"
     ? `顧客「${name}」的彌月試吃申請單`
     : `[森森網站] ${subject}`;
@@ -56,7 +83,7 @@ export default async function handler(request, response) {
       to: mailTo,
       replyTo: email,
       subject: storeSubject,
-      text: details,
+      text: isTasteApplication ? tasteMail : details,
     });
 
     // 客戶確認信：讓申請人知道表單已被系統收到。
@@ -81,6 +108,6 @@ export default async function handler(request, response) {
     }, 201);
   } catch (error) {
     console.error("SMTP send failed", error instanceof Error ? error.message : error);
-    return json({ error: "通知信寄送失敗，請稍後再試。" }, 502);
+    return json(response, { error: "通知信寄送失敗，請稍後再試。" }, 502);
   }
 }
