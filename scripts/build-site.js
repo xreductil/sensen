@@ -3430,6 +3430,7 @@ function main() {
     pruneRetiredStaticSnapshot();
     fs.copyFileSync(path.join(ROOT, "site.css"), path.join(OUT_DIR, "assets", "site.css"));
     fs.copyFileSync(path.join(__dirname, "storefront-products.js"), path.join(OUT_DIR, "assets", "storefront-products.js"));
+    fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));
     fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
     fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
     fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));

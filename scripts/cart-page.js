@@ -79,6 +79,7 @@
       try {
         const data = await api('/api/cart/quote', { method: 'POST', body: JSON.stringify({ couponCode: coupon.value.trim(), shippingMethod: shipping.value }) });
         subtotalEl.textContent = money(data.subtotal); shippingFeeEl.textContent = money(data.shippingFee); discountRow.hidden = !Number(data.discount); discountEl.textContent = '-' + money(data.discount); totalEl.textContent = money(data.total); save();
+        if (coupon.value.trim()) showMessage(quoteMessage, Number(data.discount) ? '優惠碼已套用。' : '優惠碼有效，但目前沒有折扣。');
       } catch (error) { showMessage(quoteMessage, error.message, true); }
     };
     root.querySelectorAll('[data-cart-id]').forEach(button => button.addEventListener('click', async () => { await api('/api/cart/item', { method: 'PATCH', body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) }); load(); }));

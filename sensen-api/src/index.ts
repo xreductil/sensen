@@ -722,6 +722,30 @@ const cartSummary = async (env: Env, guestId: string) => {
   };
 };
 
+const couponDiscount = async (env: Env, code: unknown, subtotal: number) => {
+  const normalizedCode = String(code || "").trim().toUpperCase();
+  if (!normalizedCode) return { discount: 0, coupon: null as Record<string, unknown> | null };
+
+  const coupon = await env.DB.prepare(`
+    SELECT code, label, type, value, min_amount AS min
+    FROM coupons
+    WHERE code = ?1 AND enabled = 1
+    LIMIT 1
+  `).bind(normalizedCode).first<Record<string, unknown>>();
+  if (!coupon) return { discount: 0, coupon: null, error: "優惠碼不存在或已停用。" };
+
+  const minimum = Math.max(0, Number(coupon.min || 0));
+  if (subtotal < minimum) {
+    return { discount: 0, coupon, error: `此優惠碼須滿 $${minimum.toFixed(2)} 才能使用。` };
+  }
+
+  const value = Math.max(0, Number(coupon.value || 0));
+  const discount = coupon.type === "percent"
+    ? subtotal * Math.min(value, 100) / 100
+    : value;
+  return { discount: Number(Math.min(subtotal, discount).toFixed(2)), coupon };
+};
+
 const imageResponse = async (request: Request, env: Env) => {
   const url = new URL(request.url);
   let requestedKey: string;
@@ -1326,12 +1350,15 @@ export default {
         const cart = await cartSummary(env, guestId);
         const shippingMethod = String(body.shippingMethod || "pickup");
         const shippingFee = shippingMethod === "frozen" ? 240 : shippingMethod === "home" ? 120 : 0;
+        const coupon = await couponDiscount(env, body.couponCode, cart.subtotal);
+        if (coupon.error) return json(request, { error: coupon.error }, 400, guestId);
         return json(request, {
           ...cart,
           shippingMethod,
           shippingFee,
-          total: Number((cart.subtotal + shippingFee).toFixed(2)),
-          discount: 0,
+          discount: coupon.discount,
+          coupon: coupon.coupon,
+          total: Number((cart.subtotal + shippingFee - coupon.discount).toFixed(2)),
         }, 200, guestId);
       }
 
@@ -1467,6 +1494,9 @@ export default {
         const cart = await cartSummary(env, guestId);
         if (!cart.items.length) return json(request, { error: "購物車是空的。" }, 400);
 
+        const coupon = await couponDiscount(env, body.couponCode, cart.subtotal);
+        if (coupon.error) return json(request, { error: coupon.error }, 400);
+
         const shippingMethod = String(body.shippingMethod || "pickup");
         if (!["pickup", "home", "frozen"].includes(shippingMethod)) {
           return json(request, { error: "物流方式無效。" }, 400);
@@ -1491,7 +1521,8 @@ export default {
         }
 
         const shippingFee = shippingMethod === "frozen" ? 240 : shippingMethod === "home" ? 120 : 0;
-        const total = Number((cart.subtotal + shippingFee).toFixed(2));
+        const discount = coupon.discount;
+        const total = Number((cart.subtotal + shippingFee - discount).toFixed(2));
         const orderNumber = `S${Date.now().toString(36).toUpperCase()}`;
         const addressJson = JSON.stringify({
           fullName: name,
@@ -1506,7 +1537,7 @@ export default {
             user_id, order_number, total_amount, status, customer_name, customer_email,
             customer_phone, shipping_method, shipping_address, fulfillment_date,
             customer_note, shipping_fee, discount_amount
-          ) VALUES (?1, ?2, ?3, 'pending', ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, 0)
+          ) VALUES (?1, ?2, ?3, 'pending', ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12)
         `).bind(
           sessionUser?.id || null,
           orderNumber,
@@ -1519,6 +1550,7 @@ export default {
           fulfillmentDate,
           String(body.customerNote || "").trim(),
           shippingFee,
+          discount,
         ).run();
 
         const order = await env.DB.prepare("SELECT id, order_number, total_amount, status, created_at FROM orders WHERE order_number = ?1").bind(orderNumber).first<Record<string, unknown>>();

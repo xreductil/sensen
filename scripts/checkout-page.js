@@ -80,6 +80,7 @@
     try {
       const data = await api('/api/cart/quote', { method: 'POST', body: JSON.stringify({ couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value }) });
       renderQuote(data); save();
+      if (fields.coupon.value.trim()) setMessage('[data-checkout-quote-message]', Number(data.discount) ? '優惠碼已套用。' : '優惠碼有效，但目前沒有折扣。');
     } catch (error) { setMessage('[data-checkout-quote-message]', error.message, true); }
   };
   const submit = async button => {
