@@ -926,46 +926,12 @@ export default {
 
     try {
       const decodedPathname = decodeURI(url.pathname);
-      const normalizedPathname = decodedPathname.replace(/\/+$/, "") || "/";
-      if ((request.method === "GET" || request.method === "HEAD") && RETIRED_CONTENT_PATHS.has(normalizedPathname)) {
-        return new Response("此內容已永久移除。", {
-          status: 410,
-          headers: { "Content-Type": "text/plain; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" },
-        });
-      }
-      if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/product-item/法式蝶蝨酥-1657") {
-        return Response.redirect(`${url.origin}/product-item/${encodeURIComponent("法式蝴蝶酥-1657")}/`, 301);
-      }
-      if ((request.method === "GET" || request.method === "HEAD")
-        && ["/product-item/top-house-boston-classic", "/頂家彌月/商品/top-house-boston-classic"].includes(normalizedPathname)) {
-        return Response.redirect(`${url.origin}/頂家彌月/商品/${encodeURIComponent("top-house-boston-new")}/`, 301);
-      }
-      if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/隱私權條件") {
-        return Response.redirect(`${url.origin}/${encodeURIComponent("隱私權條款")}/`, 301);
-      }
 
       // Keep old asset URLs working while ensuring the image bytes come from R2.
       if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.startsWith("/assets/images/")) {
         const r2Url = new URL(request.url);
         r2Url.pathname = `/images/${decodedPathname.slice("/assets/images/".length)}`;
         return imageResponse(new Request(r2Url, request), env);
-      }
-
-      if ((request.method === "GET" || request.method === "HEAD") && /^\/latest-news\/article\/?$/.test(url.pathname) && url.searchParams.get("id")) {
-        return Response.redirect(`${url.origin}/latest-news/article/${encodeURIComponent(url.searchParams.get("id") || "")}/`, 301);
-      }
-      if ((request.method === "GET" || request.method === "HEAD")
-        && /^\/latest-news\/article\/birthday-cake-2026\/?$/i.test(url.pathname)) {
-        return Response.redirect(`${url.origin}/產品介紹/生日蛋糕-下方有dm供下載-264/`, 301);
-      }
-
-      if ((request.method === "GET" || request.method === "HEAD")
-        && !url.pathname.endsWith("/")
-        && !url.pathname.startsWith("/api/")
-        && !url.pathname.startsWith("/images/")
-        && url.pathname !== "/health"
-        && !/\/[^/]+\.[a-z0-9]+$/i.test(url.pathname)) {
-        return Response.redirect(`${url.origin}${url.pathname}/${url.search}`, 301);
       }
 
       if (url.pathname === "/health" && request.method === "GET") {
@@ -1810,86 +1776,10 @@ export default {
         return imageResponse(request, env);
       }
 
-      const articlePathMatch = url.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/);
-      if (articlePathMatch && request.method === "GET") {
-        const articleKey = decodeURIComponent(articlePathMatch[1] || "").trim();
-        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/latest-news/article/`, {
-          method: "GET",
-          headers: request.headers,
-          redirect: "follow",
-        }));
-        const template = await templateResponse.text();
-        const row = articleKey
-          ? await env.DB.prepare(`
-              SELECT * FROM news
-              WHERE is_published = 1 AND (id = ?1 OR slug = ?1)
-                AND (publish_at IS NULL OR datetime(replace(publish_at, 'T', ' ')) <= CURRENT_TIMESTAMP)
-              LIMIT 1
-            `).bind(articleKey).first<Record<string, unknown>>()
-          : null;
-        if (!row) {
-          const missing = template
-            .replace('<p class="latest-news-article-status" data-article-status role="status">載入文章中…</p>', '<p class="latest-news-article-status is-error" data-article-status role="status">找不到這則最新消息，可能已下架或不存在。</p>')
-            .replace(/<meta name="robots" content="[^"]*">/i, '<meta name="robots" content="noindex, nofollow">');
-          return new Response(missing, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" } });
-        }
-        const articleSlug = String(row.slug || "").trim();
-        if (articleSlug && articleKey !== articleSlug) {
-          return Response.redirect(`${url.origin}/latest-news/article/${encodeURIComponent(articleSlug)}/`, 301);
-        }
-        return new Response(renderNewsArticlePage(template, row), {
-          headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "public, max-age=60, s-maxage=300" },
-        });
-      }
-
-      const productPathMatch = decodedPathname.match(/^\/product-item\/([^/]+)\/?$/);
-      if (productPathMatch && request.method === "GET" && productPathMatch[1] !== "_template") {
-        const productAssetPath = `${decodedPathname.replace(/\/+$/, "")}/index.html`;
-        const existingAsset = await env.ASSETS.fetch(new Request(`${url.origin}${productAssetPath}`, {
-          method: "GET",
-          headers: request.headers,
-          redirect: "follow",
-        }));
-        if (existingAsset.status !== 404) return existingAsset;
-
-        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/product-item/_template/index.html`, {
-          method: "GET",
-          headers: request.headers,
-          redirect: "follow",
-        }));
-        if (!templateResponse.ok) return new Response("商品頁模板不存在。", { status: 500, headers: { "Content-Type": "text/plain; charset=utf-8" } });
-        const template = await templateResponse.text();
-        const product = await findProduct(env, decodeURIComponent(productPathMatch[1] || ""));
-        if (!product) {
-          const missing = template
-            .replace(/<title>[\s\S]*?<\/title>/i, "<title>找不到商品 – 森森點心坊</title>")
-            .replace(/<meta name="robots"[^>]*>/i, '<meta name="robots" content="noindex, nofollow">')
-            .replace(/商品資料載入中…/g, "找不到此商品，可能已下架或不存在。");
-          return new Response(missing, { status: 404, headers: { "Content-Type": "text/html; charset=utf-8", "X-Robots-Tag": "noindex, nofollow" } });
-        }
-        return new Response(renderProductDetailTemplate(template, productFromRow(product)), {
-          headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store, max-age=0" },
-        });
-      }
-
       if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
         return json(request, { error: "找不到 API 路徑。" }, 404);
       }
-
-      const assetUrl = new URL(request.url);
-      if (assetUrl.pathname.endsWith("/")) assetUrl.pathname += "index.html";
-      if (url.pathname.startsWith("/admin/")) assetUrl.searchParams.set("sensen_admin_asset", "20260826-2");
-      const assetRequest = new Request(assetUrl, request);
-      const assetResponse = await env.ASSETS.fetch(assetRequest);
-      if (assetResponse.status === 404) {
-        return json(request, { error: "找不到 API 路徑。" }, 404);
-      }
-      if (/^\/(?:admin|customer|cart|checkout|orders)(?:\/|$)/i.test(url.pathname)) {
-        const headers = new Headers(assetResponse.headers);
-        headers.set("X-Robots-Tag", "noindex, nofollow");
-        return new Response(assetResponse.body, { status: assetResponse.status, statusText: assetResponse.statusText, headers });
-      }
-      return assetResponse;
+      return json(request, { error: "找不到 API 路徑。" }, 404);
     } catch (error) {
       const requestId = crypto.randomUUID();
       const detail = error instanceof Error ? error.message : String(error);

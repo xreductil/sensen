@@ -71,73 +71,36 @@ describe("sensen-api Worker", () => {
     }
   });
 
-  it("server-renders published news metadata and content", async () => {
-    const id = `seo-news-${crypto.randomUUID()}`;
-    await env.DB.prepare(`
-      INSERT INTO news (id, title, slug, category, excerpt, content, publish_at, is_published)
-      VALUES (?1, 'SEO 測試文章', ?2, 'latest-news', '這是搜尋摘要。', '這是伺服器端文章內容。', '2026-01-01T00:00:00.000Z', 1)
-    `).bind(id, `${id}-slug`).run();
-
-    const response = await SELF.fetch(`https://example.com/latest-news/article/${encodeURIComponent(`${id}-slug`)}/`);
-    const html = await response.text();
-    expect(response.status).toBe(200);
-    expect(html).toContain("<title>SEO 測試文章 – 森森點心坊</title>");
-    expect(html).toContain('content="這是搜尋摘要。"');
-    expect(html).toContain("這是伺服器端文章內容。");
-    expect(html).toContain('data-article-hydrated="true"');
-    expect(html.match(/<h1\b/gi)).toHaveLength(1);
-
-    const idResponse = await SELF.fetch(`https://example.com/latest-news/article/${encodeURIComponent(id)}/`, { redirect: "manual" });
-    expect(idResponse.status).toBe(301);
-    expect(idResponse.headers.get("location")).toBe(`https://example.com/latest-news/article/${encodeURIComponent(`${id}-slug`)}/`);
-  });
-
-  it("renders a new product through the static detail template", async () => {
-    const slug = `template-product-${crypto.randomUUID()}`;
-    await env.DB.prepare(`
-      INSERT INTO products (name, slug, description, price, stock, image_key, is_active, metadata_json)
-      VALUES ('模板測試商品', ?1, '模板商品描述。', 400, 10, 'images/template-product.png', 1, ?2)
-    `).bind(slug, JSON.stringify({ cat: "伴手禮", img: "/images/template-product.png" })).run();
-
-    const response = await SELF.fetch(`https://example.com/product-item/${encodeURIComponent(slug)}/`);
-    const html = await response.text();
-    expect(response.status).toBe(200);
-    expect(html).toContain("<title>模板測試商品 – 森森點心坊</title>");
-    expect(html).toContain('data-product-id="');
-    expect(html).toContain("模板商品描述。");
-  });
-
-  it("redirects duplicate page URL variants to one trailing-slash URL", async () => {
+  it("does not serve the old website pages", async () => {
     const request = new IncomingRequest("https://example.com/cart?source=test", { redirect: "manual" });
     const ctx = createExecutionContext();
     const response = await worker.fetch(request, env, ctx);
     await waitOnExecutionContext(ctx);
-    expect(response.status).toBe(301);
-    expect(response.headers.get("location")).toBe("https://example.com/cart/?source=test");
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "找不到 API 路徑。" });
   });
 
-  it("redirects a duplicate legacy privacy URL to its canonical page", async () => {
+  it("does not serve old website redirects", async () => {
     const request = new IncomingRequest(`https://example.com/${encodeURIComponent("隱私權條件")}/`, { redirect: "manual" });
     const ctx = createExecutionContext();
     const response = await worker.fetch(request, env, ctx);
     await waitOnExecutionContext(ctx);
-    expect(response.status).toBe(301);
-    expect(response.headers.get("location")).toBe(`https://example.com/${encodeURIComponent("隱私權條款")}/`);
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "找不到 API 路徑。" });
   });
 
-  it("permanently removes retired orphan content", async () => {
+  it("does not serve retired website content", async () => {
     const request = new IncomingRequest(`https://example.com/latest-news/${encodeURIComponent("2019頂家彌月目錄")}/`);
     const ctx = createExecutionContext();
     const response = await worker.fetch(request, env, ctx);
     await waitOnExecutionContext(ctx);
-    expect(response.status).toBe(410);
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "找不到 API 路徑。" });
   });
 
-  it("returns an HTML 404 for a missing news article", async () => {
+  it("does not serve old news article pages", async () => {
     const response = await SELF.fetch("https://example.com/latest-news/article/missing-news-for-seo/");
     expect(response.status).toBe(404);
-    expect(response.headers.get("x-robots-tag")).toBe("noindex, nofollow");
-    expect(await response.text()).toContain("找不到這則最新消息");
+    expect(await response.json()).toEqual({ error: "找不到 API 路徑。" });
   });
 });
