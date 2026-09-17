@@ -138,10 +138,10 @@
 
   function thumbnailPresetOffsetY(product, settings) {
     // These offsets are the legacy framing rules used by the public product
-    // cards. Keep the editor preview on the same visual baseline.
+    // cards. Keep the editor preview on the same visual baseline on every device.
     if (product?.id === 'new-birthday-cake-image-03') return 0;
     if (legacyRelativeThumbnailProductIds.has(product?.id)) {
-      return window.matchMedia('(max-width: 700px)').matches ? -100 : -120;
+      return -120;
     }
     if (product?.cat === '伴手禮' && settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100) return -8;
     return 0;

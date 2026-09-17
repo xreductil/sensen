@@ -128,7 +128,7 @@
   };
   const thumbnailLegacyOffset = (product, settings) => {
     if (legacyRelativeThumbnailProductIds.has(product?.id) && product?.id !== 'new-birthday-cake-image-03') {
-      return { desktop: -120, mobile: -100 };
+      return { desktop: -120, mobile: -120 };
     }
     const isDefault = settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100;
     if (product?.cat === '伴手禮' && isDefault) return { desktop: -8, mobile: -8 };
