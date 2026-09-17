@@ -136,6 +136,16 @@
     return '';
   };
   const formatDate = value => String(value || '').slice(0, 10);
+  const thumbnailSettings = product => {
+    const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
+    const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
+    return {
+      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
+      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
+      scale: Math.max(25, Math.min(300, number(source.scale, 100)))
+    };
+  };
+  const thumbnailStyle = settings => `--product-thumbnail-x:${settings.offsetX}px;--product-thumbnail-y:${settings.offsetY}px;--product-thumbnail-scale:${settings.scale / 100};`;
 
   let orderInfoModal;
   let lastOrderInfoTrigger;
@@ -277,7 +287,11 @@
       const image = (Array.isArray(item.images) && item.images[0]) || item.img || '';
       const href = productPath(item);
       const displayTitle = topHouseCardTitles[item.id] || item.title || '商品';
-      return `<article class="emerald-related-card"><a href="${escapeHtml(href)}"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayTitle)}" loading="lazy"><span>${escapeHtml(formatDate(item.createdAt))}</span><h3>${escapeHtml(displayTitle)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`;
+      const thumbnail = thumbnailSettings(item);
+      const adjustableClass = thumbnail.offsetX !== 0 || thumbnail.offsetY !== 0 || thumbnail.scale !== 100
+        ? ' product-thumbnail-adjustable'
+        : '';
+      return `<article class="emerald-related-card product-thumbnail-managed${adjustableClass}" style="${thumbnailStyle(thumbnail)}"><a href="${escapeHtml(href)}"><div class="emerald-related-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayTitle)}" loading="lazy"></div><span>${escapeHtml(formatDate(item.createdAt))}</span><h3>${escapeHtml(displayTitle)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`;
     }).join('');
   };
 

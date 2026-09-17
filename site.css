@@ -6881,6 +6881,9 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .emerald-related-card h3 { min-height: 58px; margin: 8px 0 14px; color: #17291e; font-size: 22px; line-height: 1.35; }
 .emerald-related-card b { display: inline-flex; min-width: 100px; min-height: 42px; align-items: center; justify-content: center; color: #704820; background: var(--sand); font-size: 16px; font-weight: 400; }
 .emerald-related-card a:hover b { filter: brightness(.96); }
+.emerald-related-card .emerald-related-image { display: grid; width: 100%; height: 235px; place-items: center; overflow: hidden; }
+.emerald-related-card .emerald-related-image img { width: 100%; height: 100%; object-fit: contain; transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(var(--product-thumbnail-scale, 1)); transform-origin: center center; transition: transform .28s ease; }
+.souvenir-related .emerald-related-card .emerald-related-image img { object-fit: cover; }
 
 /* Bean tart gift box product detail: match the reference gallery layout. */
 .page-main:has(.bean-tart-product-page) { background: #fff; }
@@ -6971,6 +6974,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .emerald-related-grid { gap: 16px; }
   .emerald-related-card { flex-basis: calc((100% - 16px) / 2); }
   .emerald-related-card img { height: auto; aspect-ratio: 1; }
+  .emerald-related-card .emerald-related-image { height: auto; aspect-ratio: 1; }
   .emerald-related-card h3 { min-height: 0; font-size: 17px; }
   .bean-tart-product-page { width: calc(100% - 28px); }
   .bean-tart-feature { grid-template-columns: 1fr; gap: 26px; padding: 28px 0 38px; }
