@@ -36,6 +36,10 @@
     'new-birthday-cake-image-06',
     'new-birthday-cake-image-07'
   ]);
+  const legacyRelativeThumbnailProductIds = new Set([
+    ...referenceThumbnailProductIds,
+    ...liftedThumbnailProductIds
+  ].filter(id => !id.startsWith('rose-salt-')));
   let products = [];
   let currentPage = 1;
   const dialog = $('#inventory-product-dialog');
@@ -136,7 +140,7 @@
     // These offsets are the legacy framing rules used by the public product
     // cards. Keep the editor preview on the same visual baseline.
     if (product?.id === 'new-birthday-cake-image-03') return 0;
-    if (referenceThumbnailProductIds.has(product?.id) || liftedThumbnailProductIds.has(product?.id)) {
+    if (legacyRelativeThumbnailProductIds.has(product?.id)) {
       return window.matchMedia('(max-width: 700px)').matches ? -100 : -120;
     }
     if (product?.cat === '伴手禮' && settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100) return -8;

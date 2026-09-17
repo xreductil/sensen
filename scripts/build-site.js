@@ -23,7 +23,7 @@ const WORDPRESS_EXPORT_FILES = [
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20260917-thumbnail-sync-2";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260917-thumbnail-sync-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260917-thumbnail-sync-2";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -2478,7 +2478,7 @@ function syncAutomaticProductDetailSnapshots() {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260917-thumbnail-authoritative-1"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="/assets/storefront-products.js?v=20260917-thumbnail-authoritative-2"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -3175,10 +3175,10 @@ function syncStaticSnapshotContent() {
     if (page.localPath === BIRTHDAY_CAKE_PATH || page.localPath === "/產品介紹/伴手禮") {
       updated = updated.replace(/\s*<script[^>]*src="\/assets\/storefront-products\.js(?:\?[^"']*)?"[^>]*><\/script>/g, "");
       if (updated.includes("data-storefront-catalog")) {
-        updated = updated.replace("</main>", '<script src="/assets/storefront-products.js?v=20260917-thumbnail-authoritative-1"></script>\n</main>');
+        updated = updated.replace("</main>", '<script src="/assets/storefront-products.js?v=20260917-thumbnail-authoritative-2"></script>\n</main>');
       }
     }
-    updated = updated.replace(/\/assets\/storefront-products\.js(?:\?[^"']*)?/g, "/assets/storefront-products.js?v=20260917-thumbnail-authoritative-1");
+    updated = updated.replace(/\/assets\/storefront-products\.js(?:\?[^"']*)?/g, "/assets/storefront-products.js?v=20260917-thumbnail-authoritative-2");
     if (TOP_HOUSE_PAGE_PATHS.has(page.localPath) && !updated.includes('/assets/top-house-purchase.js')) {
       updated = updated.replace('</body>', '  <script src="/assets/top-house-purchase.js"></script>\n</body>');
     }

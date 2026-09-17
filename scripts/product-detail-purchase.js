@@ -145,7 +145,28 @@
       scale: Math.max(25, Math.min(300, number(source.scale, 100)))
     };
   };
-  const thumbnailStyle = settings => `--product-thumbnail-x:${settings.offsetX}px;--product-thumbnail-y:${settings.offsetY}px;--product-thumbnail-scale:${settings.scale / 100};`;
+  const legacyRelativeThumbnailProductIds = new Set([
+    'new-birthday-cake-image-01',
+    'new-birthday-cake-image-02',
+    'new-birthday-cake-image-04',
+    'new-birthday-cake-image-05',
+    'new-birthday-cake-image-06',
+    'new-birthday-cake-image-07',
+    'new-souvenir-image-02',
+    'new-souvenir-image-03',
+    'new-souvenir-image-04',
+    'new-souvenir-image-05',
+    'new-souvenir-image-06',
+    'new-souvenir-image-07',
+    'new-souvenir-image-08',
+    'new-souvenir-image-11'
+  ]);
+  const thumbnailStyle = (settings, product) => {
+    const legacyOffset = legacyRelativeThumbnailProductIds.has(product?.id)
+      ? (window.matchMedia('(max-width: 700px)').matches ? -100 : -120)
+      : 0;
+    return `--product-thumbnail-x:${settings.offsetX}px;--product-thumbnail-y:${settings.offsetY + legacyOffset}px;--product-thumbnail-scale:${settings.scale / 100};`;
+  };
 
   let orderInfoModal;
   let lastOrderInfoTrigger;
@@ -291,7 +312,7 @@
       const adjustableClass = thumbnail.offsetX !== 0 || thumbnail.offsetY !== 0 || thumbnail.scale !== 100
         ? ' product-thumbnail-adjustable'
         : '';
-      return `<article class="emerald-related-card product-thumbnail-managed${adjustableClass}" style="${thumbnailStyle(thumbnail)}"><a href="${escapeHtml(href)}"><div class="emerald-related-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayTitle)}" loading="lazy"></div><span>${escapeHtml(formatDate(item.createdAt))}</span><h3>${escapeHtml(displayTitle)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`;
+      return `<article class="emerald-related-card product-thumbnail-managed${adjustableClass}" style="${thumbnailStyle(thumbnail, item)}"><a href="${escapeHtml(href)}"><div class="emerald-related-image"><img src="${escapeHtml(image)}" alt="${escapeHtml(displayTitle)}" loading="lazy"></div><span>${escapeHtml(formatDate(item.createdAt))}</span><h3>${escapeHtml(displayTitle)}</h3><b aria-hidden="true">▪▪&nbsp; 更多</b></a></article>`;
     }).join('');
   };
 
