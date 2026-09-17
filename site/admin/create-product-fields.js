@@ -126,12 +126,22 @@
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品儲存失敗。');
+      const pageUrl = String(data.pageUrl || data.product?.url || '').trim();
+      if (!pageUrl) throw new Error('商品已儲存，但沒有建立商品詳細頁網址。');
       form.reset();
       const priceOptions = form.querySelector('[data-create-price-options]');
       if (priceOptions) priceOptions.innerHTML = '';
       addPriceOptionRow();
       status.className = 'small mt-3 mb-0 text-success';
-      status.textContent = `${data.product?.title || title} 已加入前台菜單、Inventory 與商品頁模板。`;
+      status.replaceChildren(
+        document.createTextNode(`${data.product?.title || title} 已加入前台菜單與 Inventory，商品詳細頁已建立：`),
+        Object.assign(document.createElement('a'), {
+          href: pageUrl,
+          target: '_blank',
+          rel: 'noreferrer',
+          textContent: '立即查看',
+        }),
+      );
     } catch (error) {
       status.className = 'small mt-3 mb-0 text-danger';
       status.textContent = error.message;
