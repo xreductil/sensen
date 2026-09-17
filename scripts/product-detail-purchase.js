@@ -163,7 +163,7 @@
   ]);
   const thumbnailStyle = (settings, product) => {
     const legacyOffset = legacyRelativeThumbnailProductIds.has(product?.id)
-      ? (window.matchMedia('(max-width: 700px)').matches ? -100 : -120)
+      ? -120
       : 0;
     return `--product-thumbnail-x:${settings.offsetX}px;--product-thumbnail-y:${settings.offsetY + legacyOffset}px;--product-thumbnail-scale:${settings.scale / 100};`;
   };

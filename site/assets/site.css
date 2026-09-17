@@ -6892,6 +6892,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .emerald-related-card a:hover b { filter: brightness(.96); }
 .emerald-related-card .emerald-related-image { display: grid; width: 100%; height: 235px; place-items: center; overflow: hidden; }
 .emerald-related-card .emerald-related-image img { width: 100%; height: auto; max-height: 100%; object-fit: contain; transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(var(--product-thumbnail-scale, 1)); transform-origin: center bottom; transition: transform .28s ease; }
+.emerald-related-card.product-thumbnail-managed .emerald-related-image img { width: 100%; height: 100%; max-height: none; object-fit: contain; }
 .souvenir-related .emerald-related-card .emerald-related-image img { object-fit: cover; }
 .souvenir-related .emerald-related-card.product-thumbnail-managed .emerald-related-image img { object-fit: contain; }
 
