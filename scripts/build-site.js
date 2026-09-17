@@ -744,6 +744,15 @@ function readAutomaticProductDetailRecords() {
 // detail pages do not return a Vercel 404 before the next catalog export.
 const DYNAMIC_PRODUCT_DETAIL_RECORDS = [
   {
+    id: "rose-salt-assorted-egg-yolk-gift",
+    title: "玫瑰鹽綜合蛋黃酥禮盒",
+    path: "/product-item/玫瑰鹽綜合蛋黃酥禮盒",
+    image: "/images/products/1789651471278-c3367963-eaa1-4cca-b469-fc2ef37e8df3.jpg",
+    kind: "souvenir",
+    category: "伴手禮",
+    description: "烏豆沙、芋頭、抹茶、棗泥任選三入。",
+  },
+  {
     id: "蛋黃綠豆椪禮盒-mu5bhpph",
     title: "蛋黃綠豆椪禮盒",
     path: "/product-item/蛋黃綠豆椪禮盒-mu5bhpph",
