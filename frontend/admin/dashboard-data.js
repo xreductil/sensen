@@ -367,6 +367,7 @@
       .sort((left, right) => Number(left.quantity) - Number(right.quantity) || String(left.title).localeCompare(String(right.title), 'zh-Hant'))
       .slice(0, 5);
     const recentOrders = orders
+      .filter(order => String(order.status || '').toLowerCase() !== 'picked_up')
       .map((order, index) => ({ order, index, time: parseDate(order.createdAt)?.getTime() || 0 }))
       .sort((left, right) => right.time - left.time || right.index - left.index)
       .slice(0, 5)
