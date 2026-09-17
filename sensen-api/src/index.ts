@@ -1562,7 +1562,7 @@ export default {
 
       const productPathMatch = decodedPathname.match(/^\/product-item\/([^/]+)\/?$/);
       if (productPathMatch && request.method === "GET" && productPathMatch[1] !== "_template") {
-        const productAssetPath = decodedPathname.endsWith("/") ? decodedPathname : `${decodedPathname}/`;
+        const productAssetPath = `${decodedPathname.replace(/\/+$/, "")}/index.html`;
         const existingAsset = await env.ASSETS.fetch(new Request(`${url.origin}${productAssetPath}`, {
           method: "GET",
           headers: request.headers,
@@ -1570,7 +1570,7 @@ export default {
         }));
         if (existingAsset.status !== 404) return existingAsset;
 
-        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/product-item/_template/`, {
+        const templateResponse = await env.ASSETS.fetch(new Request(`${url.origin}/product-item/_template/index.html`, {
           method: "GET",
           headers: request.headers,
           redirect: "follow",
