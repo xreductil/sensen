@@ -16,8 +16,6 @@
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const money = value => `NT$${Number(value || 0).toLocaleString('zh-TW')}`;
   const topHouseOriginalPrices = {
-    'top-house-boston-classic': 520,
-    'top-house-boston-new': 600,
     'top-house-pa1-boston-gift': 635,
     'top-house-pa2-boston-gift': 690,
     'top-house-pa3-boston-gift': 685,
@@ -350,7 +348,16 @@
     let selectedSize = options[0]?.[0] || '';
     let selectedFlavors = flavorCount > 1 ? [] : (flavors[0] ? [flavors[0]] : []);
     const selectedFlavor = () => selectedFlavors.join('、');
-    const selectedPrice = () => Number(options.find(([size]) => size === selectedSize)?.[1] || product.priceValue || 0);
+    const flavorPrices = product.variants?.flavorPrices && typeof product.variants.flavorPrices === 'object' && !Array.isArray(product.variants.flavorPrices)
+      ? product.variants.flavorPrices
+      : {};
+    const selectedPrice = () => {
+      const flavorKey = selectedFlavor();
+      const flavorPrice = Number(flavorPrices[flavorKey] ?? (selectedFlavors.length === 1 ? flavorPrices[selectedFlavors[0]] : NaN));
+      return Number.isFinite(flavorPrice) && flavorPrice > 0
+        ? flavorPrice
+        : Number(options.find(([size]) => size === selectedSize)?.[1] || product.priceValue || 0);
+    };
     const hasRequiredFlavors = () => flavorCount <= 1 || selectedFlavors.length === flavorCount;
     const inStock = () => product.published !== false && selectedPrice() > 0 && Number(product.quantity ?? 1) > 0 && hasRequiredFlavors();
     if (selectedPrice() <= 0) {

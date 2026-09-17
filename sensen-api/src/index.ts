@@ -613,7 +613,20 @@ const productVariant = (product: StoreProduct, options: Record<string, unknown> 
   const flavor = selectedFlavors.length ? selectedFlavors.join("、") : flavors[0];
   const temperature = temperatures.includes(String(options.temperature || "")) ? String(options.temperature) : temperatures[0];
   const sugar = sugars.includes(String(options.sugar || "")) ? String(options.sugar) : sugars[0];
-  return { size, flavor, flavors: selectedFlavors, flavorCount, temperature, sugar, priceValue: Number(sizes[size] || 0) };
+  const flavorPrices = variants.flavorPrices && typeof variants.flavorPrices === "object" && !Array.isArray(variants.flavorPrices)
+    ? variants.flavorPrices as Record<string, unknown>
+    : {};
+  const flavorPrice = Number(flavorPrices[flavor] ?? (selectedFlavors.length === 1 ? flavorPrices[selectedFlavors[0]] : NaN));
+  const sizePrice = Number(sizes[size] || 0);
+  return {
+    size,
+    flavor,
+    flavors: selectedFlavors,
+    flavorCount,
+    temperature,
+    sugar,
+    priceValue: Number.isFinite(flavorPrice) && flavorPrice > 0 ? flavorPrice : sizePrice,
+  };
 };
 
 const variantKey = (variant: ReturnType<typeof productVariant>) => variant
@@ -781,6 +794,10 @@ export default {
       }
       if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/product-item/法式蝶蝨酥-1657") {
         return Response.redirect(`${url.origin}/product-item/${encodeURIComponent("法式蝴蝶酥-1657")}/`, 301);
+      }
+      if ((request.method === "GET" || request.method === "HEAD")
+        && ["/product-item/top-house-boston-classic", "/頂家彌月/商品/top-house-boston-classic"].includes(normalizedPathname)) {
+        return Response.redirect(`${url.origin}/頂家彌月/商品/${encodeURIComponent("top-house-boston-new")}/`, 301);
       }
       if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.replace(/\/+$/, "") === "/隱私權條件") {
         return Response.redirect(`${url.origin}/${encodeURIComponent("隱私權條款")}/`, 301);

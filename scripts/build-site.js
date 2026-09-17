@@ -467,9 +467,8 @@ function pairingContent() {
       <h3>${escapeHtml(title)}</h3>
       <span class="pairing-rule" aria-hidden="true"></span>
     </article>`).join("");
-  const classicBostonCard = topHouseProductCardMarkup(["波士頓派（經典口味）", "poston-cream-pie-1.png", 260, "top-house-boston-classic"], "pairing-product pairing-boston-classic", "9吋波士頓鮮奶派", true);
-  const newBostonCard = topHouseProductCardMarkup(["波士頓派（新品口味）", "poston-cream-pie-1.png", 300, "top-house-boston-new"], "pairing-product pairing-boston-new", "9吋波士頓鮮奶派", true);
-  const productCards = [classicBostonCard, newBostonCard, ...PAIRING_PRODUCTS.map(([title, image, note, price, id]) => topHouseProductCardMarkup([title, image, price, id], note ? "pairing-product has-note" : "pairing-product"))].join("");
+  const bostonCard = topHouseProductCardMarkup(["波士頓派", "poston-cream-pie-1.png", 260, "top-house-boston-new"], "pairing-product pairing-boston", "經典／草莓／藍莓／香草口味", true);
+  const productCards = [bostonCard, ...PAIRING_PRODUCTS.map(([title, image, note, price, id]) => topHouseProductCardMarkup([title, image, price, id], note ? "pairing-product has-note" : "pairing-product"))].join("");
   return `<section class="pairing-page">
     <section class="pairing-hero" aria-labelledby="pairing-title">
       <h1 id="pairing-title">搭配單品</h1>
@@ -1992,8 +1991,7 @@ const BIG_BEAR_STYLES = [["cheese.jpg", "波士頓派禮盒"], ["single-piece.jp
 // excluded from the storefront category renderer, while still getting the same
 // card/detail route behavior as online-store products.
 const TOP_HOUSE_PRODUCT_RECORDS = [
-  ["波士頓派（經典口味）", "poston-cream-pie-1.png", 260, "top-house-boston-classic"],
-  ["波士頓派（新品口味）", "poston-cream-pie-1.png", 300, "top-house-boston-new"],
+  ["波士頓派", "poston-cream-pie-1.png", 260, "top-house-boston-new"],
   ...BOSTON_GIFTS.map(([image, title, description, price, id]) => [title, image, price, id]),
   ...BIG_BEAR_GIFTS.map(([image, title, description, price, id]) => [title, image, price, id]),
   ...COUNTRY_CHEESE_GIFTS.map(([image, title, description, price, id]) => [title, image, price, id]),
