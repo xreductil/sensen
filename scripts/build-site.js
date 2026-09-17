@@ -22,7 +22,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const SITE_CSS_URL = "/assets/site.css?v=20260917-thumbnail-sync-2";
+const SITE_CSS_URL = "/assets/site.css?v=20260917-thumbnail-sync-3";
 const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260917-thumbnail-sync-2";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
@@ -1506,7 +1506,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:url" content="${escapeAttr(canonical)}">
-  <link rel="stylesheet" href="/assets/site.css?v=20260914-thumbnail-sync-1">
+  <link rel="stylesheet" href="${SITE_CSS_URL}">
   ${checkoutStyle}
 </head>
 <body>
