@@ -738,7 +738,31 @@ function readAutomaticProductDetailRecords() {
   return [...records.values()];
 }
 
+// These products were created through the online admin after the last static
+// snapshot. Keep lightweight route shells in the repository so their API-backed
+// detail pages do not return a Vercel 404 before the next catalog export.
+const DYNAMIC_PRODUCT_DETAIL_RECORDS = [
+  {
+    id: "蛋黃綠豆椪禮盒-mu5bhpph",
+    title: "蛋黃綠豆椪禮盒",
+    path: "/product-item/蛋黃綠豆椪禮盒-mu5bhpph",
+    image: "/images/news/1789636712810-3ec04626-1336-4dd9-9553-8308b35a664c.jpg",
+    kind: "souvenir",
+    category: "伴手禮",
+    description: "",
+  },
+  {
+    id: "綜合綠豆椪禮盒",
+    title: "綜合綠豆椪禮盒",
+    path: "/product-item/綜合綠豆椪禮盒",
+    image: "/images/news/1789636633880-c0110b74-90fc-4141-b5a1-ee1eb4bce16c.jpg",
+    kind: "souvenir",
+    category: "伴手禮",
+    description: "",
+  },
+];
 const AUTOMATIC_PRODUCT_DETAIL_RECORDS = readAutomaticProductDetailRecords();
+const DYNAMIC_PRODUCT_DETAIL_BY_ID = new Map(DYNAMIC_PRODUCT_DETAIL_RECORDS.map((record) => [record.id, record]));
 const AUTOMATIC_PRODUCT_DETAIL_BY_ID = new Map(AUTOMATIC_PRODUCT_DETAIL_RECORDS.map((record) => [record.id, record]));
 
 const BIRTHDAY_CAKE_PRODUCT_RECORDS = [
@@ -2084,7 +2108,9 @@ function productIdForDetailPath(localPath) {
   }
   const match = Object.entries(STOREFRONT_PRODUCT_ID_PATHS).find(([, productPath]) => productPath === localPath);
   if (match?.[0]) return match[0];
-  return AUTOMATIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id || "";
+  return AUTOMATIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id
+    || DYNAMIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id
+    || "";
 }
 
 function productDetailTitleForPath(localPath) {
@@ -2099,6 +2125,8 @@ function productDetailTitleForPath(localPath) {
   if (newImageProduct) return newImageProduct.title;
   const automaticProduct = AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(topHouseId);
   if (automaticProduct) return automaticProduct.title;
+  const dynamicProduct = DYNAMIC_PRODUCT_DETAIL_BY_ID.get(topHouseId);
+  if (dynamicProduct) return dynamicProduct.title;
   const cake = CAKE_PRODUCT_RECORDS.find((product) => product.path === localPath);
   return cake?.title || "商品";
 }
@@ -2106,7 +2134,9 @@ function productDetailTitleForPath(localPath) {
 function productDetailDataAttributes(localPath) {
   const includeTopHouseProducts = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
   const productId = productIdForDetailPath(localPath);
-  const fallback = NEW_IMAGE_PRODUCT_BY_ID.get(productId) || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId);
+  const fallback = NEW_IMAGE_PRODUCT_BY_ID.get(productId)
+    || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId)
+    || DYNAMIC_PRODUCT_DETAIL_BY_ID.get(productId);
   const fallbackAttributes = fallback
     ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"`
     : "";
@@ -2456,6 +2486,7 @@ function syncAutomaticProductDetailSnapshots() {
   const mappedIds = new Set(Object.keys(STOREFRONT_PRODUCT_ID_PATHS));
   const records = [...new Map([
     ...AUTOMATIC_PRODUCT_DETAIL_RECORDS,
+    ...DYNAMIC_PRODUCT_DETAIL_RECORDS,
     ...NEW_IMAGE_PRODUCT_RECORDS,
   ].map((record) => [record.id, record])).values()];
   for (const product of records) {
