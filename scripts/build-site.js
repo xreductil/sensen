@@ -312,7 +312,7 @@ const LONG_CAKE_NAPOLEON_PRODUCTS = [
 
 const TOP_HOUSE_CARD_DETAILS = new Map([
   ["top-house-boston-classic", { title: "波士頓派（經典口味）", description: "9吋波士頓鮮奶派", originalPrice: 520 }],
-  ["top-house-boston-new", { title: "波士頓鮮奶派", description: "9吋波士頓鮮奶派" }],
+  ["top-house-boston-new", { title: "波士頓鮮奶派", description: "" }],
   ["top-house-pa1-boston-gift", { title: "PA1 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、油飯8兩x1、紅蛋x2", originalPrice: 635 }],
   ["top-house-pa2-boston-gift", { title: "PA2 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、小檸檬x1、KT蛋糕x1、手工餅乾x1", originalPrice: 690 }],
   ["top-house-pa3-boston-gift", { title: "PA3 波士頓派禮盒", description: "9吋波士頓派（經典口味）x1、草莓大福x3", originalPrice: 685 }],
@@ -467,7 +467,7 @@ function pairingContent() {
       <h3>${escapeHtml(title)}</h3>
       <span class="pairing-rule" aria-hidden="true"></span>
     </article>`).join("");
-  const bostonCard = topHouseProductCardMarkup(["波士頓鮮奶派", "poston-cream-pie-1.png", 260, "top-house-boston-new"], "pairing-product pairing-boston", "經典／草莓／藍莓／香草口味");
+  const bostonCard = topHouseProductCardMarkup(["波士頓鮮奶派", "poston-cream-pie-1.png", 260, "top-house-boston-new"], "pairing-product pairing-boston");
   const productCards = [bostonCard, ...PAIRING_PRODUCTS.map(([title, image, note, price, id]) => topHouseProductCardMarkup([title, image, price, id], note ? "pairing-product has-note" : "pairing-product"))].join("");
   return `<section class="pairing-page">
     <section class="pairing-hero" aria-labelledby="pairing-title">
