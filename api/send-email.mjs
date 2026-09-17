@@ -1,28 +1,22 @@
 import nodemailer from "nodemailer";
 
-const json = (body, status = 200) => new Response(JSON.stringify(body), {
-  status,
-  headers: { "content-type": "application/json; charset=utf-8" },
-});
+const json = (response, body, status = 200) => response.status(status).json(body);
 
 const text = value => String(value ?? "").trim();
 
-export default async function handler(request) {
-  if (request.method !== "POST") return json({ error: "只接受 POST 請求。" }, 405);
+export default async function handler(request, response) {
+  if (request.method !== "POST") return json(response, { error: "只接受 POST 請求。" }, 405);
 
   const smtpUser = text(process.env.SMTP_USER);
   const smtpPass = text(process.env.SMTP_PASS);
   const mailTo = text(process.env.MAIL_TO);
   if (!smtpUser || !smtpPass || !mailTo) {
-    return json({ error: "寄信服務尚未完成環境變數設定。" }, 503);
+    return json(response, { error: "寄信服務尚未完成環境變數設定。" }, 503);
   }
 
   let body;
-  try {
-    body = await request.json();
-  } catch {
-    return json({ error: "請提供有效的 JSON 資料。" }, 400);
-  }
+  try { body = typeof request.body === "string" ? JSON.parse(request.body) : request.body || {}; }
+  catch { return json(response, { error: "請提供有效的 JSON 資料。" }, 400); }
 
   const name = text(body.name);
   const email = text(body.email).toLowerCase();
@@ -30,7 +24,7 @@ export default async function handler(request) {
   const subject = text(body.subject) || "網站聯絡通知";
   const message = text(body.message);
   if (!name || !message || !/^\S+@\S+\.\S+$/.test(email)) {
-    return json({ error: "請填寫姓名、有效 Email 與訊息內容。" }, 400);
+    return json(response, { error: "請填寫姓名、有效 Email 與訊息內容。" }, 400);
   }
 
   const port = Number(process.env.SMTP_PORT || 465);
@@ -77,7 +71,7 @@ export default async function handler(request) {
         "森森點心坊會再與您聯絡，謝謝。",
       ].join("\n"),
     });
-    return json({
+    return json(response, {
       ok: true,
       message: "店家與客戶通知信已寄出。",
       email: { store: true, customer: true },
