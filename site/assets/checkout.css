@@ -41,7 +41,8 @@ body:has(.checkout-layout) { background: #fffdfb; }
 .checkout-order-card { box-sizing: border-box; min-width: 0; padding: clamp(26px, 3vw, 56px); }
 .checkout-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 18px; }
 .checkout-card-heading h2 { margin: 0 0 28px; }
-.checkout-card-heading a { color: #3f2d25; font: 700 1rem Georgia, serif; white-space: nowrap; }
+.checkout-card-heading a, .checkout-card-heading button { color: #3f2d25; font: 700 1rem Georgia, serif; white-space: nowrap; }
+.checkout-card-heading button { border: 0; padding: 0; background: transparent; cursor: pointer; }
 .checkout-coupon { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; padding: 26px; background: #fff; }
 .checkout-coupon input { box-sizing: border-box; min-width: 0; border: 1px solid #efbd68; border-radius: 13px; padding: 13px 15px; color: #493329; background: #fff; font: 700 .95rem Georgia, serif; outline: 0; }
 .checkout-coupon button { box-sizing: border-box; min-width: 0; border: 0; border-radius: 13px; padding: 0 17px; color: #3c3d3d; background: #e9eef0; cursor: pointer; font: 700 .9rem Georgia, serif; }

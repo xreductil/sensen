@@ -110,11 +110,6 @@
     "path": "/關於森森"
   },
   {
-    "title": "購物車",
-    "url": "https://www.sensen.com.tw/cart/",
-    "path": "/cart"
-  },
-  {
     "title": "結帳",
     "url": "https://www.sensen.com.tw/checkout/",
     "path": "/checkout"

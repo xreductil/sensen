@@ -40,6 +40,7 @@ const EXTRA_MARKDOWN_PAGES = [
 ];
 const SOURCE_ORIGIN = "https://www.sensen.com.tw";
 const RETIRED_CONTENT_PATHS = new Set([
+  "/cart",
   "/author/admin",
   "/森森咖啡",
   "/slide-types/index-slider",
@@ -853,7 +854,6 @@ const STORE_MODULE_PAGES = [
   { url: `https://www.sensen.com.tw${FROZEN_BREAD_PATH}/`, title: "歐式麵包(冷凍)" },
   { url: "https://www.sensen.com.tw/customer/admin/", title: "會員登入" },
   { url: "https://www.sensen.com.tw/customer/admin/backup/", title: "會員後台" },
-  { url: "https://www.sensen.com.tw/cart/", title: "購物車" },
   { url: "https://www.sensen.com.tw/checkout/", title: "結帳" },
   { url: "https://www.sensen.com.tw/orders/", title: "我的訂單" },
 ];
@@ -2244,10 +2244,6 @@ function customerPageContent(route = "login") {
   <script>${accountScript()}</script>`;
 }
 
-function cartPageContent() {
-  return `<section class="store-page"><div class="store-page-card"><p class="eyebrow">SENSEN BAKERY</p><h1>購物車</h1><div data-full-cart><p>載入中…</p></div><div class="store-page-actions"><a class="button" href="/產品介紹/">繼續選購</a><a class="button" href="/customer/admin/">前往會員中心</a></div></div></section>${cartPageScript()}`;
-}
-
 function checkoutPageContent() {
   return `<section class="checkout-hero"><div class="checkout-hero-inner"><p class="eyebrow">SENSEN BAKERY</p><h1>Checkout</h1><p>完成森森點心坊的訂單。</p></div></section>
     <section class="checkout-layout" data-checkout-page>
@@ -2258,7 +2254,7 @@ function checkoutPageContent() {
           <label class="checkout-field checkout-field-wide">給店家的備註<textarea data-checkout-note rows="4" placeholder="例如：蛋糕牌文字、配送提醒"></textarea></label>
         </div><p class="checkout-account-hint">需要修改姓名、地址或電話？請返回會員中心的 Account Details / Addresses 更新。</p><p class="checkout-form-message" data-checkout-submit-message role="status"></p><button class="checkout-submit checkout-submit-mobile" type="button" data-checkout-submit>前往結帳</button></section>
       </div>
-      <aside class="checkout-sidebar"><section class="checkout-order-card"><div class="checkout-card-heading"><h2>Your Order</h2><a href="/cart/">✎ 編輯購物車</a></div><div class="checkout-coupon"><input data-checkout-coupon type="text" placeholder="優惠碼" autocomplete="off"><button type="button" data-checkout-apply-coupon>套用優惠碼</button></div><p class="checkout-form-message" data-checkout-quote-message role="status"></p><div class="checkout-items" data-checkout-items><p>載入中…</p></div><div class="checkout-pickup-card"><span class="checkout-calendar" aria-hidden="true">▣</span><div><span>Pickup date</span><strong data-checkout-pickup-label>載入中…</strong></div><input data-checkout-pickup type="date" required aria-label="取貨／配送日期"></div><div class="checkout-summary"><div><span>商品小計</span><strong data-checkout-subtotal>$0.00</strong></div><div><span>運費</span><strong data-checkout-shipping-fee>$0.00</strong></div><div data-checkout-discount-row hidden><span>折扣</span><strong data-checkout-discount>-$0.00</strong></div><div class="checkout-total"><span>Total</span><strong data-checkout-total>$0.00</strong></div></div><section class="checkout-payment-note"><h3>Payment</h3><strong>Secure payment</strong><p>付款資料由金流服務商處理，森森點心坊不會儲存信用卡敏感資料。</p><p>目前會先建立訂單；正式啟用金流服務後，付款方式會在此安全完成。</p></section><p class="checkout-form-message" data-checkout-submit-message-secondary role="status"></p><button class="checkout-submit" type="button" data-checkout-submit>前往結帳</button><button class="checkout-back" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">返回購物車</button></section></aside>
+      <aside class="checkout-sidebar"><section class="checkout-order-card"><div class="checkout-card-heading"><h2>Your Order</h2><button class="checkout-edit-cart" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">✎ 編輯購物車</button></div><div class="checkout-coupon"><input data-checkout-coupon type="text" placeholder="優惠碼" autocomplete="off"><button type="button" data-checkout-apply-coupon>套用優惠碼</button></div><p class="checkout-form-message" data-checkout-quote-message role="status"></p><div class="checkout-items" data-checkout-items><p>載入中…</p></div><div class="checkout-pickup-card"><span class="checkout-calendar" aria-hidden="true">▣</span><div><span>Pickup date</span><strong data-checkout-pickup-label>載入中…</strong></div><input data-checkout-pickup type="date" required aria-label="取貨／配送日期"></div><div class="checkout-summary"><div><span>商品小計</span><strong data-checkout-subtotal>$0.00</strong></div><div><span>運費</span><strong data-checkout-shipping-fee>$0.00</strong></div><div data-checkout-discount-row hidden><span>折扣</span><strong data-checkout-discount>-$0.00</strong></div><div class="checkout-total"><span>Total</span><strong data-checkout-total>$0.00</strong></div></div><section class="checkout-payment-note"><h3>Payment</h3><strong>Secure payment</strong><p>付款資料由金流服務商處理，森森點心坊不會儲存信用卡敏感資料。</p><p>目前會先建立訂單；正式啟用金流服務後，付款方式會在此安全完成。</p></section><p class="checkout-form-message" data-checkout-submit-message-secondary role="status"></p><button class="checkout-submit" type="button" data-checkout-submit>前往結帳</button><button class="checkout-back" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">返回購物車</button></section></aside>
     </section>${checkoutPageScript()}`;
 }
 
@@ -2292,10 +2288,6 @@ function accountScript() {
     document.querySelectorAll(".account-nav [data-account-tab]").forEach(button => button.addEventListener("click", () => { if (window.matchMedia("(max-width: 760px)").matches) { accountMenuToggle.setAttribute("aria-expanded", "false"); accountNav.classList.remove("is-open"); } }));
     document.querySelectorAll("[data-account-logout]").forEach(button => button.addEventListener("click", async () => { button.disabled = true; await api("/api/logout", { method: "POST" }); window.location.assign("/customer/admin/"); })); if (root.dataset.accountRoute === "dashboard") load(true); else api("/api/me").then(() => window.location.assign(returnTo)).catch(() => {});
   })();`;
-}
-
-function cartPageScript() {
-  return '<script src="/assets/cart-page.js"></script>';
 }
 
 function checkoutPageScript() {
@@ -2859,7 +2851,6 @@ function pageContent(page) {
   if (localPath === "/customer/admin") return customerPageContent("login");
   if (localPath === "/customer/admin/backup") return customerPageContent("dashboard");
   if (localPath === "/customer") return customerPageContent("login");
-  if (localPath === "/cart") return cartPageContent();
   if (localPath === "/checkout") return checkoutPageContent();
   if (localPath === "/orders") return ordersPageContent();
 
