@@ -297,13 +297,10 @@
     const related = productPage.querySelector('[data-product-related]');
     const track = related?.querySelector('[data-related-track]');
     if (!related || !track) return;
+    const category = String(product.cat || '').trim();
     const candidates = products
-      .filter(item => item.id !== product.id && productPath(item))
-      .sort((left, right) => {
-        const sameCategory = Number(right.cat === product.cat) - Number(left.cat === product.cat);
-        return sameCategory || new Date(right.createdAt || 0) - new Date(left.createdAt || 0);
-      })
-      .slice(0, 10);
+      .filter(item => item.id !== product.id && productPath(item) && category && String(item.cat || '').trim() === category)
+      .sort((left, right) => new Date(right.createdAt || 0) - new Date(left.createdAt || 0));
     if (!candidates.length) {
       related.hidden = true;
       return;
