@@ -25,8 +25,8 @@
       "destination": "/latest-news/article/index.html"
     },
     {
-      "source": "/api/:path*",
-      "destination": "https://sensen.jinfeng8605.workers.dev/api/:path*"
+      "source": "/api/((?!send-email(?:/|$)).*)",
+      "destination": "https://sensen.jinfeng8605.workers.dev/api/$1"
     },
     {
       "source": "/images/:path*",

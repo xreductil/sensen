@@ -1,6 +1,7 @@
 const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
 const GUEST_COOKIE = "sensen_guest";
 const SESSION_COOKIE = "sensen_session";
+const VERCEL_EMAIL_ENDPOINT = "https://sensen-three.vercel.app/api/send-email";
 
 // D1/SQLite CURRENT_TIMESTAMP is UTC but is returned without an offset.
 // Mark that value explicitly so browsers do not parse it as local time.
@@ -865,7 +866,23 @@ export default {
           INSERT INTO engagement_records (record_type, payload_json)
           VALUES ('message', ?1)
         `).bind(JSON.stringify({ name, email, phone, subject, message })).run();
-        return json(request, { message: "訊息已送出，我們會盡快與您聯絡。", record: { name, email, phone, subject, message }, ok: true }, 201);
+        const notification = await fetch(VERCEL_EMAIL_ENDPOINT, {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ name, email, phone, subject, message }),
+        }).catch(error => {
+          console.error("Vercel email notification failed", error instanceof Error ? error.message : error);
+          return null;
+        });
+        if (notification && !notification.ok) {
+          console.error("Vercel email notification returned", notification.status);
+        }
+        return json(request, {
+          message: "訊息已送出，我們會盡快與您聯絡。",
+          record: { name, email, phone, subject, message },
+          email: { status: notification?.ok ? "sent" : "pending" },
+          ok: true,
+        }, 201);
       }
 
       if (url.pathname === "/api/reservations" && request.method === "POST") {
