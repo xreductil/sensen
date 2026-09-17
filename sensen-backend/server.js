@@ -518,6 +518,7 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
     : [];
   return {
     flavors: [...new Set(flavors)],
+    flavorCount: Math.max(0, Number(variants.flavorCount || 0)),
     temperatures: temperatures.length ? [...new Set(temperatures)] : ['冷'],
     sugars: sugars.length ? [...new Set(sugars)] : ['正常甜'],
     sizes: Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 }
@@ -607,16 +608,20 @@ function productVariant(product, options = {}) {
   const variants = normalizeProductVariants(product.variants, product.priceValue);
   const sizeLabels = Object.keys(variants.sizes);
   const size = sizeLabels.includes(String(options.size || '')) ? String(options.size) : sizeLabels[0];
-  const flavor = variants.flavors.includes(String(options.flavor || ''))
-    ? String(options.flavor)
-    : variants.flavors[0];
+  const requestedFlavors = Array.isArray(options.flavors)
+    ? options.flavors.map(item => String(item).trim()).filter(item => variants.flavors.includes(item))
+    : variants.flavors.includes(String(options.flavor || '')) ? [String(options.flavor)] : [];
+  const selectedFlavors = variants.flavorCount > 1
+    ? [...new Set(requestedFlavors)].slice(0, variants.flavorCount)
+    : requestedFlavors.slice(0, 1);
+  const flavor = selectedFlavors.length ? selectedFlavors.join('、') : variants.flavors[0];
   const temperature = variants.temperatures.includes(String(options.temperature || ''))
     ? String(options.temperature)
     : variants.temperatures[0];
   const sugar = variants.sugars.includes(String(options.sugar || ''))
     ? String(options.sugar)
     : variants.sugars[0];
-  return { size, flavor, temperature, sugar, priceValue: Number(variants.sizes[size] || 0) };
+  return { size, flavor, flavors: selectedFlavors, flavorCount: variants.flavorCount, temperature, sugar, priceValue: Number(variants.sizes[size] || 0) };
 }
 
 function variantCartId(product, variant) {
@@ -641,7 +646,7 @@ function cartItemForProduct(product, qty, options = {}) {
     price: '$' + variant.priceValue.toFixed(2),
     priceValue: variant.priceValue,
     selectedOptions: {
-      ...(variant.flavor ? { flavor: variant.flavor } : {}),
+      ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})),
       size: variant.size,
       temperature: variant.temperature,
       sugar: variant.sugar
@@ -671,7 +676,7 @@ function currentCartItems(cart, products = []) {
       refreshed.title = variantTitle(current.title, variant);
       refreshed.price = '$' + variant.priceValue.toFixed(2);
       refreshed.priceValue = variant.priceValue;
-      refreshed.selectedOptions = { size: variant.size, temperature: variant.temperature, sugar: variant.sugar };
+      refreshed.selectedOptions = { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar };
     }
     return refreshed;
   });
@@ -1234,6 +1239,11 @@ async function handleApi(req, res) {
       const qty = Math.max(1, Number(body.qty || 1));
       if (!product) return send(res, 404, { error: 'Product not found.' });
       if (product.published === false) return send(res, 409, { error: '此商品目前未上架。' });
+      const requiredFlavorCount = Math.max(0, Number(product.variants?.flavorCount || 0));
+      if (requiredFlavorCount > 1) {
+        const selectedFlavors = Array.isArray(body.options?.flavors) ? [...new Set(body.options.flavors.map(item => String(item).trim()).filter(Boolean))] : [];
+        if (selectedFlavors.length !== requiredFlavorCount) return send(res, 400, { error: `請選擇${requiredFlavorCount}種口味。` });
+      }
       const cart = getCart(db, auth, guestId);
       const item = cartItemForProduct(product, qty, body.options || {});
       const existing = cart.find(cartItem => cartItem.id === item.id);

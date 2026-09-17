@@ -577,10 +577,19 @@ const productVariant = (product: StoreProduct, options: Record<string, unknown> 
   const flavors = Array.isArray(variants.flavors) && variants.flavors.length
     ? variants.flavors.map(value => String(value).trim()).filter(Boolean)
     : [];
-  const flavor = flavors.includes(String(options.flavor || "")) ? String(options.flavor) : flavors[0];
+  const flavorCount = Math.max(0, Number(variants.flavorCount || 0));
+  const requestedFlavors = Array.isArray(options.flavors)
+    ? options.flavors.map(value => String(value).trim()).filter(value => flavors.includes(value))
+    : String(options.flavor || "").trim() && flavors.includes(String(options.flavor).trim())
+      ? [String(options.flavor).trim()]
+      : [];
+  const selectedFlavors = flavorCount > 1
+    ? [...new Set(requestedFlavors)].slice(0, flavorCount)
+    : requestedFlavors.slice(0, 1);
+  const flavor = selectedFlavors.length ? selectedFlavors.join("、") : flavors[0];
   const temperature = temperatures.includes(String(options.temperature || "")) ? String(options.temperature) : temperatures[0];
   const sugar = sugars.includes(String(options.sugar || "")) ? String(options.sugar) : sugars[0];
-  return { size, flavor, temperature, sugar, priceValue: Number(sizes[size] || 0) };
+  return { size, flavor, flavors: selectedFlavors, flavorCount, temperature, sugar, priceValue: Number(sizes[size] || 0) };
 };
 
 const variantKey = (variant: ReturnType<typeof productVariant>) => variant
@@ -661,7 +670,7 @@ const cartSummary = async (env: Env, guestId: string) => {
       title: variantTitle(product.title, variant),
       price: variant ? `$${variant.priceValue.toFixed(2)}` : product.price,
       priceValue: variant?.priceValue ?? product.priceValue,
-      selectedOptions: variant ? { ...(variant.flavor ? { flavor: variant.flavor } : {}), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
+      selectedOptions: variant ? { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
       qty: Math.max(1, Number(row.cart_quantity || 1)),
     };
   });
@@ -1206,8 +1215,14 @@ export default {
 
         const storeProduct = productFromRow(product);
         const requestedOptions = body.options && typeof body.options === "object" && !Array.isArray(body.options) ? body.options as Record<string, unknown> : {};
+        const variants = storeProduct.variants && typeof storeProduct.variants === "object" ? storeProduct.variants : {};
+        const requiredFlavorCount = Math.max(0, Number(variants.flavorCount || 0));
+        if (requiredFlavorCount > 1) {
+          const selectedFlavors = Array.isArray(requestedOptions.flavors) ? [...new Set(requestedOptions.flavors.map(value => String(value).trim()).filter(Boolean))] : [];
+          if (selectedFlavors.length !== requiredFlavorCount) return json(request, { error: `請選擇${requiredFlavorCount}種口味。` }, 400);
+        }
         const variant = productVariant(storeProduct, requestedOptions);
-        const selectedOptions = variant ? { ...(variant.flavor ? { flavor: variant.flavor } : {}), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : {};
+        const selectedOptions = variant ? { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : {};
         const selectedVariantKey = variantKey(variant);
         const guestId = getGuestId(request);
         const quantity = Math.min(99, Math.max(1, Number(body.qty || 1)));
