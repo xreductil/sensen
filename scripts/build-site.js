@@ -349,8 +349,11 @@ const TOP_HOUSE_CARD_DETAILS = new Map([
   ["top-house-a12-osmanthus-oolong", { title: "A12 桂花烏龍甜心", description: "香草布丁與桂花烏龍奶油、清香優雅", originalPrice: 580 }],
 ]);
 
-function topHousePurchaseMarkup(id) {
-  return `<div class="top-house-purchase"><button class="top-house-add-cart" type="button" data-top-house-product-id="${escapeAttr(id)}">加入購物車</button></div><p class="top-house-purchase-message" data-top-house-product-message role="status"></p>`;
+function topHousePurchaseMarkup(id, price = 0, flavors = []) {
+  const flavorMarkup = flavors.length
+    ? `<fieldset class="top-house-flavor-options"><legend>口味選擇</legend><div class="top-house-flavor-list" role="group" aria-label="選擇波士頓派口味">${flavors.map((flavor, index) => `<button class="top-house-flavor-option${index === 0 ? " is-selected" : ""}" type="button" data-top-house-flavor="${escapeAttr(flavor)}" aria-pressed="${index === 0 ? "true" : "false"}">${escapeHtml(flavor)}</button>`).join("")}</div></fieldset>`
+    : "";
+  return `<div class="top-house-purchase">${flavorMarkup}<button class="top-house-add-cart" type="button" data-top-house-product-id="${escapeAttr(id)}">加入購物車</button></div><p class="top-house-purchase-message" data-top-house-product-message role="status"></p>`;
 }
 
 function topHouseProductPath(id) {
@@ -2000,7 +2003,7 @@ function bostonPieContent() {
         <p class="boston-product-description">將鮮奶中去除83%的水，留下的精華爽口不甜<br>膩且富有細緻的口感。</p>
         <hr>
         <p class="boston-product-spec">波士頓派尺寸：9吋(23cm±10%)<br>印刷包裝：手繪水彩風格&amp;禮盒霧模搭配高質感<br>Pantone金屬色側邊。手提式紙盒設計，恕不<br>另外提供袋子</p>
-        <div class="boston-flavor-purchases"><div><span>新品口味</span>${topHousePurchaseMarkup("top-house-boston-new", 300)}</div></div>
+        <div class="boston-flavor-purchases"><div><span>波士頓派禮盒</span>${topHousePurchaseMarkup("top-house-boston-new", 300, ["草莓", "藍莓", "香草"])}</div></div>
         <img class="boston-vegetarian-badge" src="/images/icon-vlml.png" alt="奶蛋素">
       </div>
     </section>

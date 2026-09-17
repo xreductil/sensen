@@ -574,18 +574,22 @@ const productVariant = (product: StoreProduct, options: Record<string, unknown> 
   const sugars = Array.isArray(variants.sugars) && variants.sugars.length
     ? variants.sugars.map(value => String(value).trim()).filter(Boolean)
     : ["正常甜"];
+  const flavors = Array.isArray(variants.flavors) && variants.flavors.length
+    ? variants.flavors.map(value => String(value).trim()).filter(Boolean)
+    : [];
+  const flavor = flavors.includes(String(options.flavor || "")) ? String(options.flavor) : flavors[0];
   const temperature = temperatures.includes(String(options.temperature || "")) ? String(options.temperature) : temperatures[0];
   const sugar = sugars.includes(String(options.sugar || "")) ? String(options.sugar) : sugars[0];
-  return { size, temperature, sugar, priceValue: Number(sizes[size] || 0) };
+  return { size, flavor, temperature, sugar, priceValue: Number(sizes[size] || 0) };
 };
 
 const variantKey = (variant: ReturnType<typeof productVariant>) => variant
-  ? encodeURIComponent([variant.size, variant.temperature, variant.sugar].join("|"))
+  ? encodeURIComponent([variant.flavor, variant.size, variant.temperature, variant.sugar].filter(Boolean).join("|"))
   : "";
 
 const variantTitle = (title: string, variant: ReturnType<typeof productVariant>) => {
   if (!variant) return title;
-  const details = [variant.size !== "單杯" ? variant.size : "", variant.temperature, variant.sugar].filter(Boolean).join("・");
+  const details = [variant.flavor, variant.size !== "單杯" ? variant.size : "", variant.temperature, variant.sugar].filter(Boolean).join("・");
   return details ? `${title}（${details}）` : title;
 };
 
@@ -657,7 +661,7 @@ const cartSummary = async (env: Env, guestId: string) => {
       title: variantTitle(product.title, variant),
       price: variant ? `$${variant.priceValue.toFixed(2)}` : product.price,
       priceValue: variant?.priceValue ?? product.priceValue,
-      selectedOptions: variant ? { size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
+      selectedOptions: variant ? { ...(variant.flavor ? { flavor: variant.flavor } : {}), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
       qty: Math.max(1, Number(row.cart_quantity || 1)),
     };
   });
@@ -1203,7 +1207,7 @@ export default {
         const storeProduct = productFromRow(product);
         const requestedOptions = body.options && typeof body.options === "object" && !Array.isArray(body.options) ? body.options as Record<string, unknown> : {};
         const variant = productVariant(storeProduct, requestedOptions);
-        const selectedOptions = variant ? { size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : {};
+        const selectedOptions = variant ? { ...(variant.flavor ? { flavor: variant.flavor } : {}), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : {};
         const selectedVariantKey = variantKey(variant);
         const guestId = getGuestId(request);
         const quantity = Math.min(99, Math.max(1, Number(body.qty || 1)));

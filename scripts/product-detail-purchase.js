@@ -97,6 +97,12 @@
     return Object.entries(source || {})
       .filter(([, value]) => Number.isFinite(Number(value)) && Number(value) > 0);
   };
+  const flavorOptions = product => {
+    const variants = product.variants && typeof product.variants === 'object' ? product.variants : {};
+    return Array.isArray(variants.flavors)
+      ? [...new Set(variants.flavors.map(value => String(value || '').trim()).filter(Boolean))]
+      : [];
+  };
   const productOriginalPrice = product => Number(product.originalPrice || product.priceOriginal || topHouseOriginalPrices[product.id] || 0);
   const priceMarkup = (product, value) => {
     const amount = Number(value || 0);
@@ -297,7 +303,9 @@
       else titleElement.insertAdjacentElement('afterend', element);
     };
     const options = sizeOptions(product);
+    const flavors = flavorOptions(product);
     let selectedSize = options[0]?.[0] || '';
+    let selectedFlavor = flavors[0] || '';
     const selectedPrice = () => Number(options.find(([size]) => size === selectedSize)?.[1] || product.priceValue || 0);
     const inStock = () => product.published !== false && selectedPrice() > 0 && Number(product.quantity ?? 1) > 0;
     if (selectedPrice() <= 0) {
@@ -313,10 +321,13 @@
     const sizeMarkup = options.length > 1
       ? `<div class="product-detail-size-options"><span class="product-detail-size-options-label">商品尺寸</span><div class="product-detail-size-options-list" role="group" aria-label="選擇商品尺寸">${options.map(([size, value], index) => `<button class="product-detail-size-option${index === 0 ? ' is-selected' : ''}" type="button" data-product-size="${escapeHtml(size)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(size)}<span>${money(value)}</span></button>`).join('')}</div></div>`
       : '';
+    const flavorMarkup = flavors.length
+      ? `<fieldset class="product-detail-flavor-options"><legend>口味選擇</legend><div class="product-detail-flavor-list" role="group" aria-label="選擇商品口味">${flavors.map((flavor, index) => `<button class="product-detail-flavor-option${index === 0 ? ' is-selected' : ''}" type="button" data-product-flavor="${escapeHtml(flavor)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(flavor)}</button>`).join('')}</div></fieldset>`
+      : '';
     const purchaseMarkup = isCakeDetail
       ? '<div class="cake-product-purchase"><button class="product-order-info-button cake-add-cart" type="button" data-product-order-info>訂購資訊</button></div>'
       : `<div class="cake-product-purchase"><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock() ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock() ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock() ? '' : ' disabled'}>${inStock() ? '加入購物車' : '暫停供應'}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
-    section.innerHTML = `${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p>${purchaseMarkup}`;
+    section.innerHTML = `${flavorMarkup}${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p>${purchaseMarkup}`;
     insertPurchase(section);
 
     const updateVariant = () => {
@@ -325,6 +336,11 @@
       if (priceElement) priceElement.innerHTML = priceMarkup(product, selectedPrice());
       section.querySelectorAll('[data-product-size]').forEach(button => {
         const isSelected = button.dataset.productSize === selectedSize;
+        button.classList.toggle('is-selected', isSelected);
+        button.setAttribute('aria-pressed', String(isSelected));
+      });
+      section.querySelectorAll('[data-product-flavor]').forEach(button => {
+        const isSelected = button.dataset.productFlavor === selectedFlavor;
         button.classList.toggle('is-selected', isSelected);
         button.setAttribute('aria-pressed', String(isSelected));
       });
@@ -338,6 +354,10 @@
 
     section.querySelectorAll('[data-product-size]').forEach(button => button.addEventListener('click', () => {
       selectedSize = button.dataset.productSize || '';
+      updateVariant();
+    }));
+    section.querySelectorAll('[data-product-flavor]').forEach(button => button.addEventListener('click', () => {
+      selectedFlavor = button.dataset.productFlavor || '';
       updateVariant();
     }));
 
@@ -358,7 +378,7 @@
       addButton.textContent = '加入中…';
       message.textContent = '';
       try {
-        const response = await fetch('/api/cart/add', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: product.id, qty: quantity, options: selectedSize ? { size: selectedSize } : {} }) });
+        const response = await fetch('/api/cart/add', { method: 'POST', credentials: 'include', headers: { Accept: 'application/json', 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: product.id, qty: quantity, options: { ...(selectedSize ? { size: selectedSize } : {}), ...(selectedFlavor ? { flavor: selectedFlavor } : {}) } }) });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) throw new Error(data.error || '加入購物車失敗。');
         addButton.textContent = '已加購物車';

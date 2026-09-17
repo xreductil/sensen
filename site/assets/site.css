@@ -185,6 +185,11 @@ body:has(.account-shell) #message { padding: 18px 22px; border: 1px solid #e8edf
 .cake-add-cart { flex: 1; min-height: 40px; padding: 6px 12px; border: 1px solid var(--sand); border-radius: 7px; background: transparent; color: var(--brown-2); cursor: pointer; font-size: clamp(13px, .9vw, 16px); }
 .cake-add-cart:hover, .cake-add-cart:disabled { background: var(--sand-soft); }
 .top-house-purchase { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 9px; margin-top: 14px; }
+.top-house-flavor-options, .product-detail-flavor-options { width: 100%; margin: 0; padding: 0; border: 0; }
+.top-house-flavor-options legend, .product-detail-flavor-options legend { margin-bottom: 6px; color: var(--brown-2); font-size: 13px; font-weight: 700; }
+.top-house-flavor-list, .product-detail-flavor-list { display: flex; flex-wrap: wrap; gap: 7px; }
+.top-house-flavor-option, .product-detail-flavor-option { min-height: 34px; padding: 5px 12px; border: 1px solid var(--sand); border-radius: 999px; background: #fff; color: var(--brown-2); cursor: pointer; font: inherit; font-size: 13px; }
+.top-house-flavor-option:hover, .top-house-flavor-option.is-selected, .product-detail-flavor-option:hover, .product-detail-flavor-option.is-selected { background: var(--sand-soft); box-shadow: inset 0 0 0 1px var(--sand); }
 .top-house-purchase strong { color: var(--brown-2); font-size: 1.05rem; }
 .top-house-add-cart { min-height: 38px; padding: 6px 13px; border: 1px solid var(--sand); border-radius: 7px; background: transparent; color: var(--brown-2); cursor: pointer; font-size: 14px; }
 .top-house-add-cart:hover, .top-house-add-cart:disabled { background: var(--sand-soft); }

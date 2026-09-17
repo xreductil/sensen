@@ -19,7 +19,8 @@
   "quantity":25,
   "day":"5",
   "img":"/assets/images/poston-cream-pie-1.png",
-  "desc":"9吋波士頓派，新品口味。"
+  "desc":"9吋波士頓派禮盒，可選草莓、藍莓或香草口味。",
+  "variants":{"flavors":["草莓","藍莓","香草"],"sizes":{"單杯":300}}
 },
   {"id":"top-house-pa1-boston-gift","sku":"PA1","title":"PA1","cat":"頂家彌月","price":"$375","priceValue":375,"quantity":25,"day":"5","img":"/assets/images/boston-pa1.jpg","desc":"9吋波士頓派×1、油飯8兩×1、紅蛋×2"},
   {"id":"top-house-pa2-boston-gift","sku":"PA2","title":"PA2","cat":"頂家彌月","price":"$430","priceValue":430,"quantity":25,"day":"5","img":"/assets/images/boston-pa2.jpg","desc":"9吋波士頓派×1、小檸檬×1、KT蛋糕×1、手工餅乾×1"},

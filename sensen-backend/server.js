@@ -513,7 +513,11 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
   const sugars = Array.isArray(variants.sugars) && variants.sugars.length
     ? variants.sugars.map(item => String(item).trim()).filter(Boolean)
     : ['正常甜'];
+  const flavors = Array.isArray(variants.flavors) && variants.flavors.length
+    ? variants.flavors.map(item => String(item).trim()).filter(Boolean)
+    : [];
   return {
+    flavors: [...new Set(flavors)],
     temperatures: temperatures.length ? [...new Set(temperatures)] : ['冷'],
     sugars: sugars.length ? [...new Set(sugars)] : ['正常甜'],
     sizes: Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 }
@@ -603,23 +607,26 @@ function productVariant(product, options = {}) {
   const variants = normalizeProductVariants(product.variants, product.priceValue);
   const sizeLabels = Object.keys(variants.sizes);
   const size = sizeLabels.includes(String(options.size || '')) ? String(options.size) : sizeLabels[0];
+  const flavor = variants.flavors.includes(String(options.flavor || ''))
+    ? String(options.flavor)
+    : variants.flavors[0];
   const temperature = variants.temperatures.includes(String(options.temperature || ''))
     ? String(options.temperature)
     : variants.temperatures[0];
   const sugar = variants.sugars.includes(String(options.sugar || ''))
     ? String(options.sugar)
     : variants.sugars[0];
-  return { size, temperature, sugar, priceValue: Number(variants.sizes[size] || 0) };
+  return { size, flavor, temperature, sugar, priceValue: Number(variants.sizes[size] || 0) };
 }
 
 function variantCartId(product, variant) {
   if (!variant) return product.id;
-  return product.id + '::' + encodeURIComponent([variant.size, variant.temperature, variant.sugar].join('|'));
+  return product.id + '::' + encodeURIComponent([variant.flavor, variant.size, variant.temperature, variant.sugar].filter(Boolean).join('|'));
 }
 
 function variantTitle(title, variant) {
   if (!variant) return title;
-  const details = [variant.size !== '單杯' ? variant.size : '', variant.temperature, variant.sugar].filter(Boolean).join('・');
+  const details = [variant.flavor, variant.size !== '單杯' ? variant.size : '', variant.temperature, variant.sugar].filter(Boolean).join('・');
   return details ? `${title}（${details}）` : title;
 }
 
@@ -634,6 +641,7 @@ function cartItemForProduct(product, qty, options = {}) {
     price: '$' + variant.priceValue.toFixed(2),
     priceValue: variant.priceValue,
     selectedOptions: {
+      ...(variant.flavor ? { flavor: variant.flavor } : {}),
       size: variant.size,
       temperature: variant.temperature,
       sugar: variant.sugar
