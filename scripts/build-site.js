@@ -2025,7 +2025,6 @@ function bostonPieContent() {
         <p class="boston-product-description">將鮮奶中去除83%的水，留下的精華爽口不甜<br>膩且富有細緻的口感。</p>
         <hr>
         <p class="boston-product-spec">波士頓派尺寸：9吋(23cm±10%)<br>印刷包裝：手繪水彩風格&amp;禮盒霧模搭配高質感<br>Pantone金屬色側邊。手提式紙盒設計，恕不<br>另外提供袋子</p>
-        <div class="boston-flavor-purchases"><div><span>波士頓派禮盒</span>${topHousePurchaseMarkup("top-house-boston-new", 300, ["草莓", "藍莓", "香草"])}</div></div>
         <img class="boston-vegetarian-badge" src="/images/icon-vlml.png" alt="奶蛋素">
       </div>
     </section>
