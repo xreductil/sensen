@@ -45,6 +45,9 @@ export default async function handler(request, response) {
     "",
     message,
   ].filter(Boolean).join("\n");
+  const storeSubject = subject === "彌月試吃申請"
+    ? `顧客「${name}」的彌月試吃申請單`
+    : `[森森網站] ${subject}`;
 
   try {
     // 店家通知：直接回覆這封信即可聯絡客戶。
@@ -52,7 +55,7 @@ export default async function handler(request, response) {
       from: smtpUser,
       to: mailTo,
       replyTo: email,
-      subject: `[森森網站] ${subject}`,
+      subject: storeSubject,
       text: details,
     });
 
