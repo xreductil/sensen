@@ -37,6 +37,10 @@
       "destination": "https://sensen.jinfeng8605.workers.dev/product-item/:path*"
     },
     {
+      "source": "/product-item/:path*/",
+      "destination": "https://sensen.jinfeng8605.workers.dev/product-item/:path*/"
+    },
+    {
       "source": "/assets/images/:path*",
       "destination": "https://sensen.jinfeng8605.workers.dev/images/:path*"
     },
