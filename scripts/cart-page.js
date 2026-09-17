@@ -60,6 +60,9 @@
     const discountEl = root.querySelector('[data-cart-discount]');
     const totalEl = root.querySelector('[data-cart-total]');
     const checkoutButton = root.querySelector('[data-cart-checkout]');
+    const applyCouponButton = root.querySelector('[data-apply-coupon]');
+    let quoteTimer;
+    if (applyCouponButton) applyCouponButton.hidden = true;
     const method = saved('sensen-cart-shipping') || 'pickup';
     shipping.value = ['pickup', 'home', 'frozen'].includes(method) ? method : 'pickup';
     const minDate = new Date(); minDate.setHours(0, 0, 0, 0); minDate.setDate(minDate.getDate() + Number(cart.leadDays || 5));
@@ -86,7 +89,11 @@
     root.querySelectorAll('[data-cart-remove]').forEach(button => button.addEventListener('click', async () => { await api('/api/cart/item', { method: 'DELETE', body: JSON.stringify({ productId: button.dataset.cartRemove }) }); load(); }));
     shipping.addEventListener('change', () => { syncDeliveryFields(); quote(); });
     root.querySelector('[data-apply-coupon]').addEventListener('click', quote);
-    coupon.addEventListener('input', () => showMessage(quoteMessage, '')); coupon.addEventListener('change', save); pickup.addEventListener('change', save);
+    coupon.addEventListener('input', () => {
+      showMessage(quoteMessage, '');
+      clearTimeout(quoteTimer);
+      quoteTimer = setTimeout(quote, 500);
+    }); coupon.addEventListener('change', save); pickup.addEventListener('change', save);
     syncDeliveryFields(); await quote();
     checkoutButton.addEventListener('click', async () => {
       try { if (!await requireLogin()) return; } catch (error) { showMessage(checkoutMessage, error.message, true); return; }

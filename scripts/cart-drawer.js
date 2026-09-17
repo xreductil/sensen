@@ -16,6 +16,9 @@
   const discountEl = drawer.querySelector('[data-cart-discount]');
   const totalEl = drawer.querySelector('[data-cart-total]');
   const checkoutLink = drawer.querySelector('a[href="/checkout/"]');
+  const applyCouponButton = drawer.querySelector('[data-cart-apply-coupon]');
+  let quoteTimer;
+  if (applyCouponButton) applyCouponButton.hidden = true;
   const money = (value) => `$${Number(value || 0).toFixed(2)}`;
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
   const toIsoDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
@@ -113,7 +116,14 @@
     const response = await fetch('/api/cart', { credentials: 'include' });
     if (response.ok) await applyQuote(await response.json());
   });
-  couponInput.addEventListener('input', () => showQuoteMessage(''));
+  couponInput.addEventListener('input', () => {
+    showQuoteMessage('');
+    clearTimeout(quoteTimer);
+    quoteTimer = setTimeout(async () => {
+      const response = await fetch('/api/cart', { credentials: 'include' });
+      if (response.ok) await applyQuote(await response.json());
+    }, 500);
+  });
   couponInput.addEventListener('change', saveFields);
   pickupInput.addEventListener('change', saveFields);
   itemsEl.addEventListener('click', async (event) => { const button = event.target.closest('[data-cart-id]'); if (!button) return; await fetch('/api/cart/item', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) }); loadCart(); });

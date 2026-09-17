@@ -26,6 +26,9 @@
     shipping: root.querySelector('[data-checkout-shipping]'), delivery: root.querySelector('[data-checkout-delivery-fields]'), address: root.querySelector('[data-checkout-address]'), city: root.querySelector('[data-checkout-city]'), zip: root.querySelector('[data-checkout-zip]'),
     pickupFields: root.querySelector('[data-checkout-pickup-fields]'), pickupStore: root.querySelector('[data-checkout-pickup-store]'), pickupTime: root.querySelector('[data-checkout-pickup-time]'), pickup: root.querySelector('[data-checkout-pickup]'), pickupLabel: root.querySelector('[data-checkout-pickup-label]'), note: root.querySelector('[data-checkout-note]'), coupon: root.querySelector('[data-checkout-coupon]')
   };
+  const applyCouponButton = root.querySelector('[data-checkout-apply-coupon]');
+  let quoteTimer;
+  if (applyCouponButton) applyCouponButton.hidden = true;
   const save = () => {
     localStorage.setItem('sensen-cart-shipping', fields.shipping.value);
     localStorage.setItem('sensen-cart-coupon', fields.coupon.value.trim().toUpperCase());
@@ -119,7 +122,11 @@
     syncDateLabel(); syncDeliveryFields(); await fillProfile(); await quote();
   };
   fields.shipping.addEventListener('change', () => { syncDeliveryFields(); quote(); });
-  fields.coupon.addEventListener('input', () => setMessage('[data-checkout-quote-message]', ''));
+  fields.coupon.addEventListener('input', () => {
+    setMessage('[data-checkout-quote-message]', '');
+    clearTimeout(quoteTimer);
+    quoteTimer = setTimeout(quote, 500);
+  });
   root.querySelector('[data-checkout-apply-coupon]').addEventListener('click', quote);
   fields.pickup.addEventListener('change', syncDateLabel);
   root.querySelectorAll('[data-checkout-submit]').forEach(button => button.addEventListener('click', () => submit(button)));
