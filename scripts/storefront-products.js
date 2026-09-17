@@ -114,12 +114,12 @@
   };
   const thumbnailLegacyOffset = (product, settings) => {
     const usesLiftedFrame = referenceThumbnailProductIds.has(product?.id) || liftedThumbnailProductIds.has(product?.id);
-    if (usesLiftedFrame && product?.id !== 'new-birthday-cake-image-03') {
-      return { desktop: -120, mobile: -100 };
-    }
     // Keep the legacy souvenir baseline only when the backend has not set a
     // custom position. Once an editor value exists, that value is authoritative.
     const isDefault = settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100;
+    if (usesLiftedFrame && isDefault && product?.id !== 'new-birthday-cake-image-03') {
+      return { desktop: -120, mobile: -100 };
+    }
     if (product?.cat === '伴手禮' && isDefault) return { desktop: -8, mobile: -8 };
     return { desktop: 0, mobile: 0 };
   };
