@@ -3,6 +3,43 @@ const GUEST_COOKIE = "sensen_guest";
 const SESSION_COOKIE = "sensen_session";
 const VERCEL_EMAIL_ENDPOINT = "https://sensen-three.vercel.app/api/send-email";
 
+const sendOrderCompletionEmail = async (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
+  const recipient = String(row.customer_email || row.user_email || "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(recipient)) return { status: "not_requested", recipient };
+  const customerName = String(row.customer_name || row.user_name || "會員").trim();
+  const orderNumber = String(row.order_number || "").trim();
+  const itemLines = items.length
+    ? items.map(item => `- ${String(item.title || "商品")} × ${Number(item.qty || 0)}｜$${(Number(item.priceValue || 0) * Number(item.qty || 0)).toFixed(0)}`).join("\n")
+    : "（訂單商品明細請至會員中心查看）";
+  const message = [
+    `您好 ${customerName}：`, "", `您的訂單「${orderNumber}」已完成。`, "", "訂單內容：", itemLines, "",
+    `訂單金額：$${Number(row.total_amount || 0).toFixed(0)}`,
+    `取貨／配送方式：${shippingLabel(String(row.shipping_method || "pickup"))}`,
+    `取貨／配送日期：${String(row.fulfillment_date || "請依訂單資料確認")}`, "",
+    "感謝您的訂購，森森點心坊祝您順心！",
+  ].join("\n");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(VERCEL_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ type: "order_status", name: customerName, email: recipient, subject: `您的訂單 ${orderNumber} 已完成`, message }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error("Order completion email returned", response.status);
+      return { status: "pending", recipient };
+    }
+    return { status: "sent", recipient };
+  } catch (error) {
+    console.error("Order completion email failed", error instanceof Error ? error.message : error);
+    return { status: "pending", recipient };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 // D1/SQLite CURRENT_TIMESTAMP is UTC but is returned without an offset.
 // Mark that value explicitly so browsers do not parse it as local time.
 const utcDateString = (value: unknown) => {
@@ -1196,7 +1233,7 @@ export default {
           const trackingNumber = String(body.trackingNumber || "").trim();
           const allowedStatuses = ["created", "pending", "pending_payment", "processing", "shipped", "ready_for_pickup", "completed", "picked_up", "cancelled"];
           if (!orderId || !allowedStatuses.includes(status)) return json(request, { error: "訂單狀態資料格式錯誤。" }, 400);
-          const existing = await env.DB.prepare("SELECT id FROM orders WHERE order_number = ?1 OR CAST(id AS TEXT) = ?1 LIMIT 1").bind(orderId).first<{ id: number }>();
+          const existing = await env.DB.prepare("SELECT id, status FROM orders WHERE order_number = ?1 OR CAST(id AS TEXT) = ?1 LIMIT 1").bind(orderId).first<{ id: number; status: string }>();
           if (!existing) return json(request, { error: "找不到訂單。" }, 404);
           await env.DB.prepare(`UPDATE orders SET status = ?1, tracking_number = ?2, updated_at = CURRENT_TIMESTAMP WHERE id = ?3`)
             .bind(status, trackingNumber, existing.id).run();
@@ -1213,8 +1250,15 @@ export default {
             LEFT JOIN categories c ON c.id = p.category_id
             WHERE oi.order_id = ?1 ORDER BY oi.id ASC
           `).bind(existing.id).all<Record<string, unknown>>();
+          const completionNotification = status === "completed" && String(existing.status || "").toLowerCase() !== "completed"
+            ? await sendOrderCompletionEmail(row || {}, items.results.map(adminOrderItemFromRow))
+            : { status: "not_requested", recipient: row?.customer_email || row?.user_email || "" };
           return json(request, {
-            order: row ? { ...orderFromRow(row, items.results.map(adminOrderItemFromRow)), shippingNotification: body.notify ? { status: "pending", recipient: row.customer_email || row.user_email || "" } : { status: "not_requested" } } : null,
+            order: row ? {
+              ...orderFromRow(row, items.results.map(adminOrderItemFromRow)),
+              completionNotification,
+              shippingNotification: body.notify ? { status: "pending", recipient: row.customer_email || row.user_email || "" } : { status: "not_requested" },
+            } : null,
           });
         }
 

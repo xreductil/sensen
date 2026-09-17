@@ -10,13 +10,16 @@ export default async function handler(request, response) {
   const smtpUser = text(process.env.SMTP_USER);
   const smtpPass = text(process.env.SMTP_PASS);
   const mailTo = text(process.env.MAIL_TO);
-  if (!smtpUser || !smtpPass || !mailTo) {
-    return json(response, { error: "寄信服務尚未完成環境變數設定。" }, 503);
-  }
 
   let body;
   try { body = typeof request.body === "string" ? JSON.parse(request.body) : request.body || {}; }
   catch { return json(response, { error: "請提供有效的 JSON 資料。" }, 400); }
+
+  const type = text(body.type);
+  const isOrderStatus = type === "order_status";
+  if (!smtpUser || !smtpPass || (!mailTo && !isOrderStatus)) {
+    return json(response, { error: "寄信服務尚未完成環境變數設定。" }, 503);
+  }
 
   const name = text(body.name);
   const email = text(body.email).toLowerCase();
@@ -37,6 +40,21 @@ export default async function handler(request, response) {
     greetingTimeout: 10000,
     socketTimeout: 15000,
   });
+
+  if (isOrderStatus) {
+    try {
+      await transporter.sendMail({
+        from: smtpUser,
+        to: email,
+        subject: subject || "您的訂單已完成",
+        text: message,
+      });
+      return json(response, { ok: true, message: "訂單完成通知信已寄出。", email: { customer: true } }, 201);
+    } catch (error) {
+      console.error("SMTP order status email failed", error instanceof Error ? error.message : error);
+      return json(response, { error: "訂單完成通知信寄送失敗，請稍後再試。" }, 502);
+    }
+  }
 
   const details = [
     `姓名：${name}`,
