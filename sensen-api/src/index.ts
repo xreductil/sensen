@@ -866,14 +866,17 @@ export default {
           INSERT INTO engagement_records (record_type, payload_json)
           VALUES ('message', ?1)
         `).bind(JSON.stringify({ name, email, phone, subject, message })).run();
+        const emailController = new AbortController();
+        const emailTimeout = setTimeout(() => emailController.abort(), 5000);
         const notification = await fetch(VERCEL_EMAIL_ENDPOINT, {
           method: "POST",
           headers: { "content-type": "application/json", accept: "application/json" },
           body: JSON.stringify({ name, email, phone, subject, message }),
+          signal: emailController.signal,
         }).catch(error => {
           console.error("Vercel email notification failed", error instanceof Error ? error.message : error);
           return null;
-        });
+        }).finally(() => clearTimeout(emailTimeout));
         if (notification && !notification.ok) {
           console.error("Vercel email notification returned", notification.status);
         }
