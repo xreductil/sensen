@@ -3317,32 +3317,26 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
   }
 }
 
-/* All storefront card variants use the same square thumbnail viewport. The
-   image itself is contained in that viewport so the backend settings mean the
-   same thing on the overview and category pages. */
+/* Backend thumbnail settings are the final source of truth for storefront
+   cards. The legacy offset is kept as a per-product fallback so existing
+   portrait assets retain their framing until an editor value is saved. */
 .cake-product-card.product-thumbnail-managed .cake-product-image img {
-  width: 100%;
-  height: auto;
-  aspect-ratio: 1 / 1;
-  max-height: none;
-  object-fit: contain;
-  object-position: center;
-  transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(var(--product-thumbnail-scale, 1));
+  transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y, 0px))) scale(var(--product-thumbnail-scale, 1));
 }
 
 .cake-product-card.product-thumbnail-managed .cake-product-card-link:hover .cake-product-image img,
 .cake-product-card.product-thumbnail-managed .cake-product-card-link:focus-visible .cake-product-image img {
-  transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
+  transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y, 0px))) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
 }
 
 @media (max-width: 700px) {
   .cake-product-card.product-thumbnail-managed .cake-product-image img {
-    transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(var(--product-thumbnail-scale, 1));
+    transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(var(--product-thumbnail-scale, 1));
   }
 
   .cake-product-card.product-thumbnail-managed .cake-product-card-link:hover .cake-product-image img,
   .cake-product-card.product-thumbnail-managed .cake-product-card-link:focus-visible .cake-product-image img {
-    transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
+    transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
   }
 }
 
@@ -4735,6 +4729,13 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .product-intro-featured-badge { position: absolute; top: 10px; left: 10px; z-index: 1; min-width: 54px; padding: 6px 9px; border-radius: 999px; color: #fff; background: var(--brown-2); font-size: 12px; font-weight: 800; letter-spacing: .08em; line-height: 1; text-align: center; }
 .product-intro-card-link, .product-intro-menu-card a { display: block; color: inherit; text-decoration: none; }
 .product-intro-card img { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: contain; transition: transform .25s ease, filter .25s ease; }
+/* The online mall overview should use the same natural image sizing as the
+   souvenir page. Keep the category page rules unchanged. */
+.product-intro-card.product-thumbnail-managed .cake-product-image img {
+  aspect-ratio: auto;
+  height: auto;
+  max-height: 100%;
+}
 .product-intro-card-link:hover img, .product-intro-card-link:focus-visible img { transform: translateY(-6px) scale(1.035); filter: drop-shadow(0 12px 12px rgba(81, 54, 36, .16)); }
 .product-intro-card-meta { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: start; gap: 8px 10px; padding: 18px 4px 0; }
 .product-intro-card-title { min-width: 0; }

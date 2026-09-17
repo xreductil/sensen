@@ -36,6 +36,10 @@
     'new-birthday-cake-image-06',
     'new-birthday-cake-image-07'
   ]);
+  const legacyRelativeThumbnailProductIds = new Set([
+    ...referenceThumbnailProductIds,
+    ...liftedThumbnailProductIds
+  ].filter(id => !id.startsWith('rose-salt-')));
   let products = [];
   let currentPage = 1;
   const dialog = $('#inventory-product-dialog');
@@ -133,8 +137,13 @@
   }
 
   function thumbnailPresetOffsetY(product, settings) {
-    // The backend values are absolute. Do not add product-specific framing
-    // offsets here because the same values are used by every storefront card.
+    // These offsets are the legacy framing rules used by the public product
+    // cards. Keep the editor preview on the same visual baseline.
+    if (product?.id === 'new-birthday-cake-image-03') return 0;
+    if (legacyRelativeThumbnailProductIds.has(product?.id)) {
+      return window.matchMedia('(max-width: 700px)').matches ? -100 : -120;
+    }
+    if (product?.cat === '伴手禮' && settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100) return -8;
     return 0;
   }
 
@@ -148,7 +157,7 @@
     const field = document.createElement('div');
     field.className = 'col-12';
     field.dataset.inventoryThumbnailEditor = '';
-    field.innerHTML = '<label class="form-label mb-1">縮圖顯示區塊</label><div class="small text-secondary mb-2">可用正負像素調整圖片位置，縮放比例以百分比設定；預覽會同步前台商品卡片的縮圖框。</div><div class="row g-2"><div class="col-sm-4"><label class="form-label small mb-1">水平位置（px）<input class="form-control" name="thumbnailOffsetX" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">垂直位置（px）<input class="form-control" name="thumbnailOffsetY" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">縮放比例（%）<input class="form-control" name="thumbnailScale" type="number" min="25" max="300" step="1" value="100"></label></div></div><div class="inventory-thumbnail-preview mt-3" data-thumbnail-preview style="width:220px;max-width:100%;aspect-ratio:1 / 1;padding:clamp(16px, 2vw, 28px);border:1px solid #e5e7eb;border-radius:14px;background:#f7f7f7;display:grid;align-items:center;box-sizing:border-box;overflow:hidden"><img data-thumbnail-preview-image alt="縮圖預覽" style="display:block;width:100%;height:100%;max-height:none;object-fit:contain;transform-origin:center;transition:transform .15s ease"></div>';
+    field.innerHTML = '<label class="form-label mb-1">縮圖顯示區塊</label><div class="small text-secondary mb-2">可用正負像素調整圖片位置，縮放比例以百分比設定；預覽會同步前台商品卡片的縮圖框。</div><div class="row g-2"><div class="col-sm-4"><label class="form-label small mb-1">水平位置（px）<input class="form-control" name="thumbnailOffsetX" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">垂直位置（px）<input class="form-control" name="thumbnailOffsetY" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">縮放比例（%）<input class="form-control" name="thumbnailScale" type="number" min="25" max="300" step="1" value="100"></label></div></div><div class="inventory-thumbnail-preview mt-3" data-thumbnail-preview style="width:220px;max-width:100%;aspect-ratio:1 / 1;padding:clamp(16px, 2vw, 28px);border:1px solid #e5e7eb;border-radius:14px;background:#f7f7f7;display:grid;align-items:center;box-sizing:border-box;overflow:hidden"><img data-thumbnail-preview-image alt="縮圖預覽" style="display:block;width:100%;height:auto;max-height:100%;object-fit:contain;transform-origin:center bottom;transition:transform .15s ease"></div>';
     imageColumn.insertAdjacentElement('afterend', field);
     const update = () => {
       const settings = thumbnailSettings({ thumbnail: {

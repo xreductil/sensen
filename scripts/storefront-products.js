@@ -75,6 +75,20 @@
     'new-birthday-cake-image-06',
     'new-birthday-cake-image-07'
   ]);
+  // These older portrait assets stored their editor value relative to the
+  // original -120px framing baseline. Keep that compatibility behavior while
+  // newer products (including the rose-salt gift boxes) use absolute values.
+  const legacyRelativeThumbnailProductIds = new Set([
+    ...referenceThumbnailProductIds,
+    'new-souvenir-image-02',
+    'new-souvenir-image-03',
+    'new-souvenir-image-04',
+    'new-souvenir-image-05',
+    'new-souvenir-image-06',
+    'new-souvenir-image-07',
+    'new-souvenir-image-08',
+    'new-souvenir-image-11'
+  ]);
   const birthdayProductOrder = [
     'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',
     'passion-pear', 'colorful-world', 'mocha', 'hazelnut-crunch',
@@ -112,7 +126,14 @@
       scale: Math.max(25, Math.min(300, number(source.scale, 100))),
     };
   };
-  const thumbnailLegacyOffset = () => ({ desktop: 0, mobile: 0 });
+  const thumbnailLegacyOffset = (product, settings) => {
+    if (legacyRelativeThumbnailProductIds.has(product?.id) && product?.id !== 'new-birthday-cake-image-03') {
+      return { desktop: -120, mobile: -100 };
+    }
+    const isDefault = settings.offsetX === 0 && settings.offsetY === 0 && settings.scale === 100;
+    if (product?.cat === '伴手禮' && isDefault) return { desktop: -8, mobile: -8 };
+    return { desktop: 0, mobile: 0 };
+  };
   const available = product => product.published !== false && Number(product.priceValue || 0) > 0 && Number(product.quantity ?? 1) > 0;
 
   const productLink = (product, className, body) => {
