@@ -13,7 +13,7 @@
   <meta property="og:title" content="常見問題 – 森森點心坊">
   <meta property="og:description" content="常見問題｜森森點心坊提供新鮮、健康、美味的烘焙點心與貼心服務。">
   <meta property="og:url" content="https://www.sensen.com.tw/%E5%B8%B8%E8%A6%8B%E5%95%8F%E9%A1%8C/">
-  <link rel="stylesheet" href="/assets/site.css?v=20260917-thumbnail-sync-3">
+  <link rel="stylesheet" href="/assets/site.css?v=20260917-thumbnail-sync-4">
   
 </head>
 <body>
@@ -69,6 +69,19 @@
     </section>
   </div>
 </section>
+<script>
+(() => {
+  document.querySelectorAll('.faq-item > button').forEach((button) => {
+    button.addEventListener('click', () => {
+      const answer = document.getElementById(button.getAttribute('aria-controls'));
+      const open = button.getAttribute('aria-expanded') === 'true';
+      button.setAttribute('aria-expanded', String(!open));
+      button.querySelector('.faq-plus').textContent = open ? '＋' : '－';
+      if (answer) answer.hidden = open;
+    });
+  });
+})();
+</script>
 <script>
 (() => {
   document.querySelectorAll('.faq-item > button').forEach((button) => {
