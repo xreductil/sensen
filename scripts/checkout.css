@@ -63,7 +63,7 @@ body:has(.checkout-layout) { background: #fffdfb; }
 .checkout-submit:hover, .checkout-submit:focus-visible { background: #c91d16; transform: translateY(-1px); }
 .checkout-submit:disabled { cursor: wait; opacity: .65; transform: none; }
 .checkout-submit-mobile { display: none; }
-.checkout-back { display: block; margin-top: 20px; border: 1px solid #efcfaa; border-radius: 999px; padding: 17px 25px; color: #6e5548; background: #fff; font-weight: 700; text-align: center; }
+.checkout-back { display: block; width: 100%; margin-top: 20px; box-sizing: border-box; border: 1px solid #efcfaa; border-radius: 999px; padding: 17px 25px; color: #6e5548; background: #fff; cursor: pointer; font: inherit; font-weight: 700; text-align: center; }
 .checkout-order-success { padding: 30px; border: 1px solid #c9dfc8; border-radius: 16px; background: #f5fbf3; color: #47704e; }
 .checkout-order-success h2 { margin: 0 0 16px; color: #47704e; font-size: 2rem; }
 .checkout-order-success a { color: #47704e; text-decoration: underline; }

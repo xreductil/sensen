@@ -1,7 +1,7 @@
 (() => {
   const drawer = document.querySelector('#sensen-cart-drawer');
   const overlay = document.querySelector('#sensen-cart-overlay');
-  const triggers = [...document.querySelectorAll('.cart-trigger')];
+  const triggers = [...document.querySelectorAll('.cart-trigger, [data-checkout-cart-trigger]')];
   if (!drawer || !overlay || !triggers.length) return;
   const itemsEl = drawer.querySelector('[data-cart-items]');
   const messageEl = drawer.querySelector('[data-cart-message]');
