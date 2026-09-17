@@ -53,7 +53,7 @@
   };
   const topHouseCardTitles = {
     'top-house-boston-classic': '波士頓派（經典口味）',
-    'top-house-boston-new': '波士頓派（新品口味）',
+    'top-house-boston-new': '波士頓鮮奶派',
     'top-house-pa1-boston-gift': 'PA1 波士頓派禮盒',
     'top-house-pa2-boston-gift': 'PA2 波士頓派禮盒',
     'top-house-pa3-boston-gift': 'PA3 波士頓派禮盒',
