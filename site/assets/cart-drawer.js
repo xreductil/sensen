@@ -3,6 +3,8 @@
   const overlay = document.querySelector('#sensen-cart-overlay');
   const triggers = [...document.querySelectorAll('.cart-trigger, [data-checkout-cart-trigger]')];
   if (!drawer || !overlay || !triggers.length) return;
+  const isCheckoutPage = /^\/checkout\/?$/i.test(window.location.pathname);
+  const shouldOpenFromQuery = new URLSearchParams(window.location.search).get('cart') === 'open';
   const itemsEl = drawer.querySelector('[data-cart-items]');
   const messageEl = drawer.querySelector('[data-cart-message]');
   const optionsEl = drawer.querySelector('[data-cart-options]');
@@ -99,7 +101,13 @@
     }
   }
   const toggle = (open) => { drawer.classList.toggle('is-open', open); overlay.classList.toggle('is-open', open); overlay.hidden = !open; drawer.setAttribute('aria-hidden', String(!open)); triggers.forEach((trigger) => trigger.setAttribute('aria-expanded', String(open))); document.body.classList.toggle('cart-drawer-open', open); if (open) loadCart(); };
-  triggers.forEach((trigger) => trigger.addEventListener('click', () => toggle(!drawer.classList.contains('is-open'))));
+  triggers.forEach((trigger) => trigger.addEventListener('click', () => {
+    if (isCheckoutPage && trigger.matches('[data-checkout-cart-trigger]')) {
+      window.location.assign('/產品介紹/?cart=open');
+      return;
+    }
+    toggle(!drawer.classList.contains('is-open'));
+  }));
   drawer.querySelector('.sensen-cart-close').addEventListener('click', () => toggle(false));
   overlay.addEventListener('click', () => toggle(false));
   document.addEventListener('keydown', (event) => { if (event.key === 'Escape') toggle(false); });
@@ -127,4 +135,8 @@
   couponInput.addEventListener('change', saveFields);
   pickupInput.addEventListener('change', saveFields);
   itemsEl.addEventListener('click', async (event) => { const button = event.target.closest('[data-cart-id]'); if (!button) return; await fetch('/api/cart/item', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) }); loadCart(); });
+  if (shouldOpenFromQuery) {
+    window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
+    toggle(true);
+  }
 })();
