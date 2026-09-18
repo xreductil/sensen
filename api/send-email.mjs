@@ -17,6 +17,7 @@ export default async function handler(request, response) {
 
   const type = text(body.type);
   const isOrderStatus = type === "order_status";
+  const isOrderCreated = type === "order_created";
   if (!smtpUser || !smtpPass || (!mailTo && !isOrderStatus)) {
     return json(response, { error: "寄信服務尚未完成環境變數設定。" }, 503);
   }
@@ -53,6 +54,22 @@ export default async function handler(request, response) {
     } catch (error) {
       console.error("SMTP order status email failed", error instanceof Error ? error.message : error);
       return json(response, { error: "訂單完成通知信寄送失敗，請稍後再試。" }, 502);
+    }
+  }
+
+  if (isOrderCreated) {
+    try {
+      await transporter.sendMail({
+        from: smtpUser,
+        to: mailTo,
+        replyTo: email,
+        subject: subject || `顧客「${name}」的新訂單`,
+        text: message,
+      });
+      return json(response, { ok: true, message: "店家訂單通知信已寄出。", email: { store: true } }, 201);
+    } catch (error) {
+      console.error("SMTP order notification email failed", error instanceof Error ? error.message : error);
+      return json(response, { error: "店家訂單通知信寄送失敗，請稍後再試。" }, 502);
     }
   }
 

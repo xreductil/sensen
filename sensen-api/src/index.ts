@@ -40,6 +40,66 @@ const sendOrderCompletionEmail = async (row: Record<string, unknown>, items: Rec
   }
 };
 
+const sendOrderCreatedEmail = async (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
+  const recipient = String(row.customer_email || row.user_email || "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(recipient)) return { status: "not_requested", recipient };
+  const customerName = String(row.customer_name || row.user_name || "會員").trim();
+  const orderNumber = String(row.order_number || "").trim();
+  const itemLines = items.length
+    ? items.map(item => `- ${String(item.title || "商品")} × ${Number(item.qty || 0)}｜$${(Number(item.priceValue || 0) * Number(item.qty || 0)).toFixed(0)}`).join("\n")
+    : "（訂單商品明細請至後台訂單管理查看）";
+  const shippingAddress = parseJson<Record<string, unknown> | null>(String(row.shipping_address || ""), null);
+  const address = shippingAddress
+    ? [shippingAddress.city, shippingAddress.zip, shippingAddress.address].filter(Boolean).join(" ")
+    : "";
+  const message = [
+    "郵件內容來自 森森官網-線上商城訂單",
+    "===== 以下為內容 ====",
+    `訂單編號：${orderNumber}`,
+    `顧客姓名：${customerName}`,
+    `電子信箱：${recipient}`,
+    `連絡電話：${String(row.customer_phone || row.user_phone || "")}`,
+    "",
+    "訂單商品：",
+    itemLines,
+    "",
+    `訂單金額：$${Number(row.total_amount || 0).toFixed(0)}`,
+    `取貨／配送方式：${shippingLabel(String(row.shipping_method || "pickup"))}`,
+    `取貨／配送日期：${String(row.fulfillment_date || "")}`,
+    address ? `宅配地址：${address}` : "",
+    row.customer_note ? `備註：${String(row.customer_note)}` : "",
+    "----完畢----",
+    "",
+    "這封電子郵件由《森森點心坊》線上商城傳送，網站網址為 https://www.sensen.com.tw",
+  ].filter(Boolean).join("\n");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(VERCEL_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        type: "order_created",
+        name: customerName,
+        email: recipient,
+        subject: `顧客「${customerName}」的新訂單 ${orderNumber}`,
+        message,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error("Order notification email returned", response.status);
+      return { status: "pending", recipient };
+    }
+    return { status: "sent", recipient };
+  } catch (error) {
+    console.error("Order notification email failed", error instanceof Error ? error.message : error);
+    return { status: "pending", recipient };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
 // D1/SQLite CURRENT_TIMESTAMP is UTC but is returned without an offset.
 // Mark that value explicitly so browsers do not parse it as local time.
 const utcDateString = (value: unknown) => {
@@ -1760,6 +1820,12 @@ export default {
           SET status = 'processing', payment_status = 'paid', paid_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
           WHERE id = ?1
         `).bind(row.id).run();
+        const items = await env.DB.prepare(`
+          SELECT oi.product_name AS title, oi.price AS priceValue, oi.quantity AS qty
+          FROM order_items oi
+          WHERE oi.order_id = ?1 ORDER BY oi.id ASC
+        `).bind(row.id).all<Record<string, unknown>>();
+        await sendOrderCreatedEmail({ ...row, status: "processing", payment_status: "paid" }, items.results);
         return paymentRedirect(env, String(row.order_number), "success");
       }
 
