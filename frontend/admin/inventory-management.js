@@ -204,6 +204,36 @@
     return field.querySelector('[name="dietary"]');
   }
 
+  function ensureFlavorEditor() {
+    const form = $('#inventory-product-form');
+    if (!form) return null;
+    const existing = form.querySelector('[data-inventory-flavor-editor]');
+    if (existing) return existing;
+    const anchor = form.elements.spec?.closest('.col-md-6') || form.elements.other?.closest('.col-12');
+    if (!anchor) return null;
+    const field = document.createElement('div');
+    field.className = 'col-12';
+    field.dataset.inventoryFlavorEditor = '';
+    field.innerHTML = '<div class="border rounded p-3 bg-light-subtle"><label class="form-label mb-1">口味選項</label><div class="small text-secondary mb-2">需要在前台顯示口味按鈕時使用；請以逗號、頓號或換行分隔，例如：烏豆沙、芋頭、抹茶、棗泥。</div><div class="row g-2"><div class="col-md-8"><input class="form-control" name="flavorOptions" placeholder="烏豆沙、芋頭、抹茶、棗泥"></div><div class="col-md-4"><label class="form-label small mb-1">任選數量<input class="form-control" name="flavorCount" type="number" min="1" step="1" placeholder="例如：3"></label></div></div></div>';
+    anchor.insertAdjacentElement('afterend', field);
+    return field;
+  }
+
+  function collectFlavorSettings() {
+    const form = $('#inventory-product-form');
+    ensureFlavorEditor();
+    const flavors = [...new Set(String(form.elements.flavorOptions?.value || '')
+      .split(/[,，、/\n]+/)
+      .map(value => value.trim())
+      .filter(Boolean))];
+    const count = Number(form.elements.flavorCount?.value || 0);
+    if (!flavors.length) return { flavors: [], flavorCount: 0 };
+    if (!Number.isInteger(count) || count < 1 || count > flavors.length) {
+      throw new Error(`任選數量需介於 1 至 ${flavors.length} 種之間。`);
+    }
+    return { flavors, flavorCount: count };
+  }
+
   function renderFilters() {
     const category = $('#inventory-category-filter');
     const current = category.value;
@@ -262,6 +292,7 @@
     const form = $('#inventory-product-form');
     const thumbnailEditor = ensureThumbnailEditor();
     const dietaryInput = ensureDietaryEditor();
+    const flavorEditor = ensureFlavorEditor();
     form.reset();
     const priceOptions = ensurePriceOptionsEditor();
     if (priceOptions) priceOptions.innerHTML = '';
@@ -279,6 +310,12 @@
     form.elements.day.value = product?.day || 5;
     form.elements.img.value = product?.img || '';
     form.elements.desc.value = product?.desc || '';
+    form._editingVariants = product?.variants && typeof product.variants === 'object' ? { ...product.variants } : {};
+    const flavors = Array.isArray(form._editingVariants.flavors) ? form._editingVariants.flavors.map(value => String(value || '').trim()).filter(Boolean) : [];
+    if (flavorEditor) {
+      form.elements.flavorOptions.value = flavors.join('、');
+      form.elements.flavorCount.value = flavors.length ? Number(form._editingVariants.flavorCount || 1) : '';
+    }
     const thumbnail = thumbnailSettings(product);
     if (form.elements.thumbnailOffsetX) form.elements.thumbnailOffsetX.value = thumbnail.offsetX;
     if (form.elements.thumbnailOffsetY) form.elements.thumbnailOffsetY.value = thumbnail.offsetY;
@@ -301,7 +338,8 @@
   $('#inventory-product-search').addEventListener('input', () => { currentPage = 1; render(); }); $('#inventory-category-filter').addEventListener('change', () => { currentPage = 1; render(); }); $('#inventory-visibility-filter').addEventListener('change', () => { currentPage = 1; render(); });
   ensureThumbnailEditor();
   ensureDietaryEditor();
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const message = $('#inventory-product-message'); const dietaryInput = ensureDietaryEditor(); const data = Object.fromEntries(new FormData(form)); button.disabled = true; button.textContent = '儲存中…'; message.textContent = ''; message.className = 'small'; try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; const result = await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants: { sizes }, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked, dietary: dietaryInput?.checked ? '蛋奶素' : '' }) }); notifyProductUpdate(result.product?.id || data.id); dialog.close(); await load(); } catch (error) { message.textContent = error.message; message.className = 'text-danger small'; } finally { button.disabled = false; button.textContent = '儲存商品'; } });
+  ensureFlavorEditor();
+  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const message = $('#inventory-product-message'); const dietaryInput = ensureDietaryEditor(); const data = Object.fromEntries(new FormData(form)); button.disabled = true; button.textContent = '儲存中…'; message.textContent = ''; message.className = 'small'; try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); const flavorSettings = collectFlavorSettings(); const variants = { ...(form._editingVariants || {}), sizes }; if (flavorSettings.flavors.length) { variants.flavors = flavorSettings.flavors; variants.flavorCount = flavorSettings.flavorCount; } else { delete variants.flavors; delete variants.flavorCount; } data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; const result = await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked, dietary: dietaryInput?.checked ? '蛋奶素' : '' }) }); notifyProductUpdate(result.product?.id || data.id); dialog.close(); await load(); } catch (error) { message.textContent = error.message; message.className = 'text-danger small'; } finally { button.disabled = false; button.textContent = '儲存商品'; } });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();
