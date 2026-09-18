@@ -460,6 +460,8 @@
     const title = productPage.dataset.productFallbackTitle || '';
     const image = productPage.dataset.productFallbackImage || '';
     if (!title || !image) return null;
+    let variants = {};
+    try { variants = JSON.parse(productPage.dataset.productFallbackVariants || '{}'); } catch { variants = {}; }
     return {
       id: productId,
       title,
@@ -470,7 +472,8 @@
       published: false,
       quantity: 0,
       priceValue: 0,
-      likes: 0
+      likes: 0,
+      variants,
     };
   };
 

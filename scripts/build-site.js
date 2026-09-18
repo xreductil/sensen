@@ -751,6 +751,7 @@ const DYNAMIC_PRODUCT_DETAIL_RECORDS = [
     kind: "souvenir",
     category: "伴手禮",
     description: "烏豆沙、芋頭、抹茶、棗泥任選三入。",
+    variants: { flavors: ["烏豆沙", "芋頭", "抹茶", "棗泥"], flavorCount: 3 },
   },
   {
     id: "蛋黃綠豆椪禮盒-mu5bhpph",
@@ -2145,7 +2146,7 @@ function productDetailDataAttributes(localPath) {
     || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId)
     || DYNAMIC_PRODUCT_DETAIL_BY_ID.get(productId);
   const fallbackAttributes = fallback
-    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"`
+    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"${fallback.variants ? ` data-product-fallback-variants="${escapeAttr(JSON.stringify(fallback.variants))}"` : ""}`
     : "";
   return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"${fallbackAttributes}`;
 }
