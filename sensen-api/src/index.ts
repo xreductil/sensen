@@ -632,6 +632,12 @@ const adminProductFromRow = (row: ProductRow) => {
   };
 };
 
+const normalizeDietary = (value: unknown) => {
+  if (value === true) return "蛋奶素";
+  const normalized = String(value ?? "").trim();
+  return ["蛋奶素", "奶蛋素"].includes(normalized) ? "蛋奶素" : "";
+};
+
 const orderFromRow = (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
   const total = Number(row.total_amount || 0);
   const shippingFee = Number(row.shipping_fee || 0);
@@ -1165,7 +1171,9 @@ export default {
           const size = String(body.size ?? body.spec ?? existingMetadata.size ?? existingMetadata.productSize ?? existingMetadata.spec ?? "").trim();
           const storage = String(body.storage ?? body.storageMethod ?? existingMetadata.storage ?? existingMetadata.storageMethod ?? "").trim();
           const other = String(body.other ?? body.otherNotes ?? existingMetadata.other ?? existingMetadata.otherNotes ?? "").trim();
-          const dietary = String(body.dietary ?? existingMetadata.dietary ?? existingMetadata.dietaryLabel ?? "").trim();
+          const dietary = body.dietary === undefined
+            ? normalizeDietary(existingMetadata.dietary ?? existingMetadata.dietaryLabel)
+            : normalizeDietary(body.dietary);
           if (!title) return json(request, { error: "商品名稱不可為空白。" }, 400);
           if (!Number.isFinite(price) || !Number.isFinite(stock)) return json(request, { error: "售價或庫存格式錯誤。" }, 400);
 

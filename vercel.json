@@ -26,19 +26,19 @@
     },
     {
       "source": "/api/((?!send-email(?:/|$)).*)",
-      "destination": "https://sensen.jinfeng8605.workers.dev/api/$1"
+      "destination": "https://sensen-api.jinfeng8605.workers.dev/api/$1"
     },
     {
       "source": "/images/:path*",
-      "destination": "https://sensen.jinfeng8605.workers.dev/images/:path*"
+      "destination": "https://sensen-api.jinfeng8605.workers.dev/images/:path*"
     },
     {
       "source": "/assets/images/:path*",
-      "destination": "https://sensen.jinfeng8605.workers.dev/images/:path*"
+      "destination": "https://sensen-api.jinfeng8605.workers.dev/images/:path*"
     },
     {
       "source": "/health",
-      "destination": "https://sensen.jinfeng8605.workers.dev/health"
+      "destination": "https://sensen-api.jinfeng8605.workers.dev/health"
     }
   ]
 }

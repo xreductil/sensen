@@ -193,7 +193,7 @@
   function ensureDietaryEditor() {
     const form = $('#inventory-product-form');
     if (!form) return null;
-    const existing = form.elements.dietary;
+    const existing = form.querySelector('input[name="dietary"]');
     if (existing) return existing;
     const otherColumn = form.elements.other?.closest('.col-12');
     if (!otherColumn) return null;
@@ -339,7 +339,60 @@
   ensureThumbnailEditor();
   ensureDietaryEditor();
   ensureFlavorEditor();
-  $('#inventory-product-form').addEventListener('submit', async event => { event.preventDefault(); const form = event.currentTarget; const button = form.querySelector('button[type="submit"]'); const message = $('#inventory-product-message'); const dietaryInput = ensureDietaryEditor(); const data = Object.fromEntries(new FormData(form)); button.disabled = true; button.textContent = '儲存中…'; message.textContent = ''; message.className = 'small'; try { const sizes = collectPriceOptions(); if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。'); const flavorSettings = collectFlavorSettings(); const variants = { ...(form._editingVariants || {}), sizes }; if (flavorSettings.flavors.length) { variants.flavors = flavorSettings.flavors; variants.flavorCount = flavorSettings.flavorCount; } else { delete variants.flavors; delete variants.flavorCount; } data.priceValue = Number(Object.values(sizes)[0]); data.spec = Object.keys(sizes).join('、'); data.size = data.spec; const result = await api('/api/admin/products', { method: data.id ? 'PATCH' : 'POST', body: JSON.stringify({ ...data, priceValue: Number(data.priceValue), quantity: Number(data.quantity), variants, thumbnail: collectThumbnailSettings(), published: form.elements.published.checked, newArrival: form.elements.newArrival.checked, dietary: dietaryInput?.checked ? '蛋奶素' : '' }) }); notifyProductUpdate(result.product?.id || data.id); dialog.close(); await load(); } catch (error) { message.textContent = error.message; message.className = 'text-danger small'; } finally { button.disabled = false; button.textContent = '儲存商品'; } });
+  $('#inventory-product-form').addEventListener('submit', async event => {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const button = form.querySelector('button[type="submit"]');
+    const message = $('#inventory-product-message');
+    const dietaryInput = form.querySelector('input[name="dietary"]') || ensureDietaryEditor();
+    const dietary = dietaryInput?.checked === true ? '蛋奶素' : '';
+    const data = Object.fromEntries(new FormData(form));
+    button.disabled = true;
+    button.textContent = '儲存中…';
+    message.textContent = '';
+    message.className = 'small';
+    try {
+      const sizes = collectPriceOptions();
+      if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
+      const flavorSettings = collectFlavorSettings();
+      const variants = { ...(form._editingVariants || {}), sizes };
+      if (flavorSettings.flavors.length) {
+        variants.flavors = flavorSettings.flavors;
+        variants.flavorCount = flavorSettings.flavorCount;
+      } else {
+        delete variants.flavors;
+        delete variants.flavorCount;
+      }
+      data.priceValue = Number(Object.values(sizes)[0]);
+      data.spec = Object.keys(sizes).join('、');
+      data.size = data.spec;
+      const result = await api('/api/admin/products', {
+        method: data.id ? 'PATCH' : 'POST',
+        body: JSON.stringify({
+          ...data,
+          priceValue: Number(data.priceValue),
+          quantity: Number(data.quantity),
+          variants,
+          thumbnail: collectThumbnailSettings(),
+          published: form.elements.published.checked,
+          newArrival: form.elements.newArrival.checked,
+          dietary,
+        }),
+      });
+      if (String(result.product?.dietary || '') !== dietary) {
+        throw new Error('蛋奶素設定未成功儲存，請重新整理頁面後再試。');
+      }
+      notifyProductUpdate(result.product?.id || data.id);
+      dialog.close();
+      await load();
+    } catch (error) {
+      message.textContent = error.message;
+      message.className = 'text-danger small';
+    } finally {
+      button.disabled = false;
+      button.textContent = '儲存商品';
+    }
+  });
   const loadProducts = () => load().catch(error => { const status = $('[data-inventory-excel-status]'); if (status) status.textContent = error.message; const table = $('[data-sensen-table="inventory"]'); if (table) table.innerHTML = '<tr><td colspan="8" class="text-danger py-4">商品資料載入失敗，請稍後再試。</td></tr>'; });
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', loadProducts, { once: true }); else loadProducts();
 })();
