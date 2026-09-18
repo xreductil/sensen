@@ -1165,6 +1165,7 @@ export default {
           const size = String(body.size ?? body.spec ?? existingMetadata.size ?? existingMetadata.productSize ?? existingMetadata.spec ?? "").trim();
           const storage = String(body.storage ?? body.storageMethod ?? existingMetadata.storage ?? existingMetadata.storageMethod ?? "").trim();
           const other = String(body.other ?? body.otherNotes ?? existingMetadata.other ?? existingMetadata.otherNotes ?? "").trim();
+          const dietary = String(body.dietary ?? existingMetadata.dietary ?? existingMetadata.dietaryLabel ?? "").trim();
           if (!title) return json(request, { error: "商品名稱不可為空白。" }, 400);
           if (!Number.isFinite(price) || !Number.isFinite(stock)) return json(request, { error: "售價或庫存格式錯誤。" }, 400);
 
@@ -1184,6 +1185,7 @@ export default {
             size,
             storage,
             other,
+            dietary,
             day: String(body.day ?? existingMetadata.day ?? "5").trim(),
             img: imageValue,
             thumbnail: normalizeThumbnailSettings(body.thumbnail ?? existingMetadata.thumbnail),
