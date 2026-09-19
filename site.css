@@ -241,13 +241,20 @@ body:has(.account-shell) #message { padding: 18px 22px; border: 1px solid #e8edf
 
 /* Login / register screen based on the Patria two-column account form. */
 body:has(.account-shell) [hidden] { display: none !important; }
-body:has([data-account-route="login"]) .account-layout { display: block; }
-body:has([data-account-route="login"]) .account-sidebar { display: none; }
-body:has([data-account-route="login"]) .account-content { width: 100%; }
-body:has([data-account-route="login"]) .account-topbar { margin-bottom: 34px; }
+body:has([data-account-route="login"]) .account-layout,
+body:has([data-account-route="register"]) .account-layout { display: block; }
+body:has([data-account-route="login"]) .account-sidebar,
+body:has([data-account-route="register"]) .account-sidebar { display: none; }
+body:has([data-account-route="login"]) .account-content,
+body:has([data-account-route="register"]) .account-content { width: 100%; }
+body:has([data-account-route="login"]) .account-topbar,
+body:has([data-account-route="register"]) .account-topbar { margin-bottom: 34px; }
 .account-auth-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 68px; align-items: start; }
+.account-auth-grid.account-auth-single { grid-template-columns: minmax(0, 620px); justify-content: center; }
 .account-auth-grid .account-login-card { width: 100%; min-height: 620px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+.account-auth-grid .account-login-card h1,
 .account-auth-grid .account-login-card h2 { display: flex; align-items: center; gap: 16px; margin: 0 0 28px; color: #3a1f14; font-family: Georgia, "Times New Roman", var(--font-main); font-size: clamp(2.15rem, 3.4vw, 3.35rem); line-height: 1; }
+.account-auth-grid .account-login-card h1 span,
 .account-auth-grid .account-login-card h2 span { display: inline-block; width: 12px; height: 50px; border-radius: 999px; background: #e8281a; box-shadow: 0 8px 20px rgba(232, 40, 26, .18); }
 .account-auth-grid .account-form { min-height: 510px; padding: 60px; border: 1px solid #efd7bb; border-radius: 12px; background: #fffdfa; box-shadow: 0 18px 40px rgba(58, 31, 20, .06); }
 .account-auth-grid .account-form label { gap: 9px; color: #3a1f14; font-size: 1rem; font-weight: 800; }
@@ -259,6 +266,8 @@ body:has([data-account-route="login"]) .account-topbar { margin-bottom: 34px; }
 .account-auth-actions .save-btn { background: #e8281a; box-shadow: 0 12px 25px rgba(232, 40, 26, .16); }
 .account-auth-actions .save-btn:hover { background: #c51f14; }
 .account-auth-actions .save-btn:disabled { opacity: .65; cursor: wait; }
+.account-auth-switch { margin: 26px 0 0; color: #7b5b4b; text-align: center; }
+.account-auth-switch a { color: #8d563d; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 
 @media (max-width: 991px) {
   .account-auth-grid { gap: 28px; }
@@ -268,7 +277,9 @@ body:has([data-account-route="login"]) .account-topbar { margin-bottom: 34px; }
 @media (max-width: 760px) {
   .account-auth-grid { grid-template-columns: 1fr; gap: 42px; }
   .account-auth-grid .account-login-card { min-height: 0; }
+  .account-auth-grid .account-login-card h1,
   .account-auth-grid .account-login-card h2 { font-size: 2.25rem; }
+  .account-auth-grid .account-login-card h1 span,
   .account-auth-grid .account-login-card h2 span { height: 38px; }
   .account-auth-grid .account-form { min-height: 0; padding: 26px 20px; }
   .account-auth-grid .account-form input { height: 62px; }

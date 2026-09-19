@@ -1401,7 +1401,7 @@ function normalizeHeadingStructure(content, localPath) {
   if (localPath === "/") {
     return `<h1 class="site-sr-only">森森點心坊｜高雄蛋糕、伴手禮與彌月禮盒</h1>${content}`;
   }
-  if (["/customer", "/customer/admin", "/customer/admin/backup"].includes(localPath)) {
+  if (["/customer", "/customer/admin", "/customer/admin/register", "/customer/admin/backup"].includes(localPath)) {
     return `<h1 class="site-sr-only">森森點心坊會員中心</h1>${content.replace(/<h1\b/g, "<h2").replace(/<\/h1>/g, "</h2>")}`;
   }
   return content;
@@ -2219,8 +2219,12 @@ function souvenirPageContent() {
 
 function customerPageContent(route = "login") {
   const isDashboard = route === "dashboard";
+  const isRegister = route === "register";
   const loginHidden = isDashboard ? " hidden" : "";
   const appHidden = isDashboard ? "" : " hidden";
+  const authContent = isRegister
+    ? `<section class="account-login-card"><h1><span></span>Register</h1><form class="account-form" data-account-register><label>Full Name <b>*</b><input name="name" required autocomplete="name"></label><label>Email address <b>*</b><input name="email" type="email" required autocomplete="email"></label><label>Phone<input name="phone" type="tel" autocomplete="tel"></label><label>Password <b>*</b><input name="password" type="password" minlength="6" required autocomplete="new-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Register</button></div><p class="account-auth-switch">Already have an account? <a data-login-link href="/customer/admin/">登入</a></p></form></section>`
+    : `<section class="account-login-card"><h1><span></span>Login</h1><form class="account-form" data-account-login><label>Username or email address <b>*</b><input name="login" type="text" required autocomplete="username"></label><label>Password <b>*</b><input name="password" type="password" required autocomplete="current-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Log in</button></div><p class="account-auth-switch">Don't have an account? <a data-register-link href="/customer/admin/register/">註冊</a></p></form></section>`;
   return `<section class="account-shell" data-store-account data-account-route="${route}">
     <div class="account-layout">
       <aside class="account-sidebar">
@@ -2244,9 +2248,8 @@ function customerPageContent(route = "login") {
       <div class="account-content">
         <div class="account-topbar"><span>會員中心 / <b data-account-title>帳戶總覽</b></span></div>
         <div id="account-message" role="status"></div>
-        <div data-account-panel="login" class="account-auth-grid"${loginHidden}>
-          <section class="account-login-card"><h1><span></span>Login</h1><form class="account-form" data-account-login><label>Username or email address <b>*</b><input name="login" type="text" required autocomplete="username"></label><label>Password <b>*</b><input name="password" type="password" required autocomplete="current-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Log in</button></div></form></section>
-          <section class="account-login-card"><h1><span></span>Register</h1><form class="account-form" data-account-register><label>Full Name <b>*</b><input name="name" required autocomplete="name"></label><label>Email address <b>*</b><input name="email" type="email" required autocomplete="email"></label><label>Phone<input name="phone" type="tel" autocomplete="tel"></label><label>Password <b>*</b><input name="password" type="password" minlength="6" required autocomplete="new-password"></label><div class="account-auth-actions"><button class="save-btn" type="submit">Register</button></div></form></section>
+        <div data-account-panel="login" class="account-auth-grid account-auth-single"${loginHidden}>
+          ${authContent}
         </div>
         <div data-account-panel="app"${appHidden}><div class="account-heading"><p class="account-kicker">MEMBER DASHBOARD</p><h1>歡迎回來，<span data-user-name></span></h1><p class="account-desc" data-user-email></p></div><section class="content-section account-overview-section" data-account-section="overview"><div class="section-title"><div><p class="account-kicker">ACTIVITY</p><h2>Recent Orders</h2></div><button type="button" data-account-tab-link="orders">查看全部訂單</button></div><div data-account-orders></div></section><div class="account-lower-grid"><section class="content-section account-preview-card"><h2>Saved Address</h2><p data-address-preview>尚未儲存收件地址。</p><button type="button" data-account-tab-link="address">編輯地址</button></section><section class="content-section account-preview-card"><h2>物流 Shipping</h2><p>查看取貨日期與訂單物流狀態。</p><button type="button" data-account-tab-link="orders">查看訂單</button></section></div><section class="content-section" data-account-section="profile" hidden><div class="section-title"><div><p class="account-kicker">ACCOUNT</p><h2>會員資料</h2></div></div><form class="account-form" data-profile-form><label>姓名<input name="name" required></label><label>電子信箱<input name="email" type="email" required></label><label>電話<input name="phone"></label><button class="save-btn" type="submit">儲存資料</button></form></section><section class="content-section" data-account-section="address" hidden><div class="section-title"><div><p class="account-kicker">DELIVERY</p><h2>收件地址</h2></div></div><form class="account-form" data-address-form><label>收件人<input name="fullName"></label><label>電話<input name="phone"></label><label>地址<input name="address"></label><label>城市<input name="city"></label><label>郵遞區號<input name="zip"></label><button class="save-btn" type="submit">儲存地址</button></form></section><section class="content-section" data-account-section="orders" hidden><div class="section-title"><div><p class="account-kicker">HISTORY</p><h2>我的訂單</h2></div></div><div data-account-orders-full></div></section></div>
       </div>
@@ -2288,10 +2291,14 @@ function accountScript() {
     const renderOrders = target => { target.innerHTML = orders.length ? orders.map(order => { const details = [shippingLabels[order.shippingMethod] || order.shippingMethod || "", formatOrderDate(order.createdAt) ? "下單：" + formatOrderDate(order.createdAt) : "", formatFulfillmentDate(order.fulfillmentDate) ? "取貨／配送：" + formatFulfillmentDate(order.fulfillmentDate) : "", order.trackingNumber ? "物流單號：" + order.trackingNumber : ""].filter(Boolean); return '<div class="order-row"><div class="order-row-main"><b>#' + escapeHtml(String(order.id).slice(0, 12)) + '</b>' + (details.length ? '<small class="order-details">' + escapeHtml(details.join(" · ")) + '</small>' : '') + '</div><span class="status">' + escapeHtml(statusLabels[order.status] || order.status || "已建立") + '</span><strong>$' + Number(order.total || 0).toFixed(2) + '</strong></div>'; }).join("") : "<p>目前沒有訂單。</p>"; };
     const render = data => { user = data.user; orders = (data.orders || []).slice().sort((left, right) => (parseOrderDate(right.createdAt)?.getTime() || 0) - (parseOrderDate(left.createdAt)?.getTime() || 0)); login.hidden = true; app.hidden = false; document.querySelector("[data-user-name]").textContent = user.name || "會員"; document.querySelector("[data-sidebar-user]").textContent = user.name || "會員您好"; document.querySelector("[data-user-email]").textContent = user.email || ""; document.querySelector("[data-sidebar-order-count]").textContent = orders.length ? "(" + orders.length + ")" : ""; profileForm.elements.name.value = user.name || ""; profileForm.elements.email.value = user.email || ""; profileForm.elements.phone.value = user.phone || ""; const address = data.address || {}; ["fullName", "phone", "address", "city", "zip"].forEach(key => { addressForm.elements[key].value = address[key] || ""; }); const addressText = [address.address, address.city, address.zip].filter(Boolean).join("，"); document.querySelector("[data-address-preview]").textContent = addressText || "尚未儲存收件地址。"; renderOrders(document.querySelector("[data-account-orders]")); renderOrders(document.querySelector("[data-account-orders-full]")); api("/api/cart").then(cart => { const count = (cart.items || []).reduce((sum, item) => sum + Number(item.qty || 0), 0); document.querySelectorAll("[data-cart-count]").forEach(item => { item.textContent = count; }); }); };
     const load = async (showError = false) => { try { const me = await api("/api/me"); const ordersData = await api("/api/orders"); render({ ...me, ...ordersData }); return true; } catch (error) { login.hidden = false; app.hidden = true; if (showError) showMessage(error.message, true); return false; } };
-    loginForm.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "登入中…"; showMessage(""); try { await api("/api/login", { method: "POST", body: JSON.stringify({ login: String(form.get("login") || "").trim(), password: form.get("password") }) }); window.location.assign(returnTo); } catch (error) { showMessage(error.message, true); button.disabled = false; button.textContent = "Log in"; } });
-    registerForm.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "註冊中…"; showMessage(""); try { await api("/api/register", { method: "POST", body: JSON.stringify(Object.fromEntries(form)) }); window.location.assign(returnTo); } catch (error) { showMessage(error.message, true); button.disabled = false; button.textContent = "Register"; } });
-    profileForm.addEventListener("submit", async event => { event.preventDefault(); try { const data = await api("/api/me", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("會員資料已更新。"); user = data.user; document.querySelector("[data-user-name]").textContent = user.name || "會員"; document.querySelector("[data-sidebar-user]").textContent = user.name || "會員您好"; } catch (error) { showMessage(error.message, true); } });
-    addressForm.addEventListener("submit", async event => { event.preventDefault(); try { await api("/api/address", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("收件地址已更新。"); } catch (error) { showMessage(error.message, true); } });
+    const authReturn = new URLSearchParams(window.location.search).get("return");
+    const updateAuthLink = (selector, path) => { const link = document.querySelector(selector); if (link && authReturn) link.href = path + "?return=" + encodeURIComponent(authReturn); };
+    updateAuthLink("[data-register-link]", "/customer/admin/register/");
+    updateAuthLink("[data-login-link]", "/customer/admin/");
+    loginForm?.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "登入中…"; showMessage(""); try { await api("/api/login", { method: "POST", body: JSON.stringify({ login: String(form.get("login") || "").trim(), password: form.get("password") }) }); window.location.assign(returnTo); } catch (error) { showMessage(error.message, true); button.disabled = false; button.textContent = "Log in"; } });
+    registerForm?.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "註冊中…"; showMessage(""); try { await api("/api/register", { method: "POST", body: JSON.stringify(Object.fromEntries(form)) }); window.location.assign(returnTo); } catch (error) { showMessage(error.message, true); button.disabled = false; button.textContent = "Register"; } });
+    profileForm?.addEventListener("submit", async event => { event.preventDefault(); try { const data = await api("/api/me", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("會員資料已更新。"); user = data.user; document.querySelector("[data-user-name]").textContent = user.name || "會員"; document.querySelector("[data-sidebar-user]").textContent = user.name || "會員您好"; } catch (error) { showMessage(error.message, true); } });
+    addressForm?.addEventListener("submit", async event => { event.preventDefault(); try { await api("/api/address", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("收件地址已更新。"); } catch (error) { showMessage(error.message, true); } });
     const switchTab = tab => { document.querySelectorAll("[data-account-tab]").forEach(item => item.classList.toggle("active", item.dataset.accountTab === tab)); document.querySelectorAll("[data-account-section]").forEach(section => { section.hidden = section.dataset.accountSection !== tab; }); const labels = { overview: "帳戶總覽", profile: "會員資料", address: "收件地址", orders: "我的訂單" }; document.querySelector("[data-account-title]").textContent = labels[tab] || labels.overview; };
     document.querySelectorAll("[data-account-tab], [data-account-tab-link]").forEach(button => button.addEventListener("click", () => switchTab(button.dataset.accountTab || button.dataset.accountTabLink)));
     const accountMenuToggle = document.querySelector(".account-menu-toggle"), accountNav = document.querySelector(".account-nav");
@@ -2859,6 +2866,7 @@ function pageContent(page) {
   if (localPath === "/聯絡我們" || localPath === "/contact") {
     return contactPageContent();
   }
+  if (localPath === "/customer/admin/register") return customerPageContent("register");
   if (localPath === "/customer/admin") return customerPageContent("login");
   if (localPath === "/customer/admin/backup") return customerPageContent("dashboard");
   if (localPath === "/customer") return customerPageContent("login");
@@ -3191,6 +3199,24 @@ function extractSnapshotSection(html, sectionClass) {
   return "";
 }
 
+function syncCustomerAccountSnapshots() {
+  const pages = [
+    { localPath: "/customer/admin", route: "login", title: "會員登入 – 森森點心坊" },
+    { localPath: "/customer/admin/register", route: "register", title: "會員註冊 – 森森點心坊" },
+    { localPath: "/customer/admin/backup", route: "dashboard", title: "會員中心 – 森森點心坊" },
+  ];
+  for (const page of pages) {
+    const filePath = htmlFileForLocalPath(page.localPath);
+    ensureDir(filePath);
+    fs.writeFileSync(filePath, layout({
+      title: page.title,
+      pathLabel: page.localPath,
+      content: normalizeHeadingStructure(customerPageContent(page.route), page.localPath),
+      showHero: false,
+    }));
+  }
+}
+
 function syncStaticSnapshotContent() {
   const pages = [
     { localPath: BIRTHDAY_CAKE_PATH, sectionClass: "cake-page", content: birthdayCakeContent() },
@@ -3441,6 +3467,7 @@ function main() {
     syncProductDetailTemplate();
     syncProductDetailSnapshot();
     syncAdminFrontendSnapshot();
+    syncCustomerAccountSnapshots();
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
     syncNewProductImageGalleries();
@@ -3538,10 +3565,12 @@ function main() {
       isSouvenirProduct: SOUVENIR_PRODUCT_PATHS.has(localPath),
       heroCategoryLabel: SOUVENIR_PRODUCT_PATHS.has(localPath) ? "伴手禮" : CAKE_PRODUCT_CATEGORY_LABELS.get(localPath),
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
-      showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
+      showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/register" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
       heroSource: localPath === EMERALD_LYSK_PATH ? "/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : "/images/headtitle-bg2.jpg",
     }));
   }
+
+  syncCustomerAccountSnapshots();
 
   if (!home || localPathFromUrl(home.url) !== "/") {
     fs.writeFileSync(path.join(OUT_DIR, "index.html"), layout({
