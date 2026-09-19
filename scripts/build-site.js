@@ -1540,6 +1540,8 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:url" content="${escapeAttr(canonical)}">
+  <link rel="icon" type="image/jpeg" href="/assets/images/sensen-favicon.jpg">
+  <link rel="apple-touch-icon" href="/assets/images/sensen-favicon.jpg">
   <link rel="stylesheet" href="${SITE_CSS_URL}">
   ${checkoutStyle}
 </head>
@@ -3119,7 +3121,7 @@ function rewriteR2ImagePaths() {
         .replace(new RegExp(`(?:\\.\\/|\\/admin\\/)assets\\/((?!js\\/|css\\/)[^\\s"'` + "\\`" + `<>]+\\.${imageExtensions})(?=[?#\\s"'` + "\\`" + `)]|$)`, "gi"), "/images/admin/$1");
     }
     content = content
-      .replace(/\/assets\/images\//g, "/images/")
+      .replace(/\/assets\/images\/(?!sensen-favicon\.jpg)/g, "/images/")
       .replace(/data\/images\//g, "/images/");
     fs.writeFileSync(filePath, content);
   }
@@ -3197,6 +3199,28 @@ function extractSnapshotSection(html, sectionClass) {
     if (depth === 0) return html.slice(start, match.index + match[0].length);
   }
   return "";
+}
+
+function syncStaticSnapshotFavicon() {
+  const faviconMarkup = '  <link rel="icon" type="image/jpeg" href="/assets/images/sensen-favicon.jpg">\n  <link rel="apple-touch-icon" href="/assets/images/sensen-favicon.jpg">';
+  const walk = (directory) => {
+    if (!fs.existsSync(directory)) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) walk(filePath);
+      else if (entry.isFile() && path.extname(filePath).toLowerCase() === ".html" && !path.relative(OUT_DIR, filePath).startsWith(`admin${path.sep}`)) {
+        const html = fs.readFileSync(filePath, "utf8");
+        if (html.includes("/assets/images/sensen-favicon.jpg")) continue;
+        if (html.includes("/images/sensen-favicon.jpg")) {
+          fs.writeFileSync(filePath, html.replaceAll("/images/sensen-favicon.jpg", "/assets/images/sensen-favicon.jpg"));
+          continue;
+        }
+        const updated = html.replace("</head>", `${faviconMarkup}\n</head>`);
+        if (updated !== html) fs.writeFileSync(filePath, updated);
+      }
+    }
+  };
+  walk(OUT_DIR);
 }
 
 function syncCustomerAccountSnapshots() {
@@ -3464,9 +3488,11 @@ function main() {
     fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
     fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
     fs.copyFileSync(path.join(__dirname, "home-news.js"), path.join(OUT_DIR, "assets", "home-news.js"));
+    fs.copyFileSync(path.join(IMAGE_DATA_DIR, "sensen-favicon.jpg"), path.join(OUT_DIR, "assets", "images", "sensen-favicon.jpg"));
     syncProductDetailTemplate();
     syncProductDetailSnapshot();
     syncAdminFrontendSnapshot();
+    syncStaticSnapshotFavicon();
     syncCustomerAccountSnapshots();
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
@@ -3571,6 +3597,7 @@ function main() {
   }
 
   syncCustomerAccountSnapshots();
+  syncStaticSnapshotFavicon();
 
   if (!home || localPathFromUrl(home.url) !== "/") {
     fs.writeFileSync(path.join(OUT_DIR, "index.html"), layout({
