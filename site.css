@@ -261,6 +261,9 @@ body:has([data-account-route="register"]) .account-topbar { margin-bottom: 34px;
 .account-auth-grid .account-form label b { color: #3a1f14; }
 .account-auth-grid .account-form input { height: 82px; margin-bottom: 9px; padding: 0 20px; border: 1px solid #efd7bb; border-radius: 9px; background: #fff; font-size: 1rem; }
 .account-auth-grid .account-form input:focus { border-color: #e8281a; box-shadow: 0 0 0 5px rgba(232, 40, 26, .08); }
+.account-auth-grid .account-form .account-consent { display: flex; flex-direction: row; align-items: center; gap: 10px; margin-top: 22px; color: #78907d; font-size: 1rem; font-weight: 400; line-height: 1.5; }
+.account-auth-grid .account-form .account-consent input[type="checkbox"] { flex: 0 0 auto; width: 31px; height: 31px; margin: 0; padding: 0; accent-color: #8d563d; }
+.account-auth-grid .account-form .account-consent a { color: #365d42; text-decoration: underline; text-underline-offset: 3px; }
 .account-auth-actions { display: grid; gap: 22px; margin-top: auto; padding-top: 22px; }
 .account-auth-actions .save-btn { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 68px; margin-top: 0; border: 0; border-radius: 9px; font-size: 1.05rem; font-weight: 900; }
 .account-auth-actions .save-btn { background: #e8281a; box-shadow: 0 12px 25px rgba(232, 40, 26, .16); }
