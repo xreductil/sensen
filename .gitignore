@@ -6,3 +6,5 @@ node_modules/
 .bolt/
 .firecrawl/
 /sensen/
+.vercel
+.env*
