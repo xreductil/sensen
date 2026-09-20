@@ -358,6 +358,9 @@
     };
     const hasRequiredFlavors = () => flavorCount <= 1 || selectedFlavors.length === flavorCount;
     const inStock = () => product.published !== false && selectedPrice() > 0 && Number(product.quantity ?? 1) > 0 && hasRequiredFlavors();
+    // Long cakes are maintained as cake products for layout purposes, but they
+    // are sold directly through the storefront cart like regular products.
+    const hasDirectCart = !isCakeDetail || cakeCategories.has(String(product.cat || '').trim());
     if (selectedPrice() <= 0) {
       const pending = document.createElement('p');
       pending.className = 'product-detail-pending-price';
@@ -367,7 +370,7 @@
     }
     const section = document.createElement('section');
     section.className = 'product-detail-purchase';
-    section.setAttribute('aria-label', isCakeDetail ? '訂購資訊' : '商品購買');
+    section.setAttribute('aria-label', hasDirectCart ? '商品購買' : '訂購資訊');
     const sizeMarkup = options.length > 1
       ? `<div class="product-detail-size-options"><span class="product-detail-size-options-label">商品尺寸</span><div class="product-detail-size-options-list" role="group" aria-label="選擇商品尺寸">${options.map(([size, value], index) => `<button class="product-detail-size-option${index === 0 ? ' is-selected' : ''}" type="button" data-product-size="${escapeHtml(size)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(size)}<span>${money(value)}</span></button>`).join('')}</div></div>`
       : '';
@@ -375,7 +378,7 @@
       ? `<fieldset class="product-detail-flavor-options"><legend>${flavorCount > 1 ? `口味選擇（任選${flavorCount}種）` : '口味選擇'}</legend><div class="product-detail-flavor-list" role="group" aria-label="選擇商品口味">${flavors.map(flavor => `<button class="product-detail-flavor-option${selectedFlavors.includes(flavor) ? ' is-selected' : ''}" type="button" data-product-flavor="${escapeHtml(flavor)}" aria-pressed="${selectedFlavors.includes(flavor) ? 'true' : 'false'}">${escapeHtml(flavor)}</button>`).join('')}</div></fieldset>`
       : '';
     const purchaseLabel = inStock() ? '加入購物車' : (flavorCount > 1 ? `請選擇${flavorCount}種口味` : '暫停供應');
-    const purchaseMarkup = isCakeDetail
+    const purchaseMarkup = isCakeDetail && !hasDirectCart
       ? '<div class="cake-product-purchase"><button class="product-order-info-button cake-add-cart" type="button" data-product-order-info>訂購資訊</button></div>'
       : `<div class="cake-product-purchase"><div class="cake-quantity-control" aria-label="選擇數量"><button type="button" data-cake-quantity-change="-1"${inStock() ? '' : ' disabled'} aria-label="減少數量">−</button><output data-cake-quantity aria-live="polite">1</output><button type="button" data-cake-quantity-change="1"${inStock() ? '' : ' disabled'} aria-label="增加數量">＋</button></div><button class="cake-add-cart" type="button" data-product-detail-add-cart${inStock() ? '' : ' disabled'}>${purchaseLabel}</button></div><p class="product-detail-purchase-message" data-product-detail-message role="status"></p>`;
     section.innerHTML = `${flavorMarkup}${sizeMarkup}<p class="product-detail-price" data-product-detail-price>${priceMarkup(product, selectedPrice())}</p>${purchaseMarkup}`;
