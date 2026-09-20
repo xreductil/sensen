@@ -3144,7 +3144,7 @@ function syncTopHouseProductDetailSnapshot() {
 function rewriteEmptyCatalogPages() {
   const pages = [
     { localPath: PRODUCT_INTRO_PATH, title: "線上商城 – 森森點心坊", hasBrandedHero: true, showHero: true },
-    { localPath: ONLINE_LONG_CAKE_PATH, title: "長條蛋糕 – 森森點心坊", hasBrandedHero: true, showHero: true },
+    { localPath: ONLINE_LONG_CAKE_PATH, title: "長條蛋糕 – 森森點心坊", hasBrandedHero: true, heroSource: "/images/headtitle-bg9.jpg", showHero: true },
     { localPath: ONLINE_TEA_PARTY_PATH, title: "點心餐盒 – 森森點心坊", hasBrandedHero: true, showHero: true },
     { localPath: LONG_CAKE_PATH, title: "彌月長條蛋糕 – 森森點心坊", hasBrandedHero: false, showHero: false },
     { localPath: TEA_PARTY_PATH, title: "酒會與茶會點心 – 森森點心坊", hasBrandedHero: false, showHero: false },
@@ -3161,6 +3161,7 @@ function rewriteEmptyCatalogPages() {
       pathLabel: decodeURI(page.localPath),
       content,
       hasBrandedHero: page.hasBrandedHero,
+      heroSource: page.heroSource || "/images/headtitle-bg2.jpg",
       showHero: page.showHero,
     }));
   }
@@ -3591,7 +3592,7 @@ function main() {
       heroCategoryLabel: SOUVENIR_PRODUCT_PATHS.has(localPath) ? "伴手禮" : CAKE_PRODUCT_CATEGORY_LABELS.get(localPath),
       hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
       showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/register" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
-      heroSource: localPath === EMERALD_LYSK_PATH ? "/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/images/headtitle-bg8.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : "/images/headtitle-bg2.jpg",
+      heroSource: localPath === EMERALD_LYSK_PATH ? "/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/images/headtitle-bg8.jpg" : localPath === ONLINE_LONG_CAKE_PATH ? "/images/headtitle-bg9.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : "/images/headtitle-bg2.jpg",
     }));
   }
 
