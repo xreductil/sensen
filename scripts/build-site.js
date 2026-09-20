@@ -1084,12 +1084,14 @@ function wpContentForItem(item) {
   return pieces.join("\n");
 }
 
-function imageSlotHtml({ source = "", label = "圖片預留位", className = "" } = {}) {
+function imageSlotHtml({ source = "", label = "圖片預留位", className = "", useSourceWhenLocalMissing = false } = {}) {
   const classes = ["image-slot", className].filter(Boolean).join(" ");
   const sourceAttr = source ? ` data-image-source="${escapeAttr(source)}"` : "";
   const localFile = localImageFile(source);
   const body = localFile
     ? `<img src="/images/${escapeAttr(localFile)}" alt="${escapeAttr(label)}">`
+    : useSourceWhenLocalMissing && source
+      ? `<img src="${escapeAttr(source)}" alt="${escapeAttr(label)}">`
     : `<span>${escapeHtml(label)}</span>`;
   return `<div class="${classes}"${sourceAttr}>${body}</div>`;
 }
@@ -1430,7 +1432,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     return `<div class="menu-item"><a href="${href}"${parentAttrs}>${label}${children.length ? " <span class=\"menu-arrow\">⌄</span>" : ""}</a>${childMenu}</div>`;
   }).join("");
   const heroImage = hasBrandedHero
-    ? imageSlotHtml({ source: heroSource, label: "頁首背景圖片" })
+    ? imageSlotHtml({ source: heroSource, label: "頁首背景圖片", useSourceWhenLocalMissing: true })
     : `<div class="image-slot"><span>頁首圖片預留位</span></div>`;
   const heroTitle = title.replace(/\s+–\s+森森點心坊$/, "");
   const heroTitleHtml = isBirthdayCakePage
