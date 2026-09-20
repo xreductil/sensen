@@ -6,6 +6,7 @@
   const titleElement = copy?.querySelector('[data-product-title]');
   if (!copy || !titleElement) return;
   let isCakeDetail = ['cake', 'emerald'].includes(productPage.dataset.productKind);
+  const cakeCategories = new Set(['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '長條蛋糕', '長條蛋糕(冷凍)']);
 
   const normalize = value => String(value || '')
     .normalize('NFKC')
@@ -244,7 +245,7 @@
 
   const syncProductDetails = product => {
     const apiTitle = String(product.title || '商品');
-    isCakeDetail = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕'].includes(String(product.cat || '').trim());
+    isCakeDetail = cakeCategories.has(String(product.cat || '').trim());
     productPage.dataset.productKind = isCakeDetail ? 'cake' : 'souvenir';
     productPage.classList.toggle('cake-product-page', isCakeDetail);
     productPage.classList.toggle('bean-tart-product-page', !isCakeDetail);

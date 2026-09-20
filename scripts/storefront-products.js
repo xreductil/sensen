@@ -16,6 +16,7 @@
     '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/images/icon-cake.png' },
     '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/images/icon-cake.png' },
     '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/images/icon-cake2.png' },
+    '長條蛋糕': { eyebrow: 'LONG CAKE', icon: '/images/icon-cake2.png' },
     '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.png' }
   };
   const categoryOrder = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
@@ -220,6 +221,11 @@
     }).join('') || '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>';
   };
 
+  const renderLongCakes = products => {
+    const items = products.filter(product => ['長條蛋糕', '長條蛋糕(冷凍)'].includes(product.cat));
+    content.innerHTML = `<section class="cake-category long-cake-online-category is-first"><div class="cake-category-heading"><img class="cake-section-icon" src="/images/icon-cake2.png" alt="" aria-hidden="true"><p>LONG CAKE</p><h2>長條蛋糕</h2></div><div class="cake-product-grid">${items.map(cakeCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的長條蛋糕。</p>'}</section>`;
+  };
+
   const renderSouvenirs = products => {
     const items = products.filter(product => product.cat === '伴手禮');
     content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
@@ -286,6 +292,8 @@
           )).join('');
       } else if (view === 'cakes') {
         renderCakes(products);
+      } else if (view === 'long-cakes') {
+        renderLongCakes(products);
       } else {
         renderSouvenirs(products);
       }

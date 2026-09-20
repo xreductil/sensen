@@ -410,11 +410,7 @@ function longCakeContent() {
 }
 
 function onlineLongCakeContent() {
-  return `<section class="catalog-empty-state online-catalog-empty" aria-labelledby="online-long-cake-empty-title">
-    <p class="catalog-empty-eyebrow">LONG CAKE</p>
-    <h2 id="online-long-cake-empty-title">商品頁面準備中</h2>
-    <p>長條蛋糕商品資料正在整理中，敬請期待。</p>
-  </section>`;
+  return storefrontCatalogContent("long-cakes");
 }
 
 function onlineTeaPartyContent() {
@@ -2529,7 +2525,7 @@ function syncProductDetailTemplate() {
 }
 
 function storefrontCatalogContent(view) {
-  const classes = view === "cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
+  const classes = view === "cakes" || view === "long-cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
   return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
 }
