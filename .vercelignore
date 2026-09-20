@@ -1,0 +1,9 @@
+# Runtime/user uploads are stored in Cloudflare R2 and must not be uploaded to Vercel.
+uploads/
+
+# Product images are served through the Worker/R2 rewrite.
+data/images/
+site/assets/images/
+
+# Local-only source image folder.
+圖片/

@@ -3484,7 +3484,10 @@ function main() {
     fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
     fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
     fs.copyFileSync(path.join(__dirname, "home-news.js"), path.join(OUT_DIR, "assets", "home-news.js"));
-    fs.copyFileSync(path.join(IMAGE_DATA_DIR, "sensen-favicon.jpg"), path.join(OUT_DIR, "assets", "images", "sensen-favicon.jpg"));
+    const faviconSource = path.join(IMAGE_DATA_DIR, "sensen-favicon.jpg");
+    if (fs.existsSync(faviconSource)) {
+      fs.copyFileSync(faviconSource, path.join(OUT_DIR, "assets", "images", "sensen-favicon.jpg"));
+    }
     syncProductDetailTemplate();
     syncProductDetailSnapshot();
     syncAdminFrontendSnapshot();
