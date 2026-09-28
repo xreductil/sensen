@@ -273,9 +273,9 @@ const RETIRED_SOUVENIR_IMAGE_FILES = [
   "S__294150157_0.jpg",
 ];
 const HOME_SLIDES = [
-  ["/images/image-photo-2.jpg", "SenSen Bakery seasonal products"],
-  ["/images/image-photo-1.jpg", "SenSen Bakery store information"],
-  ["/images/image-photo-5.jpg", "SenSen Bakery announcement"],
+  ["/images/image-photo-2.webp", "SenSen Bakery seasonal products"],
+  ["/images/image-photo-1.webp", "SenSen Bakery store information"],
+  ["/images/image-photo-5.webp", "SenSen Bakery announcement"],
 ];
 
 const BIRTHDAY_CAKE_PATH = "/產品介紹/生日蛋糕-下方有dm供下載-264";
@@ -1112,13 +1112,44 @@ function wpContentForItem(item) {
 function imageSlotHtml({ source = "", label = "圖片預留位", className = "", useSourceWhenLocalMissing = false } = {}) {
   const classes = ["image-slot", className].filter(Boolean).join(" ");
   const sourceAttr = source ? ` data-image-source="${escapeAttr(source)}"` : "";
-  const localFile = localImageFile(source);
+  // Vercel intentionally excludes the source image map and original images
+  // from the upload. Resolve local image slots to their published WebP path
+  // as a fallback so a clean Vercel build still emits an <img>, rather than
+  // silently rendering the placeholder span.
+  const localFile = localImageFile(source) || publishedWebpImageFile(source);
   const body = localFile
     ? `<img src="/images/${escapeAttr(localFile)}" alt="${escapeAttr(label)}">`
     : useSourceWhenLocalMissing && source
       ? `<img src="${escapeAttr(source)}" alt="${escapeAttr(label)}">`
     : `<span>${escapeHtml(label)}</span>`;
   return `<div class="${classes}"${sourceAttr}>${body}</div>`;
+}
+
+function publishedWebpImageFile(source) {
+  const requested = String(source || "").split("#")[0];
+  let decodedSource = requested;
+  try { decodedSource = decodeURIComponent(requested); } catch {}
+  if (decodedSource.includes("/首頁圖片-1.jpg")) return "photo-1-9.webp";
+  if (decodedSource.includes("/森森首頁-2.jpg")) return "sensen-2.webp";
+  if (decodedSource.endsWith("/home-service-3.jpg")) return "home-service-3.webp";
+  if (!requested.startsWith("/images/")) return "";
+  let localName = requested.slice("/images/".length).split("/").pop();
+  try { localName = decodeURIComponent(localName); } catch {}
+  if (!localName) return "";
+  if (/\.webp$/i.test(localName)) return localName;
+  const match = localName.match(/^(.*)\.(jpe?g|png)$/i);
+  if (!match) return "";
+  const base = match[1];
+  const extension = match[2].toLowerCase().replace("jpeg", "jpg");
+  const candidates = [`${base}.webp`, `${base}-${extension}.webp`];
+  for (const candidate of candidates) {
+    if (fs.existsSync(path.join(IMAGE_DATA_DIR, candidate))
+      || fs.existsSync(path.join(OUT_DIR, "assets", "images", candidate))) return candidate;
+  }
+  // The homepage's published WebP assets are supplied separately during the
+  // Vercel build, so allow the standard deterministic path when the ignored
+  // source directory is not present locally in the build sandbox.
+  return candidates[0];
 }
 
 function localImageFile(source) {
