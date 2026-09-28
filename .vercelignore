@@ -2,8 +2,11 @@
 uploads/
 
 # Product images are served through the Worker/R2 rewrite.
-data/images/
-site/assets/images/
+data/images/*
+!data/images/
+!data/images/*.webp
+!data/images/**/*.webp
+site/assets/images/*
 
 # Local-only source image folder.
 圖片/
