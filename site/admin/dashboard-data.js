@@ -312,7 +312,7 @@
 
   const productImage = value => {
     const source = String(value || '').trim();
-    if (!source) return '/images/icon-cake.png';
+    if (!source) return '/images/icon-cake.webp';
     if (/^(?:https?:)?\/\//i.test(source) || source.startsWith('/images/')) return source;
     const file = source.replace(/^\/?(?:assets\/)?images\//i, '').replace(/^\/+/, '');
     return '/images/' + file.split('/').map(part => encodeURIComponent(part)).join('/');

@@ -13,11 +13,11 @@
     '伴手禮': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/'
   };
   const categoryMeta = {
-    '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/images/icon-cake.png' },
-    '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/images/icon-cake.png' },
-    '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/images/icon-cake2.png' },
-    '長條蛋糕': { eyebrow: 'LONG CAKE', icon: '/images/icon-cake2.png' },
-    '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.png' }
+    '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/images/icon-cake.webp' },
+    '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/images/icon-cake.webp' },
+    '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/images/icon-cake2.webp' },
+    '長條蛋糕': { eyebrow: 'LONG CAKE', icon: '/images/icon-cake2.webp' },
+    '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.webp' }
   };
   const categoryOrder = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
   const menuSections = [
@@ -25,28 +25,28 @@
       title: '伴手禮',
       categories: ['伴手禮'],
       eyebrow: 'SOUVENIR',
-      icon: '/images/icon-cupcake.png',
+      icon: '/images/icon-cupcake.webp',
       href: '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/'
     },
     {
       title: '長條蛋糕',
       categories: ['長條蛋糕', '長條蛋糕(冷凍)'],
       eyebrow: 'LONG CAKE',
-      icon: '/images/icon-cake2.png',
+      icon: '/images/icon-cake2.webp',
       href: '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e9%95%b7%e6%a2%9d%e8%9b%8b%e7%b3%95/'
     },
     {
       title: '點心餐盒',
       categories: ['點心餐盒'],
       eyebrow: 'TEA PARTY BOX',
-      icon: '/images/icon-cake2.png',
+      icon: '/images/icon-cake2.webp',
       href: '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e9%bb%9e%e5%bf%83%e9%a4%90%e7%9b%92/'
     },
     {
       title: '歐式麵包(冷凍)',
       categories: ['歐式麵包(冷凍)'],
       eyebrow: 'EUROPEAN BREAD (FROZEN)',
-      icon: '/images/icon-wheat.png',
+      icon: '/images/icon-wheat.webp',
       href: '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e5%86%b7%e5%87%8d%e9%ba%b5%e5%8c%85/'
     }
   ];
@@ -117,7 +117,7 @@
     try { return JSON.parse(root.dataset.productPaths || '{}'); } catch (error) { return {}; }
   })();
   const detailPath = product => pathMap[product.id] || pathMap[normalizeTitle(product.title)] || product.url || '';
-  const imagePath = product => String(product.img || '/images/icon-cake.png').replace(/^\/assets\/images\//i, '/images/');
+  const imagePath = product => String(product.img || '/images/icon-cake.webp').replace(/^\/assets\/images\//i, '/images/');
   const thumbnailSettings = product => {
     const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
     const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
@@ -169,7 +169,7 @@
   const souvenirCard = product => storefrontProductCard(product, { articleClass: 'souvenir-card cake-product-card' });
 
   const heading = (category, icon = true) => {
-    const meta = categoryMeta[category] || { eyebrow: category, icon: '/images/icon-cake.png' };
+    const meta = categoryMeta[category] || { eyebrow: category, icon: '/images/icon-cake.webp' };
     return `<div class="product-intro-section-heading"><div><p>${escapeHtml(meta.eyebrow)}</p><h2>${icon ? `<img src="${escapeHtml(meta.icon)}" alt="" aria-hidden="true">` : ''}${escapeHtml(category)}</h2></div><div class="product-intro-carousel-controls"><button type="button" data-storefront-previous aria-label="向左滑動">‹</button><button type="button" data-storefront-next aria-label="向右滑動">›</button></div></div>`;
   };
 
@@ -217,18 +217,18 @@
       const categoryProducts = products.filter(product => product.cat === category);
       const visible = category === '生日蛋糕' ? categoryProducts.slice(0, 10) : categoryProducts;
       const extra = category === '生日蛋糕' ? categoryProducts.slice(10) : [];
-      return `<section class="cake-category ${index === 0 ? 'is-first' : ''}"><div class="cake-category-heading">${index === 0 ? `<img class="cake-section-icon" src="${escapeHtml((categoryMeta[category] || {}).icon || '/images/icon-cake.png')}" alt="" aria-hidden="true">` : ''}<p>${escapeHtml((categoryMeta[category] || {}).eyebrow || category)}</p><h2>${escapeHtml(category)}</h2></div><div class="cake-product-grid">${visible.map(cakeCard).join('')}</div>${extra.length ? `<div class="cake-product-grid cake-product-grid-more" data-cake-load-more-items hidden>${extra.map(cakeCard).join('')}</div><div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>` : ''}</section>`;
+      return `<section class="cake-category ${index === 0 ? 'is-first' : ''}"><div class="cake-category-heading">${index === 0 ? `<img class="cake-section-icon" src="${escapeHtml((categoryMeta[category] || {}).icon || '/images/icon-cake.webp')}" alt="" aria-hidden="true">` : ''}<p>${escapeHtml((categoryMeta[category] || {}).eyebrow || category)}</p><h2>${escapeHtml(category)}</h2></div><div class="cake-product-grid">${visible.map(cakeCard).join('')}</div>${extra.length ? `<div class="cake-product-grid cake-product-grid-more" data-cake-load-more-items hidden>${extra.map(cakeCard).join('')}</div><div class="cake-load-more"><button class="cake-load-more-button" type="button" data-cake-load-more aria-expanded="false">▪▪ Load more</button></div>` : ''}</section>`;
     }).join('') || '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>';
   };
 
   const renderLongCakes = products => {
     const items = products.filter(product => ['長條蛋糕', '長條蛋糕(冷凍)'].includes(product.cat));
-    content.innerHTML = `<section class="cake-category long-cake-online-category is-first"><div class="cake-category-heading"><img class="cake-section-icon" src="/images/icon-cake2.png" alt="" aria-hidden="true"><p>LONG CAKE</p><h2>長條蛋糕</h2></div><div class="cake-product-grid">${items.map(cakeCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的長條蛋糕。</p>'}</section>`;
+    content.innerHTML = `<section class="cake-category long-cake-online-category is-first"><div class="cake-category-heading"><img class="cake-section-icon" src="/images/icon-cake2.webp" alt="" aria-hidden="true"><p>LONG CAKE</p><h2>長條蛋糕</h2></div><div class="cake-product-grid">${items.map(cakeCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的長條蛋糕。</p>'}</section>`;
   };
 
   const renderSouvenirs = products => {
     const items = products.filter(product => product.cat === '伴手禮');
-    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
+    content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.webp" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
   };
 
   const bindInteractions = () => {
@@ -277,13 +277,13 @@
         content.innerHTML = renderFeaturedSection(hotProducts, {
           eyebrow: 'BEST SELLERS',
           title: '熱銷排行榜',
-          icon: '/images/icon-cake.png',
+          icon: '/images/icon-cake.webp',
           badge: (_, index) => `TOP ${index + 1}`
         })
           + renderFeaturedSection(newProducts, {
             eyebrow: 'NEW ARRIVALS',
             title: '新品上市',
-            icon: '/images/icon-wheat.png',
+            icon: '/images/icon-wheat.webp',
             badge: 'NEW'
           })
           + menuSections.map(section => renderOverviewSection(

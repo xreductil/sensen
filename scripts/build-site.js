@@ -3585,6 +3585,62 @@ function rewriteR2ImagePaths() {
   }
 }
 
+function syncWebpImageAssets() {
+  if (!fs.existsSync(IMAGE_DATA_DIR)) return;
+  const walk = (directory) => fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const filePath = path.join(directory, entry.name);
+    return entry.isDirectory() ? walk(filePath) : [filePath];
+  });
+  for (const source of walk(IMAGE_DATA_DIR).filter((filePath) => /\.webp$/i.test(filePath))) {
+    const relative = path.relative(IMAGE_DATA_DIR, source);
+    const target = path.join(OUT_DIR, "assets", "images", relative);
+    ensureDir(target);
+    fs.copyFileSync(source, target);
+  }
+}
+
+function rewriteWebpImagePaths() {
+  const textExtensions = new Set([".css", ".html", ".js", ".json", ".webmanifest"]);
+  const imageRoot = path.join(OUT_DIR, "assets", "images");
+  const walk = (directory) => fs.readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const filePath = path.join(directory, entry.name);
+    return entry.isDirectory() ? walk(filePath) : [filePath];
+  });
+  const toWebp = (match, prefix, imagePath, extension, suffix = "") => {
+    let decodedPath;
+    try {
+      decodedPath = decodeURIComponent(imagePath);
+    } catch {
+      decodedPath = imagePath;
+    }
+    const candidate = path.join(imageRoot, `${decodedPath}.${extension}`);
+    const standardWebp = candidate.replace(/\.(?:jpe?g|png)$/i, ".webp");
+    const collisionWebp = candidate.replace(/\.(?:jpe?g|png)$/i, `-${extension.toLowerCase()}.webp`);
+    const siblingExtension = extension.toLowerCase() === "png" ? "jpg" : "png";
+    const hasBasenameCollision = fs.existsSync(path.join(imageRoot, `${decodedPath}.${siblingExtension}`));
+    const webp = hasBasenameCollision && fs.existsSync(collisionWebp)
+      ? collisionWebp
+      : (fs.existsSync(standardWebp) ? standardWebp : collisionWebp);
+    if (!fs.existsSync(webp)) return match;
+    const replacement = path.relative(imageRoot, webp).split(path.sep).join("/");
+    return `${prefix || ""}/images/${replacement}${suffix || ""}`;
+  };
+  if (!fs.existsSync(OUT_DIR)) return;
+  for (const filePath of walk(OUT_DIR)) {
+    if (!textExtensions.has(path.extname(filePath).toLowerCase())) continue;
+    let content = fs.readFileSync(filePath, "utf8");
+    content = content.replace(/undefinedsensen-favicon/g, "/assets/images/sensen-favicon.jpg");
+    content = content.replace(/undefined([^\s"'`<>]+)/g, (match, imagePath) => {
+      const webp = path.join(imageRoot, `${imagePath}.webp`);
+      return fs.existsSync(webp) ? `/images/${imagePath}.webp` : match;
+    });
+    content = content.replace(/\s*<link\s+rel="(?:icon|apple-touch-icon)"[^>]*sensen-favicon[^>]*>/gi, "");
+    content = content.replace(/<\/head>/i, `\n  <link rel="icon" type="image/jpeg" href="/assets/images/sensen-favicon.jpg">\n  <link rel="apple-touch-icon" href="/assets/images/sensen-favicon.jpg">\n</head>`);
+    content = content.replace(/(https?:\/\/www\.sensen\.com\.tw)?(?<!assets)\/images\/([^\s"'`<>?#]+)\.(jpe?g|png)([?#][^\s"'`<>)]*)?/gi, toWebp);
+    fs.writeFileSync(filePath, content);
+  }
+}
+
 function syncTopHouseProductDetailSnapshot() {
   TOP_HOUSE_PRODUCT_RECORDS.forEach(([title, image, price, id]) => {
     const localPath = topHouseProductPath(id);
@@ -4092,6 +4148,7 @@ function main() {
     syncAdminFrontendSnapshot();
     syncStaticSnapshotFavicon();
     syncCustomerAccountSnapshots();
+    syncWebpImageAssets();
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
     syncHomeSnapshotContent();
@@ -4101,6 +4158,7 @@ function main() {
     syncStaticSnapshotSeoMetadata();
     syncStaticSnapshotStructuredData();
     rewriteR2ImagePaths();
+    rewriteWebpImagePaths();
     writeSitemapXml();
     copyCustom404Page();
     writeRobotsTxt();
@@ -4262,6 +4320,7 @@ function main() {
   })), null, 2));
 
   rewriteR2ImagePaths();
+  rewriteWebpImagePaths();
   rewriteHomeNewsLink();
   writeSitemapXml();
   writeRobotsTxt();

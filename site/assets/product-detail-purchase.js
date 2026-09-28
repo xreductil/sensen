@@ -279,7 +279,7 @@
       dietary.hidden = false;
       dietary.setAttribute('aria-label', product.dietary);
       if (dietaryImage) {
-        dietaryImage.src = product.dietaryImage || '/images/icon-vlml.png';
+        dietaryImage.src = product.dietaryImage || '/images/icon-vlml.webp';
         dietaryImage.alt = product.dietary;
       }
     } else {

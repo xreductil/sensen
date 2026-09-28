@@ -8,10 +8,10 @@
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
   const archivedImageMap = {
-    '/wp-content/uploads/2025/07/1-scaled.jpg': '/images/photo-1-8.jpg',
-    '/wp-content/uploads/2025/07/2-1528x1080.jpg': '/images/photo-2-3.jpg',
-    '/wp-content/uploads/2025/07/3-1528x1080.jpg': '/images/photo-3-3.jpg',
-    '/wp-content/uploads/2025/07/4-1528x1080.jpg': '/images/photo-4-2.jpg'
+    '/wp-content/uploads/2025/07/1-scaled.jpg': '/images/photo-1-8.webp',
+    '/wp-content/uploads/2025/07/2-1528x1080.jpg': '/images/photo-2-3.webp',
+    '/wp-content/uploads/2025/07/3-1528x1080.jpg': '/images/photo-3-3.webp',
+    '/wp-content/uploads/2025/07/4-1528x1080.jpg': '/images/photo-4-2.webp'
   };
   const imageUrl = value => {
     const image = String(value || '').trim();
