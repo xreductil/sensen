@@ -252,10 +252,8 @@ const RETIRED_SOUVENIR_IMAGE_FILES = [
   "S__294150157_0.jpg",
 ];
 const HOME_SLIDES = [
-  ["/images/image-photo-4.jpg", "SenSen Bakery bread promotion"],
-  ["/images/image-photo-6.jpg", "SenSen Bakery coffee promotion"],
-  ["/images/image-photo-1.jpg", "SenSen Bakery store information"],
   ["/images/image-photo-2.jpg", "SenSen Bakery seasonal products"],
+  ["/images/image-photo-1.jpg", "SenSen Bakery store information"],
   ["/images/image-photo-5.jpg", "SenSen Bakery announcement"],
 ];
 
