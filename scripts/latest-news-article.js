@@ -53,6 +53,9 @@
     };
   };
   const articleId = new URLSearchParams(window.location.search).get('id') || decodeURIComponent(window.location.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/)?.[1] || '');
+  let snapshotArticles = [];
+  try { snapshotArticles = JSON.parse(page.dataset.newsSnapshot || '[]'); } catch {}
+  const snapshotArticle = snapshotArticles.find(article => article.id === articleId || article.slug === articleId);
 
   const showError = message => {
     status.textContent = message;
@@ -64,13 +67,20 @@
     return;
   }
 
-  fetch('/api/news?id=' + encodeURIComponent(articleId), {
-    credentials: 'include',
-    headers: { Accept: 'application/json' }
-  })
+  const articleRequest = snapshotArticle
+    ? Promise.resolve({ news: [snapshotArticle] })
+    : fetch('/api/news?id=' + encodeURIComponent(articleId), {
+      credentials: 'include',
+      headers: { Accept: 'application/json' }
+    })
+      .then(response => {
+        if (!response.ok) throw new Error('目前無法載入這則最新消息。');
+        return response.json();
+      });
+
+  articleRequest
     .then(response => {
-      if (!response.ok) throw new Error('目前無法載入這則最新消息。');
-      return response.json();
+      return response;
     })
     .then(data => {
       const article = Array.isArray(data.news) ? data.news[0] : null;

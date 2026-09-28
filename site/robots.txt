@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /customer/
+Disallow: /checkout/
+Disallow: /orders/
+Disallow: /cart/
+Disallow: /api/
+Disallow: /standalone-home.html
+Disallow: /404-error/
+
+Sitemap: https://www.sensen.com.tw/sitemap.xml

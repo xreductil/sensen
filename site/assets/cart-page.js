@@ -4,10 +4,15 @@
 
   const money = value => '$' + Number(value || 0).toFixed(2);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const readableError = (error, fallback) => {
+    const message = String(error?.message || '');
+    if (!message || message === 'Failed to fetch' || message === 'Load failed' || message === '操作失敗。') return fallback;
+    return message;
+  };
   const api = async (path, options = {}) => {
     const response = await fetch(path, { ...options, credentials: 'include', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || '操作失敗。');
+    if (!response.ok) throw new Error(data.error || '購物車服務暫時無法使用。');
     return data;
   };
   const loginUrl = () => '/customer/admin/?return=' + encodeURIComponent('/checkout/');
@@ -83,7 +88,7 @@
         const data = await api('/api/cart/quote', { method: 'POST', body: JSON.stringify({ couponCode: coupon.value.trim(), shippingMethod: shipping.value }) });
         subtotalEl.textContent = money(data.subtotal); shippingFeeEl.textContent = money(data.shippingFee); discountRow.hidden = !Number(data.discount); discountEl.textContent = '-' + money(data.discount); totalEl.textContent = money(data.total); save();
         if (coupon.value.trim()) showMessage(quoteMessage, Number(data.discount) ? '優惠碼已套用。' : '優惠碼有效，但目前沒有折扣。');
-      } catch (error) { showMessage(quoteMessage, error.message, true); }
+      } catch (error) { showMessage(quoteMessage, readableError(error, '訂單金額暫時無法更新，請稍後再試。'), true); }
     };
     root.querySelectorAll('[data-cart-id]').forEach(button => button.addEventListener('click', async () => { await api('/api/cart/item', { method: 'PATCH', body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) }); load(); }));
     root.querySelectorAll('[data-cart-remove]').forEach(button => button.addEventListener('click', async () => { await api('/api/cart/item', { method: 'DELETE', body: JSON.stringify({ productId: button.dataset.cartRemove }) }); load(); }));
@@ -96,10 +101,10 @@
     }); coupon.addEventListener('change', save); pickup.addEventListener('change', save);
     syncDeliveryFields(); await quote();
     checkoutButton.addEventListener('click', async () => {
-      try { if (!await requireLogin()) return; } catch (error) { showMessage(checkoutMessage, error.message, true); return; }
+      try { if (!await requireLogin()) return; } catch (error) { showMessage(checkoutMessage, readableError(error, '目前無法確認會員登入狀態，請稍後再試。'), true); return; }
       save();
       window.location.assign('/checkout/');
     });
   };
-  load().catch(error => { root.innerHTML = '<p class="cart-form-error">' + escapeHtml(error.message) + '</p>'; });
+  load().catch(error => { root.innerHTML = '<p class="cart-form-error">' + escapeHtml(readableError(error, '購物車暫時無法載入，請重新整理頁面後再試。')) + '</p><button type="button" class="button cart-retry" data-cart-retry>重新載入購物車</button>'; root.querySelector('[data-cart-retry]')?.addEventListener('click', () => window.location.reload()); });
 })();

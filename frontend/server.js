@@ -98,14 +98,14 @@ function proxyApi(request, response, url) {
   request.pipe(proxy);
 }
 
-function serveFile(response, filePath) {
+function serveFile(response, filePath, statusCode = 200) {
   fs.readFile(filePath, (error, content) => {
     if (error) {
       response.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
       response.end('無法讀取檔案');
       return;
     }
-    response.writeHead(200, {
+    response.writeHead(statusCode, {
       'Content-Type': CONTENT_TYPES[path.extname(filePath).toLowerCase()] || 'application/octet-stream',
       'Cache-Control': 'no-store'
     });
@@ -123,6 +123,9 @@ const server = http.createServer((request, response) => {
   };
   const filePath = fallbackRoutes[url.pathname] || fileForRoute(url.pathname);
   if (!filePath) {
+    const isAssetRequest = /\.(?:css|csv|eot|gif|ico|jpe?g|js|json|png|svg|ttf|webp|woff2?)$/i.test(url.pathname);
+    const custom404 = path.join(SITE_ROOT, '404.html');
+    if (!isAssetRequest && fs.existsSync(custom404)) return serveFile(response, custom404, 404);
     response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
     response.end('找不到頁面');
     return;

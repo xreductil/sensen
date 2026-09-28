@@ -473,9 +473,9 @@
       desc: productPage.dataset.productFallbackDescription || '商品詳細資料整理中。',
       img: image,
       images: [image],
-      published: false,
-      quantity: 0,
-      priceValue: 0,
+      published: Number(productPage.dataset.productFallbackPrice || 0) > 0,
+      quantity: Number(productPage.dataset.productFallbackPrice || 0) > 0 ? 1 : 0,
+      priceValue: Number(productPage.dataset.productFallbackPrice || 0),
       likes: 0,
       variants,
     };

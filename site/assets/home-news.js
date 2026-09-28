@@ -2,6 +2,7 @@
   const section = document.querySelector('[data-home-news-section]');
   const list = document.querySelector('[data-home-news-list]');
   if (!section || !list) return;
+  const staticMarkup = list.innerHTML;
 
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -53,6 +54,14 @@
 
   fetch('/api/news', { credentials: 'include', headers: { Accept: 'application/json' } })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load news.')))
-    .then(data => render(data.news))
-    .catch(() => render([]));
+    .then(data => {
+      const news = Array.isArray(data.news) ? data.news : [];
+      if (news.length) render(news);
+      else if (staticMarkup) { list.innerHTML = staticMarkup; section.hidden = false; }
+      else render([]);
+    })
+    .catch(() => {
+      if (staticMarkup) { list.innerHTML = staticMarkup; section.hidden = false; }
+      else render([]);
+    });
 })();

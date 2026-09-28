@@ -40,8 +40,28 @@ const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/2024母親節蛋糕/", "latest-detail-11.md"],
 ];
 const SOURCE_ORIGIN = "https://www.sensen.com.tw";
+const SITEMAP_EXCLUDED_PATHS = new Set([
+  "/404-error",
+  "/product-item/123",
+  "/product-item/_template",
+  "/product-item/codex-excel-test",
+]);
+const ROBOTS_TXT = `User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /customer/
+Disallow: /checkout/
+Disallow: /orders/
+Disallow: /cart/
+Disallow: /api/
+Disallow: /standalone-home.html
+Disallow: /404-error/
+
+Sitemap: ${SOURCE_ORIGIN}/sitemap.xml
+`;
 const RETIRED_CONTENT_PATHS = new Set([
   "/cart",
+  "/product-item/123",
   "/author/admin",
   "/森森咖啡",
   "/slide-types/index-slider",
@@ -705,7 +725,10 @@ function readAutomaticProductDetailRecords() {
     try {
       const payload = readJson(filePath);
       const entries = Array.isArray(payload) ? payload : payload.productAdditions;
-      if (Array.isArray(entries)) products.push(...entries);
+      if (Array.isArray(entries)) {
+        const deletedIds = new Set(Array.isArray(payload.deletedProducts) ? payload.deletedProducts.map((id) => String(id)) : []);
+        products.push(...entries.filter((product) => !deletedIds.has(String(product.id || product.slug || "").trim())));
+      }
     } catch {
       // An optional local product source should not prevent the static site build.
     }
@@ -721,6 +744,7 @@ function readAutomaticProductDetailRecords() {
     const image = String(product.img || product.image || "").trim()
       .replace(/^\/assets\/images\//i, "/images/")
       .replace(/^\/data\/images\//i, "/images/");
+    const priceValue = Number(product.priceValue || String(product.price || "").replace(/[^0-9.]/g, "")) || 0;
     records.set(id, {
       id,
       title,
@@ -729,6 +753,7 @@ function readAutomaticProductDetailRecords() {
       kind: category.includes("伴手禮") ? "souvenir" : "cake",
       category,
       description: String(product.desc || product.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。"),
+      priceValue,
     });
   }
   return [...records.values()];
@@ -1168,6 +1193,60 @@ function htmlFileForLocalPath(localPath) {
   return path.join(OUT_DIR, clean, "index.html");
 }
 
+function escapeXml(value) {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function writeSitemapXml() {
+  if (!fs.existsSync(OUT_DIR)) return;
+  const files = [];
+  const visit = (directory) => {
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(filePath);
+      else if (entry.name === "index.html") files.push(filePath);
+    }
+  };
+  visit(OUT_DIR);
+
+  const urls = new Set();
+  for (const filePath of files) {
+    const html = fs.readFileSync(filePath, "utf8");
+    if (/name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(html)) continue;
+    const canonical = (html.match(/<link\s+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) || [])[1];
+    if (!canonical) continue;
+    try {
+      const parsed = new URL(canonical);
+      const localPath = localPathFromUrl(parsed.href);
+      if (parsed.origin !== SOURCE_ORIGIN || SITEMAP_EXCLUDED_PATHS.has(localPath)) continue;
+      urls.add(parsed.href);
+    } catch {}
+  }
+
+  const body = [...urls]
+    .sort((a, b) => a.localeCompare(b, "zh-Hant"))
+    .map((url) => `  <url><loc>${escapeXml(url)}</loc></url>`)
+    .join("\n");
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+${body}
+</urlset>
+`;
+  fs.writeFileSync(path.join(OUT_DIR, "sitemap.xml"), xml);
+  console.log(`Wrote sitemap.xml with ${urls.size} URLs`);
+}
+
+function writeRobotsTxt() {
+  if (!fs.existsSync(OUT_DIR)) return;
+  fs.writeFileSync(path.join(OUT_DIR, "robots.txt"), ROBOTS_TXT);
+  console.log("Wrote robots.txt");
+}
+
 function routeHref(urlOrPath) {
   try {
     const parsed = new URL(urlOrPath, SOURCE_ORIGIN);
@@ -1389,9 +1468,192 @@ function seoDescription(title, pathLabel, isHome) {
   if (isHome) return "森森點心坊提供生日蛋糕、彌月禮盒、伴手禮、冷凍麵包、飲品與精緻外燴服務，分享新鮮、健康、美味的幸福滋味。";
   const cleanTitle = String(title || "森森點心坊").replace(/\s+[–|-]\s+森森點心坊$/, "").trim();
   if (pathLabel === "/最新消息") return "掌握森森點心坊最新消息、季節限定商品、新品上市與門市活動資訊。";
-  if (/產品介紹|蛋糕|禮盒|麵包|伴手禮|咖啡|飲品/.test(pathLabel)) return `探索森森點心坊的${cleanTitle}，查看商品特色、規格與訂購資訊。`;
+  if (pathLabel === "/產品介紹") return "瀏覽森森點心坊線上商城，選購生日蛋糕、彌月禮盒、伴手禮、冷凍麵包與點心。";
+  if (pathLabel === "/門市資訊") return "查看森森點心坊高雄門市地址、電話、營業時間與交通資訊。";
+  if (pathLabel === "/常見問題") return "查看森森點心坊訂購、取貨、付款、配送與彌月試吃的常見問題。";
+  if (pathLabel === "/關於森森") return "認識森森點心坊的品牌故事、烘焙理念與新鮮美味的點心服務。";
+  if (/^\/(?:最新消息|latest-news)\//.test(pathLabel)) return `閱讀森森點心坊「${cleanTitle}」的活動與產品消息。`;
+  if (/^\/new-arrival\//.test(pathLabel)) return `認識森森點心坊新品「${cleanTitle}」，查看產品特色與訂購資訊。`;
+  if (/^\/sensen-coffee\//.test(pathLabel)) return `查看森森點心坊飲品「${cleanTitle}」的產品資訊與門市服務。`;
+  if (/產品介紹|蛋糕|禮盒|麵包|伴手禮|咖啡|飲品|product-item|頂家彌月/.test(pathLabel)) return `探索森森點心坊的${cleanTitle}，查看商品特色、規格與訂購資訊。`;
   if (/聯絡我們|contact/.test(pathLabel)) return "聯絡森森點心坊，洽詢商品訂購、門市服務、彌月禮盒與精緻外燴需求。";
   return `${cleanTitle}｜森森點心坊提供新鮮、健康、美味的烘焙點心與貼心服務。`;
+}
+
+const JSON_LD_ORGANIZATION_ID = `${SOURCE_ORIGIN}/#organization`;
+const JSON_LD_WEBSITE_ID = `${SOURCE_ORIGIN}/#website`;
+const JSON_LD_BAKERY_ID = `${SOURCE_ORIGIN}/#bakery`;
+const JSON_LD_STORE_LOCATIONS = [
+  { id: "chenghe", name: "澄和店", image: "/images/store-1.jpg", address: "高雄市三民區澄和路78號", phone: "07-3816662", hours: "08:00-22:00", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
+  { id: "xinfu", name: "新富店", image: "/images/store-2.jpg", address: "高雄市鳳山區新富路276號", phone: "07-7675992", hours: "08:00-22:30", map: "https://goo.gl/maps/EZFqqQPeh6z" },
+  { id: "boai", name: "博愛店", image: "/images/store-3.jpg", address: "高雄市三民區博愛路219號", phone: "07-7993070", hours: "07:30-22:30", map: "https://goo.gl/maps/rYLh32wnRdm" },
+  { id: "wenlong", name: "文龍店", image: "/images/store-4.jpg", address: "高雄市鳳山區文龍東路336號", phone: "07-7335812", hours: "12:30-21:30", map: "https://goo.gl/maps/5hoEqTmHsuF2" },
+];
+
+function absoluteSiteUrl(value) {
+  if (!value) return "";
+  try {
+    return new URL(String(value), SOURCE_ORIGIN).href;
+  } catch {
+    return "";
+  }
+}
+
+function schemaPageName(title) {
+  return String(title || "森森點心坊")
+    .replace(/\s+[–|-]\s+森森點心坊$/, "")
+    .replace(/｜森森點心坊$/, "")
+    .trim();
+}
+
+function htmlAttributeValue(html, attribute) {
+  const match = String(html || "").match(new RegExp(`${attribute}\\s*=\\s*["']([^"']*)["']`, "i"));
+  return match ? decodeEntities(match[1]) : "";
+}
+
+function htmlDataText(html, attribute) {
+  const match = String(html || "").match(new RegExp(`${attribute}\\b[^>]*>([^<]*)<`, "i"));
+  return match ? stripTags(match[1]) : "";
+}
+
+function jsonLdScript(data) {
+  const serialized = JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026");
+  return `<script type="application/ld+json">${serialized}</script>`;
+}
+
+function jsonLdStore(store) {
+  return {
+    "@type": "Bakery",
+    "@id": `${SOURCE_ORIGIN}/門市資訊/#${store.id}`,
+    name: `森森點心坊${store.name}`,
+    image: absoluteSiteUrl(store.image),
+    url: `${SOURCE_ORIGIN}/門市資訊/`,
+    telephone: store.phone,
+    address: { "@type": "PostalAddress", streetAddress: store.address, addressLocality: "高雄市", addressCountry: "TW" },
+    openingHours: `Mo-Su ${store.hours}`,
+    hasMap: store.map,
+    parentOrganization: { "@id": JSON_LD_ORGANIZATION_ID },
+  };
+}
+
+function structuredDataForPage({ title, pathLabel, canonical, description, isHome = false, isProduct = false, content = "" }) {
+  const localPath = String(pathLabel || "/").replace(/\/$/, "") || "/";
+  if (SITEMAP_EXCLUDED_PATHS.has(localPath) || /^\/(?:admin|customer|cart|checkout|orders)(?:\/|$)/i.test(localPath) || localPath === "/404-error" || localPath === "/最新消息文章") return "";
+
+  const pageName = schemaPageName(title);
+  const graph = [];
+  const organization = {
+    "@type": "Organization",
+    "@id": JSON_LD_ORGANIZATION_ID,
+    name: "森森點心坊",
+    url: SOURCE_ORIGIN,
+    logo: absoluteSiteUrl("/images/logo.png"),
+    sameAs: ["https://www.facebook.com/sensenbakery/"],
+  };
+  const website = {
+    "@type": "WebSite",
+    "@id": JSON_LD_WEBSITE_ID,
+    url: `${SOURCE_ORIGIN}/`,
+    name: "森森點心坊",
+    publisher: { "@id": JSON_LD_ORGANIZATION_ID },
+    inLanguage: "zh-Hant",
+  };
+
+  if (isHome) {
+    graph.push(organization, website, {
+      "@type": "Bakery",
+      "@id": JSON_LD_BAKERY_ID,
+      name: "森森點心坊",
+      url: `${SOURCE_ORIGIN}/`,
+      image: absoluteSiteUrl("/images/logo.png"),
+      telephone: "07-3816662",
+      priceRange: "$$",
+      servesCuisine: ["蛋糕", "麵包", "中式點心"],
+      address: { "@type": "PostalAddress", addressLocality: "高雄市", addressCountry: "TW" },
+      department: JSON_LD_STORE_LOCATIONS.map(jsonLdStore),
+      parentOrganization: { "@id": JSON_LD_ORGANIZATION_ID },
+    }, {
+      "@type": "WebPage",
+      "@id": `${canonical}#webpage`,
+      url: canonical,
+      name: pageName,
+      description,
+      isPartOf: { "@id": JSON_LD_WEBSITE_ID },
+      about: { "@id": JSON_LD_BAKERY_ID },
+      inLanguage: "zh-Hant",
+    });
+    return jsonLdScript({ "@context": "https://schema.org", "@graph": graph });
+  }
+
+  const webpage = {
+    "@type": "WebPage",
+    "@id": `${canonical}#webpage`,
+    url: canonical,
+    name: pageName,
+    description,
+    isPartOf: { "@id": JSON_LD_WEBSITE_ID },
+    about: { "@id": JSON_LD_ORGANIZATION_ID },
+    inLanguage: "zh-Hant",
+  };
+  graph.push(organization, website, webpage);
+
+  if (isProduct) {
+    const productId = typeof productIdForDetailPath === "function" ? productIdForDetailPath(localPath) : "";
+    const topHouseRecord = productId && typeof TOP_HOUSE_PRODUCT_BY_ID !== "undefined" ? TOP_HOUSE_PRODUCT_BY_ID.get(productId) : null;
+    const productName = htmlAttributeValue(content, "data-product-fallback-title") || htmlDataText(content, "data-product-title") || (topHouseRecord ? topHouseRecord[0] : pageName);
+    const productImage = htmlAttributeValue(content, "data-product-fallback-image") || (topHouseRecord ? `/images/${topHouseRecord[1]}` : "");
+    const productDescription = htmlAttributeValue(content, "data-product-fallback-description") || `${productName}，森森點心坊商品。`;
+    const product = {
+      "@type": "Product",
+      "@id": `${canonical}#product`,
+      name: productName,
+      description: productDescription,
+      url: canonical,
+      image: productImage ? [absoluteSiteUrl(productImage)] : undefined,
+      brand: { "@id": JSON_LD_ORGANIZATION_ID },
+      category: htmlAttributeValue(content, "data-product-fallback-category") || "烘焙點心",
+      mainEntityOfPage: { "@id": `${canonical}#webpage` },
+      sku: productId || undefined,
+    };
+    if (topHouseRecord && Number.isFinite(Number(topHouseRecord[2]))) {
+      product.offers = { "@type": "Offer", priceCurrency: "TWD", price: Number(topHouseRecord[2]), availability: "https://schema.org/InStock", url: canonical };
+    }
+    graph.push(product);
+  } else if (/^\/(?:最新消息|latest-news)\//i.test(localPath)) {
+    graph.push({
+      "@type": "Article",
+      "@id": `${canonical}#article`,
+      headline: pageName,
+      description,
+      mainEntityOfPage: { "@id": `${canonical}#webpage` },
+      author: { "@id": JSON_LD_ORGANIZATION_ID },
+      publisher: { "@id": JSON_LD_ORGANIZATION_ID },
+      inLanguage: "zh-Hant",
+    });
+  }
+
+  if (localPath === "/門市資訊") {
+    graph.push({
+      "@type": "ItemList",
+      "@id": `${canonical}#stores`,
+      name: "森森點心坊高雄門市",
+      itemListElement: JSON_LD_STORE_LOCATIONS.map((store, index) => ({ "@type": "ListItem", position: index + 1, item: jsonLdStore(store) })),
+    });
+  }
+
+  const segments = localPath.split("/").filter(Boolean);
+  const breadcrumbItems = [{ "@type": "ListItem", position: 1, name: "首頁", item: `${SOURCE_ORIGIN}/` }];
+  let accumulatedPath = "";
+  segments.forEach((segment, index) => {
+    accumulatedPath += `/${segment}`;
+    const name = index === segments.length - 1 ? pageName : decodeURIComponent(segment);
+    breadcrumbItems.push({ "@type": "ListItem", position: index + 2, name, item: `${SOURCE_ORIGIN}${encodeURI(accumulatedPath)}/` });
+  });
+  graph.push({ "@type": "BreadcrumbList", "@id": `${canonical}#breadcrumb`, itemListElement: breadcrumbItems });
+  return jsonLdScript({ "@context": "https://schema.org", "@graph": graph });
 }
 
 function normalizeHeadingStructure(content, localPath) {
@@ -1409,9 +1671,25 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   const normalizedPath = pathLabel === "/" ? "/" : `/${String(pathLabel || "").replace(/^\/+|\/+$/g, "")}/`;
   const canonical = `${SOURCE_ORIGIN}${encodeURI(normalizedPath)}`;
   const description = seoDescription(title, normalizedPath.replace(/\/$/, "") || "/", isHome);
-  const privatePage = /^\/(?:admin|customer|cart|checkout|orders)(?:\/|$)/i.test(normalizedPath) || normalizedPath === "/最新消息文章/";
+  const normalizedLocalPath = normalizedPath.replace(/\/$/, "") || "/";
+  const privatePage = /^\/(?:admin|customer|cart|checkout|orders)(?:\/|$)/i.test(normalizedPath)
+    || normalizedPath === "/最新消息文章/"
+    || normalizedPath === "/404-error/"
+    || SITEMAP_EXCLUDED_PATHS.has(normalizedLocalPath);
   const robotsMeta = privatePage ? '<meta name="robots" content="noindex, nofollow">' : '<meta name="robots" content="index, follow">';
   const isBirthdayCakePage = pathLabel === BIRTHDAY_CAKE_PATH || (title.includes("生日蛋糕") && title.includes("DM"));
+  const isStructuredProductPage = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
+    || normalizedLocalPath.startsWith("/product-item/")
+    || normalizedLocalPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
+  const structuredData = structuredDataForPage({
+    title,
+    pathLabel: normalizedLocalPath,
+    canonical,
+    description,
+    isHome,
+    isProduct: isStructuredProductPage,
+    content,
+  });
   const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
     ? `<script src="${PRODUCT_DETAIL_SCRIPT_URL}"></script>`
     : '';
@@ -1539,6 +1817,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:url" content="${escapeAttr(canonical)}">
   <link rel="icon" type="image/jpeg" href="/assets/images/sensen-favicon.jpg">
   <link rel="apple-touch-icon" href="/assets/images/sensen-favicon.jpg">
+  ${structuredData}
   <link rel="stylesheet" href="${SITE_CSS_URL}">
   ${checkoutStyle}
 </head>
@@ -1615,6 +1894,59 @@ ${purchaseScripts ? `\n  ${purchaseScripts}` : "\n  "}
 </html>`;
 }
 
+function readStaticPublishedNews() {
+  const dbFile = path.join(ROOT, "sensen-backend", "data", "db.json");
+  if (!fs.existsSync(dbFile)) return [];
+  try {
+    const db = readJson(dbFile);
+    const now = Date.now();
+    return (Array.isArray(db.news) ? db.news : [])
+      .filter((article) => article.status === "published" && (!article.publishAt || new Date(article.publishAt).getTime() <= now))
+      .sort((left, right) => new Date(right.publishAt || right.createdAt || 0) - new Date(left.publishAt || left.createdAt || 0))
+      .map((article) => ({
+        id: String(article.id || ""),
+        slug: String(article.slug || article.id || ""),
+        title: String(article.title || "最新消息"),
+        excerpt: String(article.excerpt || ""),
+        content: String(article.content || ""),
+        image: String(article.image || ""),
+        category: String(article.category || "latest-news"),
+        publishAt: article.publishAt || article.createdAt || "",
+        createdAt: article.createdAt || "",
+        layout: Array.isArray(article.layout) ? article.layout : undefined,
+      }));
+  } catch {
+    return [];
+  }
+}
+
+function staticNewsImagePath(value) {
+  const image = String(value || "").trim();
+  if (!image) return "";
+  if (/^\/(?:assets\/)?images\//i.test(image)) return image.replace(/^\/assets\/images\//i, "/images/");
+  if (/^https?:\/\//i.test(image)) return image;
+  return `/images/${image.replace(/^\.\//, "").replace(/^assets\/images\//, "")}`;
+}
+
+function staticNewsHref(article) {
+  if (article.id === "birthday-cake-2026") return "/產品介紹/生日蛋糕-下方有dm供下載-264/";
+  return `/latest-news/article/${encodeURIComponent(article.slug || article.id)}/`;
+}
+
+function staticNewsCards(articles, className = "latest-news") {
+  return articles.map((article) => {
+    const image = staticNewsImagePath(article.image);
+    const imageMarkup = image
+      ? `<img src="${escapeAttr(image)}" alt="${escapeAttr(article.title)}" loading="lazy">`
+      : `<div class="${className}-card-placeholder" aria-hidden="true">森森點心坊</div>`;
+    const excerpt = article.excerpt || article.content || "";
+    if (className === "home-news") {
+      return `<a class="home-news-card" href="${escapeAttr(staticNewsHref(article))}"><div class="home-news-card-image">${imageMarkup}</div><small>${escapeHtml(article.publishAt ? new Date(article.publishAt).toLocaleDateString("zh-TW") : "")}</small><h3>${escapeHtml(article.title)}</h3><span>更多</span></a>`;
+    }
+    return `<article class="latest-news-card" data-news-category="${escapeAttr(article.category)}"><a class="latest-news-card-link" href="${escapeAttr(staticNewsHref(article))}" aria-label="查看${escapeAttr(article.title)}完整內容"><div class="latest-news-card-media"><div class="latest-news-card-image">${imageMarkup}</div></div><div class="latest-news-card-copy"><p class="latest-news-card-date"><span aria-hidden="true">◷</span>${escapeHtml(article.publishAt ? new Date(article.publishAt).toLocaleDateString("zh-TW") : "")}</p><h2>${escapeHtml(article.title)}</h2><p class="latest-news-card-excerpt">${escapeHtml(excerpt)}</p><span class="latest-news-card-readmore">查看完整內容 <span aria-hidden="true">→</span></span></div></a></article>`;
+  }).join("");
+}
+
 function homeContent() {
   const giftTiles = [
     ["/images/macadamia-nut-tart.jpg", "夏威夷豆塔"],
@@ -1650,7 +1982,7 @@ function homeContent() {
     </div>
   </section>
   <section class="home-taste"><div class="image-slot"><span>彌月試吃圖片預留位</span></div><div><h2>彌月試吃申請</h2><p class="eyebrow">TOP HOUSE &amp; SENSEN BAKERY</p><p>無論您是懷孕中的媽咪或是寶寶剛誕生，都感謝您給予機會選<br class="home-taste-mobile-break">擇森森彌月蛋糕，讓我們與您一同分享這份幸福的喜悅！(產<br class="home-taste-mobile-break">前產後均可申請。產前建議懷孕35週以上的媽咪唷!)</p><a class="button" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/">線上申請</a></div></section>
-  <section class="home-section" data-home-news-section hidden><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/">更多訊息</a></div><div class="home-news-grid" data-home-news-list></div></section><script src="${HOME_NEWS_SCRIPT_URL}"></script>
+  <section class="home-section" data-home-news-section${readStaticPublishedNews().length ? "" : " hidden"}><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6% הוד%a9/">更多訊息</a></div><div class="home-news-grid" data-home-news-list>${staticNewsCards(readStaticPublishedNews().slice(0, 3), "home-news")}</div></section><script src="${HOME_NEWS_SCRIPT_URL}"></script>
   <section class="gift-section"><div class="gift-copy"><img class="gift-icon" src="/images/home-icon-giftbox.png" alt="" aria-hidden="true"><h2>精選伴手禮</h2><p>各式經典組合<br>多樣化的選擇<br>吃進嘴裡都是幸福的味道</p><a class="button" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/">更多伴手禮</a></div><div class="gift-mosaic">${giftTiles}</div></section>
   <section class="home-catering"><div class="catering-copy"><div class="catering-panel"><div class="catering-title-row"><img class="catering-icon" src="/images/home-icon-cutlery.png" alt="" aria-hidden="true"><div><h2>酒會/外燴服務</h2><p>嚴選食材。精心烹調。味覺饗宴</p></div></div><span class="catering-wave" aria-hidden="true"></span><a class="button" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">了解更多 <span aria-hidden="true">›</span></a></div></div><div class="catering-images"><a class="catering-card buffet" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "/images/home-buffet.jpg", label: "Buffet" })}<div class="catering-card-copy"><span>Buffet</span><strong>精緻外燴</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a><a class="catering-card tea-party" href="/%e8%8c%b6%e6%9c%83%e9%bb%9e%e5%bf%83-tea-party/">${imageSlotHtml({ source: "/images/home-catering.jpg", label: "Tea Party" })}<div class="catering-card-copy"><span>Tea Party</span><strong>茶會點心</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a></div></section>
   <section class="catering-stores"><div class="catering-stores-panel">${storeDirectoryMarkup("catering")}</div></section>`;
@@ -2001,6 +2333,7 @@ const BIG_BEAR_STYLES = [["cheese.jpg", "波士頓派禮盒"], ["single-piece.jp
 // excluded from the storefront category renderer, while still getting the same
 // card/detail route behavior as online-store products.
 const TOP_HOUSE_PRODUCT_RECORDS = [
+  ["波士頓派（經典口味）", "poston-cream-pie-1.png", 260, "top-house-boston-classic"],
   ["波士頓鮮奶派", "poston-cream-pie-1.png", 260, "top-house-boston-new"],
   ...BOSTON_GIFTS.map(([image, title, description, price, id]) => [title, image, price, id]),
   ...BIG_BEAR_GIFTS.map(([image, title, description, price, id]) => [title, image, price, id]),
@@ -2138,35 +2471,81 @@ function productDetailTitleForPath(localPath) {
   return cake?.title || "商品";
 }
 
+function productFallbackForPath(localPath) {
+  const productId = productIdForDetailPath(localPath);
+  const automatic = NEW_IMAGE_PRODUCT_BY_ID.get(productId)
+    || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId)
+    || DYNAMIC_PRODUCT_DETAIL_BY_ID.get(productId);
+  if (automatic) {
+    return {
+      ...automatic,
+      image: automatic.image || "",
+      description: automatic.description || "商品詳細資料整理中。",
+    };
+  }
+  const topHouse = productId && TOP_HOUSE_PRODUCT_BY_ID.has(productId) ? TOP_HOUSE_PRODUCT_BY_ID.get(productId) : null;
+  if (topHouse) {
+    const details = TOP_HOUSE_CARD_DETAILS.get(productId) || {};
+    return {
+      id: productId,
+      title: details.title || topHouse[0],
+      image: `/images/${topHouse[1]}`,
+      category: "頂家彌月",
+      description: details.description || "頂家彌月商品，歡迎洽詢森森點心坊。",
+      priceValue: Number(topHouse[2]) || 0,
+    };
+  }
+  const catalog = readStaticCatalogProducts().find((product) => product.id === productId);
+  if (catalog) {
+    return {
+      id: catalog.id,
+      title: catalog.title,
+      image: catalog.img,
+      category: catalog.cat,
+      description: catalog.desc || "商品詳細資料整理中。",
+      priceValue: catalog.priceValue,
+      size: catalog.size,
+      storage: catalog.storage,
+      dietary: catalog.dietary,
+    };
+  }
+  return null;
+}
+
 function productDetailDataAttributes(localPath) {
   const includeTopHouseProducts = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
   const productId = productIdForDetailPath(localPath);
-  const fallback = NEW_IMAGE_PRODUCT_BY_ID.get(productId)
-    || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId)
-    || DYNAMIC_PRODUCT_DETAIL_BY_ID.get(productId);
+  const fallback = productFallbackForPath(localPath);
   const fallbackAttributes = fallback
-    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category)}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"${fallback.variants ? ` data-product-fallback-variants="${escapeAttr(JSON.stringify(fallback.variants))}"` : ""}`
+    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category || fallback.cat || "產品介紹")}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"${fallback.priceValue ? ` data-product-fallback-price="${escapeAttr(fallback.priceValue)}"` : ""}${fallback.variants ? ` data-product-fallback-variants="${escapeAttr(JSON.stringify(fallback.variants))}"` : ""}`
     : "";
   return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"${fallbackAttributes}`;
 }
 
 function productDetailShell({ localPath, kind = "cake" }) {
+  const fallback = productFallbackForPath(localPath);
   const souvenir = kind === "souvenir";
   const pageClass = souvenir
     ? "product-detail-template bean-tart-product-page souvenir-product-page"
     : "product-detail-template cake-product-page";
+  const initialTitle = fallback?.title || productDetailTitleForPath(localPath);
+  const initialImage = fallback?.image || "";
+  const initialDescription = fallback?.description || "商品資料載入中…";
+  const initialSize = fallback?.size || "—";
+  const initialStorage = fallback?.storage || "—";
+  const initialDietary = fallback?.dietary || "—";
   return `<section class="emerald-product-page ${pageClass}" data-product-kind="${escapeAttr(kind)}" ${productDetailDataAttributes(localPath)}>
     <section class="emerald-product-feature" aria-labelledby="product-detail-title">
-      <div class="product-detail-gallery" data-product-gallery><p class="product-detail-loading">商品圖片載入中…</p></div>
+      <div class="product-detail-gallery" data-product-gallery>${initialImage ? `<img src="${escapeAttr(initialImage)}" alt="${escapeAttr(initialTitle)}" loading="lazy">` : `<p class="product-detail-loading">商品圖片載入中…</p>`}</div>
       <div class="emerald-product-copy">
-        <h2 id="product-detail-title" data-product-title>${escapeHtml(productDetailTitleForPath(localPath))}</h2>
-        <div class="emerald-product-description" data-product-description><span>產品說明</span><p data-product-description-value>商品資料載入中…</p></div>
+        <h2 id="product-detail-title" data-product-title>${escapeHtml(initialTitle)}</h2>
+        <div class="emerald-product-description" data-product-description><span>產品說明</span><p data-product-description-value>${escapeHtml(initialDescription)}</p></div>
         <p class="emerald-product-emphasis" data-product-emphasis hidden></p>
         <hr class="product-detail-spec-divider" hidden>
         <dl class="emerald-product-specs" data-product-specs>
-          <div><dt>商品尺寸</dt><dd data-product-size>—</dd></div>
-          <div><dt>保存方式</dt><dd data-product-storage>—</dd></div>
-          <div><dt>其他</dt><dd data-product-other>—</dd></div>
+          <div><dt>商品尺寸</dt><dd data-product-size>${escapeHtml(initialSize)}</dd></div>
+          <div><dt>保存方式</dt><dd data-product-storage>${escapeHtml(initialStorage)}</dd></div>
+          <div><dt>其他</dt><dd data-product-other>${escapeHtml(initialDietary)}</dd></div>
         </dl>
         <p class="emerald-product-note" data-product-note hidden></p>
         <div class="emerald-product-badge" data-product-dietary hidden><img data-product-dietary-image alt=""></div>
@@ -2267,20 +2646,21 @@ function checkoutPageContent() {
           <label class="checkout-field checkout-field-wide">給店家的備註<textarea data-checkout-note rows="4" placeholder="例如：蛋糕牌文字、配送提醒"></textarea></label>
         </div><p class="checkout-account-hint">需要修改姓名、地址或電話？請返回會員中心的 Account Details / Addresses 更新。</p><p class="checkout-form-message" data-checkout-submit-message role="status"></p><button class="checkout-submit checkout-submit-mobile" type="button" data-checkout-submit>前往結帳</button></section>
       </div>
-      <aside class="checkout-sidebar"><section class="checkout-order-card"><div class="checkout-card-heading"><h2>Your Order</h2><button class="checkout-edit-cart" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">✎ 編輯購物車</button></div><div class="checkout-coupon"><input data-checkout-coupon type="text" placeholder="優惠碼" autocomplete="off"><button type="button" data-checkout-apply-coupon>套用優惠碼</button></div><p class="checkout-form-message" data-checkout-quote-message role="status"></p><div class="checkout-items" data-checkout-items><p>載入中…</p></div><div class="checkout-pickup-card"><span class="checkout-calendar" aria-hidden="true">▣</span><div><span>Pickup date</span><strong data-checkout-pickup-label>載入中…</strong></div><input data-checkout-pickup type="date" required aria-label="取貨／配送日期"></div><div class="checkout-summary"><div><span>商品小計</span><strong data-checkout-subtotal>$0.00</strong></div><div><span>運費</span><strong data-checkout-shipping-fee>$0.00</strong></div><div data-checkout-discount-row hidden><span>折扣</span><strong data-checkout-discount>-$0.00</strong></div><div class="checkout-total"><span>Total</span><strong data-checkout-total>$0.00</strong></div></div><section class="checkout-payment-note"><h3>Payment</h3><strong>Secure payment</strong><p>付款資料由金流服務商處理，森森點心坊不會儲存信用卡敏感資料。</p></section><p class="checkout-form-message" data-checkout-submit-message-secondary role="status"></p><button class="checkout-submit" type="button" data-checkout-submit>前往結帳</button><button class="checkout-back" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">返回購物車</button></section></aside>
+      <aside class="checkout-sidebar"><section class="checkout-order-card"><div class="checkout-card-heading"><h2>Your Order</h2><button class="checkout-edit-cart" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">✎ 編輯購物車</button></div><div class="checkout-coupon"><input data-checkout-coupon type="text" placeholder="優惠碼" autocomplete="off"><button type="button" data-checkout-apply-coupon>套用優惠碼</button></div><p class="checkout-form-message" data-checkout-quote-message role="status"></p><div class="checkout-items" data-checkout-items><p>正在讀取購物車內容…</p></div><div class="checkout-pickup-card"><span class="checkout-calendar" aria-hidden="true">▣</span><div><span>取貨／配送日期</span><strong data-checkout-pickup-label>請稍候…</strong></div><input data-checkout-pickup type="date" required aria-label="取貨／配送日期"></div><div class="checkout-summary"><div><span>商品小計</span><strong data-checkout-subtotal>$0.00</strong></div><div><span>運費</span><strong data-checkout-shipping-fee>$0.00</strong></div><div data-checkout-discount-row hidden><span>折扣</span><strong data-checkout-discount>-$0.00</strong></div><div class="checkout-total"><span>Total</span><strong data-checkout-total>$0.00</strong></div></div><section class="checkout-payment-note"><h3>Payment</h3><strong>Secure payment</strong><p>付款資料由金流服務商處理，森森點心坊不會儲存信用卡敏感資料。</p></section><p class="checkout-form-message" data-checkout-submit-message-secondary role="status"></p><button class="checkout-submit" type="button" data-checkout-submit>前往結帳</button><button class="checkout-back" type="button" data-checkout-cart-trigger aria-controls="sensen-cart-drawer" aria-expanded="false">返回購物車</button></section></aside>
     </section>${checkoutPageScript()}`;
 }
 
 function ordersPageContent() {
-  return `<section class="store-page"><div class="store-page-card"><p class="eyebrow">SENSEN BAKERY</p><h1>我的訂單</h1><div data-orders-page><p>載入中…</p></div><a class="button" href="/customer/admin/">返回會員中心</a></div></section>${ordersPageScript()}`;
+  return `<section class="store-page"><div class="store-page-card"><p class="eyebrow">SENSEN BAKERY</p><h1>我的訂單</h1><div data-orders-page><p>正在讀取訂單資料…</p></div><a class="button" href="/customer/admin/">返回會員中心</a></div></section>${ordersPageScript()}`;
 }
 
 function accountScript() {
   return `(() => {
-    const api = async (path, options = {}) => { const response = await fetch(path, { ...options, credentials: "include", headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) throw new Error(data.error || "操作失敗。"); return data; };
+    const api = async (path, options = {}) => { const response = await fetch(path, { ...options, credentials: "include", headers: { Accept: "application/json", ...(options.body ? { "Content-Type": "application/json" } : {}) } }); const data = await response.json().catch(() => ({})); if (!response.ok) { const error = new Error(data.error || "會員服務暫時無法使用。"); error.status = response.status; throw error; } return data; };
     const root = document.querySelector("[data-store-account]"), message = document.querySelector("#account-message"), login = document.querySelector("[data-account-panel=login]"), app = document.querySelector("[data-account-panel=app]"), loginForm = document.querySelector("[data-account-login]"), registerForm = document.querySelector("[data-account-register]"), profileForm = document.querySelector("[data-profile-form]"), addressForm = document.querySelector("[data-address-form]"); let user = null, orders = [];
     const returnTo = (() => { const value = new URLSearchParams(window.location.search).get("return"); try { const url = value ? new URL(value, window.location.origin) : null; return value && value.startsWith("/") && !value.startsWith("//") && url?.origin === window.location.origin ? value : "/customer/admin/backup/"; } catch (_) { return "/customer/admin/backup/"; } })();
     const showMessage = (text, error = false) => { message.textContent = text || ""; message.className = text ? (error ? "account-error" : "account-success") : ""; };
+    const readableError = (error, fallback) => { const text = String(error?.message || ""); return !text || text === "Failed to fetch" || text === "Load failed" || text === "操作失敗。" ? fallback : text; };
     const escapeHtml = value => String(value ?? "").replace(/[&<>\"']/g, char => char === "&" ? "&amp;" : char === "<" ? "&lt;" : char === ">" ? "&gt;" : char === String.fromCharCode(34) ? "&quot;" : "&#39;");
     const statusLabels = { pending: "待付款", pending_payment: "待付款", processing: "處理中", shipped: "已出貨", ready_for_pickup: "待取貨", picked_up: "已取貨", completed: "已完成", cancelled: "已取消", created: "已建立" };
     const shippingLabels = { pickup: "門市自取", home: "宅配", frozen: "冷凍宅配" };
@@ -2289,21 +2669,21 @@ function accountScript() {
     const formatFulfillmentDate = value => value ? String(value).slice(0, 10) : "";
     const renderOrders = target => { target.innerHTML = orders.length ? orders.map(order => { const details = [shippingLabels[order.shippingMethod] || order.shippingMethod || "", formatOrderDate(order.createdAt) ? "下單：" + formatOrderDate(order.createdAt) : "", formatFulfillmentDate(order.fulfillmentDate) ? "取貨／配送：" + formatFulfillmentDate(order.fulfillmentDate) : "", order.trackingNumber ? "物流單號：" + order.trackingNumber : ""].filter(Boolean); return '<div class="order-row"><div class="order-row-main"><b>#' + escapeHtml(String(order.id).slice(0, 12)) + '</b>' + (details.length ? '<small class="order-details">' + escapeHtml(details.join(" · ")) + '</small>' : '') + '</div><span class="status">' + escapeHtml(statusLabels[order.status] || order.status || "已建立") + '</span><strong>$' + Number(order.total || 0).toFixed(2) + '</strong></div>'; }).join("") : "<p>目前沒有訂單。</p>"; };
     const render = data => { user = data.user; orders = (data.orders || []).slice().sort((left, right) => (parseOrderDate(right.createdAt)?.getTime() || 0) - (parseOrderDate(left.createdAt)?.getTime() || 0)); login.hidden = true; app.hidden = false; document.querySelector("[data-user-name]").textContent = user.name || "會員"; document.querySelector("[data-sidebar-user]").textContent = user.name || "會員您好"; document.querySelector("[data-user-email]").textContent = user.email || ""; document.querySelector("[data-sidebar-order-count]").textContent = orders.length ? "(" + orders.length + ")" : ""; profileForm.elements.name.value = user.name || ""; profileForm.elements.email.value = user.email || ""; profileForm.elements.phone.value = user.phone || ""; const address = data.address || {}; ["fullName", "phone", "address", "city", "zip"].forEach(key => { addressForm.elements[key].value = address[key] || ""; }); const addressText = [address.address, address.city, address.zip].filter(Boolean).join("，"); document.querySelector("[data-address-preview]").textContent = addressText || "尚未儲存收件地址。"; renderOrders(document.querySelector("[data-account-orders]")); renderOrders(document.querySelector("[data-account-orders-full]")); api("/api/cart").then(cart => { const count = (cart.items || []).reduce((sum, item) => sum + Number(item.qty || 0), 0); document.querySelectorAll("[data-cart-count]").forEach(item => { item.textContent = count; }); }); };
-    const load = async (showError = false) => { try { const me = await api("/api/me"); const ordersData = await api("/api/orders"); render({ ...me, ...ordersData }); return true; } catch (error) { login.hidden = false; app.hidden = true; if (showError) showMessage(error.message, true); return false; } };
+    const load = async (showError = false) => { try { const me = await api("/api/me"); const ordersData = await api("/api/orders"); render({ ...me, ...ordersData }); return true; } catch (error) { login.hidden = false; app.hidden = true; if (showError) showMessage(error.status === 401 ? "請先登入會員中心。" : readableError(error, "會員資料暫時無法載入，請重新整理頁面後再試。"), true); return false; } };
     const authReturn = new URLSearchParams(window.location.search).get("return");
     const updateAuthLink = (selector, path) => { const link = document.querySelector(selector); if (link && authReturn) link.href = path + "?return=" + encodeURIComponent(authReturn); };
     updateAuthLink("[data-register-link]", "/customer/admin/register/");
     updateAuthLink("[data-login-link]", "/customer/admin/");
-    loginForm?.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "登入中…"; showMessage(""); try { await api("/api/login", { method: "POST", body: JSON.stringify({ login: String(form.get("login") || "").trim(), password: form.get("password") }) }); window.location.assign(returnTo); } catch (error) { showMessage(error.message, true); button.disabled = false; button.textContent = "Log in"; } });
-    registerForm?.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "註冊中…"; showMessage(""); try { await api("/api/register", { method: "POST", body: JSON.stringify(Object.fromEntries(form)) }); window.location.assign(returnTo); } catch (error) { showMessage(error.message, true); button.disabled = false; button.textContent = "Register"; } });
-    profileForm?.addEventListener("submit", async event => { event.preventDefault(); try { const data = await api("/api/me", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("會員資料已更新。"); user = data.user; document.querySelector("[data-user-name]").textContent = user.name || "會員"; document.querySelector("[data-sidebar-user]").textContent = user.name || "會員您好"; } catch (error) { showMessage(error.message, true); } });
-    addressForm?.addEventListener("submit", async event => { event.preventDefault(); try { await api("/api/address", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("收件地址已更新。"); } catch (error) { showMessage(error.message, true); } });
+    loginForm?.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "登入中…"; showMessage(""); try { await api("/api/login", { method: "POST", body: JSON.stringify({ login: String(form.get("login") || "").trim(), password: form.get("password") }) }); window.location.assign(returnTo); } catch (error) { showMessage(readableError(error, "登入服務暫時無法使用，請稍後再試。"), true); button.disabled = false; button.textContent = "Log in"; } });
+    registerForm?.addEventListener("submit", async event => { event.preventDefault(); const form = new FormData(event.currentTarget), button = event.currentTarget.querySelector("button[type=submit]"); button.disabled = true; button.textContent = "註冊中…"; showMessage(""); try { await api("/api/register", { method: "POST", body: JSON.stringify(Object.fromEntries(form)) }); window.location.assign(returnTo); } catch (error) { showMessage(readableError(error, "註冊服務暫時無法使用，請稍後再試。"), true); button.disabled = false; button.textContent = "Register"; } });
+    profileForm?.addEventListener("submit", async event => { event.preventDefault(); try { const data = await api("/api/me", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("會員資料已更新。"); user = data.user; document.querySelector("[data-user-name]").textContent = user.name || "會員"; document.querySelector("[data-sidebar-user]").textContent = user.name || "會員您好"; } catch (error) { showMessage(readableError(error, "會員資料更新失敗，請稍後再試。"), true); } });
+    addressForm?.addEventListener("submit", async event => { event.preventDefault(); try { await api("/api/address", { method: "PUT", body: JSON.stringify(Object.fromEntries(new FormData(event.currentTarget))) }); showMessage("收件地址已更新。"); } catch (error) { showMessage(readableError(error, "收件地址更新失敗，請稍後再試。"), true); } });
     const switchTab = tab => { document.querySelectorAll("[data-account-tab]").forEach(item => item.classList.toggle("active", item.dataset.accountTab === tab)); document.querySelectorAll("[data-account-section]").forEach(section => { section.hidden = section.dataset.accountSection !== tab; }); const labels = { overview: "帳戶總覽", profile: "會員資料", address: "收件地址", orders: "我的訂單" }; document.querySelector("[data-account-title]").textContent = labels[tab] || labels.overview; };
     document.querySelectorAll("[data-account-tab], [data-account-tab-link]").forEach(button => button.addEventListener("click", () => switchTab(button.dataset.accountTab || button.dataset.accountTabLink)));
     const accountMenuToggle = document.querySelector(".account-menu-toggle"), accountNav = document.querySelector(".account-nav");
     accountMenuToggle?.addEventListener("click", () => { const isOpen = accountMenuToggle.getAttribute("aria-expanded") === "true"; accountMenuToggle.setAttribute("aria-expanded", String(!isOpen)); accountNav.classList.toggle("is-open", !isOpen); });
     document.querySelectorAll(".account-nav [data-account-tab]").forEach(button => button.addEventListener("click", () => { if (window.matchMedia("(max-width: 760px)").matches) { accountMenuToggle.setAttribute("aria-expanded", "false"); accountNav.classList.remove("is-open"); } }));
-    document.querySelectorAll("[data-account-logout]").forEach(button => button.addEventListener("click", async () => { button.disabled = true; await api("/api/logout", { method: "POST" }); window.location.assign("/customer/admin/"); })); if (root.dataset.accountRoute === "dashboard") load(true); else api("/api/me").then(() => window.location.assign(returnTo)).catch(() => {});
+    document.querySelectorAll("[data-account-logout]").forEach(button => button.addEventListener("click", async () => { button.disabled = true; try { await api("/api/logout", { method: "POST" }); window.location.assign("/customer/admin/"); } catch (error) { button.disabled = false; showMessage(readableError(error, "登出服務暫時無法使用，請稍後再試。"), true); } })); if (root.dataset.accountRoute === "dashboard") load(true); else api("/api/me").then(() => window.location.assign(returnTo)).catch(error => { if (error.status !== 401) showMessage(readableError(error, "會員服務暫時無法連線，請稍後再試。"), true); });
   })();`;
 }
 
@@ -2478,6 +2858,9 @@ function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
   AUTOMATIC_PRODUCT_DETAIL_RECORDS.forEach((record) => {
     if (!map[record.id]) map[record.id] = record.path;
   });
+  DYNAMIC_PRODUCT_DETAIL_RECORDS.forEach((record) => {
+    if (!map[record.id]) map[record.id] = record.path;
+  });
   const normalize = value => String(value || "").replace(/<br\s*\/?\s*>/gi, "").replace(/\s+/g, "").replace(/[（(]季節限定[）)]/g, "（季節限定）");
   CAKE_SECTIONS.forEach(section => [...section.products, ...(section.loadMoreProducts || [])].forEach(([title, likes, image, href]) => { map[normalize(title)] = href; }));
   SOUVENIR_PRODUCTS.forEach(([title, href]) => { map[normalize(title)] = href; });
@@ -2525,10 +2908,79 @@ function syncProductDetailTemplate() {
   }));
 }
 
+function readStaticCatalogProducts() {
+  const records = new Map();
+  for (const filePath of PRODUCT_DATA_FILES) {
+    if (!fs.existsSync(filePath)) continue;
+    try {
+      const payload = readJson(filePath);
+      const entries = Array.isArray(payload) ? payload : payload.productAdditions;
+      if (!Array.isArray(entries)) continue;
+      const deletedIds = new Set(Array.isArray(payload.deletedProducts) ? payload.deletedProducts.map((id) => String(id)) : []);
+      for (const product of entries) {
+        const id = String(product.id || product.slug || "").trim();
+        const title = String(product.title || product.name || "").trim();
+        if (!id || !title || deletedIds.has(id)) continue;
+        const priceValue = Number(product.priceValue || String(product.price || "").replace(/[^0-9.]/g, "")) || 0;
+        records.set(id, {
+          ...product,
+          id,
+          title,
+          cat: String(product.cat || product.category || "產品介紹").trim(),
+          img: String(product.img || product.image || "").replace(/^\/assets\/images\//i, "/images/").replace(/^\/data\/images\//i, "/images/"),
+          priceValue,
+          published: product.published !== false,
+          salesCount: Number(product.salesCount || 0),
+          newArrivalRank: Number(product.newArrivalRank || 0),
+        });
+      }
+    } catch {
+      // Optional catalog exports should not prevent the static site build.
+    }
+  }
+  return [...records.values()].filter((product) => product.published);
+}
+
+function staticCatalogTitle(value) {
+  return String(value || "").replace(/<br\s*\/?\s*>/gi, "").replace(/\s+/g, "").replace(/[（(]季節限定[）)]/g, "（季節限定）");
+}
+
+function staticCatalogProductPath(product) {
+  const map = storefrontProductPathMap();
+  return map[product.id] || map[staticCatalogTitle(product.title)] || String(product.url || "").replace(/\/$/, "") || `/product-item/${encodeURIComponent(product.id)}`;
+}
+
+function staticCatalogCard(product) {
+  const title = String(product.title || "商品");
+  const href = staticCatalogProductPath(product);
+  const image = String(product.img || "/images/icon-cake.png").replace(/^\/assets\/images\//i, "/images/");
+  const isSouvenir = product.cat === "伴手禮";
+  const cardClass = isSouvenir ? "souvenir-card cake-product-card" : "cake-product-card";
+  const linkClass = isSouvenir ? "souvenir-card-link" : "cake-product-card-link";
+  return `<article class="${cardClass}"><a class="${linkClass}" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span><div class="${isSouvenir ? "souvenir-card-meta" : "cake-product-meta"}"><span class="${isSouvenir ? "souvenir-card-title" : "cake-product-title"}">${escapeHtml(title)}</span></div></a></article>`;
+}
+
+function staticCatalogSection(title, products, className = "cake-category") {
+  if (!products.length) return "";
+  const icon = title === "伴手禮" ? "/images/icon-cupcake.png" : "/images/icon-cake.png";
+  return `<section class="${className}"><div class="cake-category-heading"><img class="cake-section-icon" src="${icon}" alt="" aria-hidden="true"><p>${escapeHtml(title === "伴手禮" ? "SOUVENIR" : title)}</p><h2>${escapeHtml(title)}</h2></div><div class="cake-product-grid">${products.map(staticCatalogCard).join("")}</div></section>`;
+}
+
+function staticCatalogMarkup(view) {
+  const products = readStaticCatalogProducts().filter((product) => !String(product.cat).startsWith("頂家彌月"));
+  if (view === "long-cakes") return staticCatalogSection("長條蛋糕", products.filter((product) => ["長條蛋糕", "長條蛋糕(冷凍)"].includes(product.cat)));
+  if (view === "souvenir") return staticCatalogSection("伴手禮", products.filter((product) => product.cat === "伴手禮"), "souvenir-products");
+  if (view === "cakes") {
+    return ["生日蛋糕", "造型蛋糕", "冰淇淋蛋糕"].map((category) => staticCatalogSection(category, products.filter((product) => product.cat === category))).join("");
+  }
+  const overview = ["生日蛋糕", "伴手禮", "長條蛋糕", "點心餐盒", "歐式麵包(冷凍)"].map((category) => staticCatalogSection(category, products.filter((product) => product.cat === category), "product-intro-section")).join("");
+  return overview || `<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>`;
+}
+
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" || view === "long-cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status>商品資料載入中…</p><div data-storefront-catalog-content></div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
@@ -2898,20 +3350,23 @@ function latestNewsContent(page) {
     ["生日蛋糕", "sensen-coffee"],
   ];
   const filterHtml = filters.map(([label, value, active]) => `<button class="latest-news-filter${active ? " is-active" : ""}" type="button" data-news-filter="${escapeAttr(value)}" aria-pressed="${active ? "true" : "false"}">${escapeHtml(label)}</button>`).join("");
+  const news = readStaticPublishedNews();
+  const snapshot = escapeAttr(JSON.stringify(news).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026"));
   return `<section class="latest-news-page" data-latest-news-page aria-labelledby="latest-news-heading">
     <h2 class="latest-news-sr-only" id="latest-news-heading">最新消息</h2>
     <img class="latest-news-icon" src="/images/icon-wheat.png" alt="" aria-hidden="true">
     <nav class="latest-news-filters" aria-label="最新消息分類">${filterHtml}</nav>
-    <div class="latest-news-grid" data-news-list aria-live="polite"><p class="latest-news-empty">載入最新消息中…</p></div>
+    <div class="latest-news-grid" data-news-list data-news-snapshot="${snapshot}" aria-live="polite">${staticNewsCards(news, "latest-news") || `<p class="latest-news-empty">目前沒有最新消息。</p>`}</div>
     <script src="/assets/latest-news.js"></script>
   </section>`;
 }
 
 function latestNewsArticleContent() {
+  const snapshot = escapeAttr(JSON.stringify(readStaticPublishedNews()).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026"));
   return `<section class="page-hero about-hero">
     <div class="hero-banner"><div class="image-slot" data-image-source="/images/headtitle-bg2.jpg"><img src="/images/headtitle-bg2.jpg" alt="頁首背景圖片"></div><div class="hero-banner-title"><p>/最新消息</p><h2 class="latest-news-article-section-title">最新消息</h2></div></div>
   </section>
-  <section class="latest-news-article-page" data-latest-news-article-page aria-labelledby="latest-news-article-title">
+  <section class="latest-news-article-page" data-latest-news-article-page data-news-snapshot="${snapshot}" aria-labelledby="latest-news-article-title">
     <img class="latest-news-article-icon" src="/images/icon-wheat.png" alt="" aria-hidden="true">
     <a class="latest-news-article-back" href="/最新消息/">← 返回最新消息</a>
     <!-- NEWS_ARTICLE_SHELL_START --><div class="latest-news-article-shell">
@@ -3045,6 +3500,12 @@ function copyHomeFallback() {
       .replace(/<title>[\s\S]*?<\/title>/i, "<title>備用首頁 – 森森點心坊</title>");
     fs.writeFileSync(path.join(OUT_DIR, "standalone-home.html"), optimizedFallback);
   }
+}
+
+function copyCustom404Page() {
+  const source = path.join(OUT_DIR, "404-error", "index.html");
+  const destination = path.join(OUT_DIR, "404.html");
+  if (fs.existsSync(source)) fs.copyFileSync(source, destination);
 }
 
 function hasImportedContentSources() {
@@ -3221,6 +3682,108 @@ function syncStaticSnapshotFavicon() {
   walk(OUT_DIR);
 }
 
+function syncStaticSnapshotSeoMetadata() {
+  const files = [];
+  const visit = (directory) => {
+    if (!fs.existsSync(directory)) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(filePath);
+      else if (entry.name === "index.html") files.push(filePath);
+    }
+  };
+  visit(OUT_DIR);
+
+  const entries = files.map((filePath) => {
+    const html = fs.readFileSync(filePath, "utf8");
+    const canonical = (html.match(/<link\s+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) || [])[1];
+    const title = decodeEntities(((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "森森點心坊").trim())
+      .replace(/&ndash;/g, "–");
+    if (!canonical) return { filePath, html, localPath: "", title };
+    try {
+      return { filePath, html, localPath: localPathFromUrl(canonical), title };
+    } catch {
+      return { filePath, html, localPath: "", title };
+    }
+  });
+  const publicEntries = entries.filter((entry) => entry.localPath
+    && !/name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(entry.html)
+    && entry.localPath !== "/404-error");
+  const titleCounts = new Map();
+  for (const entry of publicEntries) titleCounts.set(entry.title, (titleCounts.get(entry.title) || 0) + 1);
+  const duplicatedTitles = new Set([...titleCounts].filter(([, count]) => count > 1).map(([title]) => title));
+
+  const replaceHeadTag = (html, pattern, markup) => pattern.test(html)
+    ? html.replace(pattern, markup)
+    : html.replace(/<\/head>/i, `${markup}\n</head>`);
+
+  for (const entry of entries) {
+    if (!entry.localPath) continue;
+    const isNotFound = entry.localPath === "/404-error";
+    const isExcluded = SITEMAP_EXCLUDED_PATHS.has(entry.localPath);
+    const isNoindex = isNotFound || isExcluded || /name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(entry.html);
+    if (isNoindex && !isNotFound && !isExcluded) continue;
+
+    const title = uniquePageTitle(entry.title, entry.localPath, duplicatedTitles);
+    const description = seoDescription(title, entry.localPath, entry.localPath === "/");
+    const canonicalPath = entry.localPath === "/" ? "/" : `${entry.localPath}/`;
+    const canonical = `${SOURCE_ORIGIN}${encodeURI(canonicalPath)}`;
+    let updated = entry.html
+      .replace(/<title[^>]*>[\s\S]*?<\/title>/i, `<title>${escapeHtml(title)}</title>`);
+    updated = replaceHeadTag(updated, /<meta\s+name=["']description["'][^>]*>/i, `<meta name="description" content="${escapeAttr(description)}">`);
+    updated = replaceHeadTag(updated, /<link\s+rel=["']canonical["'][^>]*>/i, `<link rel="canonical" href="${escapeAttr(canonical)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+name=["']robots["'][^>]*>/i, `<meta name="robots" content="${isNoindex ? "noindex, nofollow" : "index, follow"}">`);
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:title["'][^>]*>/i, `<meta property="og:title" content="${escapeAttr(title)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:description["'][^>]*>/i, `<meta property="og:description" content="${escapeAttr(description)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:url["'][^>]*>/i, `<meta property="og:url" content="${escapeAttr(canonical)}">`);
+    if (updated !== entry.html) fs.writeFileSync(entry.filePath, updated);
+  }
+}
+
+function syncStaticSnapshotStructuredData() {
+  const files = [];
+  const visit = (directory) => {
+    if (!fs.existsSync(directory)) return;
+    for (const entry of fs.readdirSync(directory, { withFileTypes: true })) {
+      const filePath = path.join(directory, entry.name);
+      if (entry.isDirectory()) visit(filePath);
+      else if (entry.name === "index.html") files.push(filePath);
+    }
+  };
+  visit(OUT_DIR);
+
+  for (const filePath of files) {
+    const html = fs.readFileSync(filePath, "utf8");
+    if (/name=["']robots["'][^>]*content=["'][^"']*noindex/i.test(html)) continue;
+    const canonical = (html.match(/<link\s+rel=["']canonical["'][^>]*href=["']([^"']+)["']/i) || [])[1];
+    if (!canonical) continue;
+    let localPath;
+    try {
+      localPath = localPathFromUrl(canonical);
+    } catch {
+      continue;
+    }
+    const title = stripTags((html.match(/<title[^>]*>([\s\S]*?)<\/title>/i) || [])[1] || "森森點心坊");
+    const descriptionTag = html.match(/<meta\s+name=["']description["'][^>]*>/i)?.[0] || "";
+    const description = htmlAttributeValue(descriptionTag, "content") || seoDescription(title, localPath, localPath === "/");
+    const isProduct = localPath.startsWith("/product-item/") || localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
+    const structuredData = structuredDataForPage({
+      title,
+      pathLabel: localPath,
+      canonical: absoluteSiteUrl(canonical),
+      description,
+      isHome: localPath === "/",
+      isProduct,
+      content: html,
+    });
+    const withoutOldStructuredData = html.replace(/\s*<script\s+type=["']application\/ld\+json["'][^>]*>[\s\S]*?<\/script>/gi, "");
+    const updated = structuredData
+      ? withoutOldStructuredData.replace(/<\/head>/i, () => `  ${structuredData}\n</head>`)
+      : withoutOldStructuredData;
+    if (updated !== html) fs.writeFileSync(filePath, updated);
+  }
+}
+
 function syncCustomerAccountSnapshots() {
   const pages = [
     { localPath: "/customer/admin", route: "login", title: "會員登入 – 森森點心坊" },
@@ -3241,6 +3804,7 @@ function syncCustomerAccountSnapshots() {
 
 function syncStaticSnapshotContent() {
   const pages = [
+    { localPath: "/最新消息", sectionClass: "latest-news-page", content: latestNewsContent({}) },
     { localPath: BIRTHDAY_CAKE_PATH, sectionClass: "cake-page", content: birthdayCakeContent() },
     { localPath: "/產品介紹/伴手禮", sectionClass: "souvenir-page", content: storefrontCatalogContent("souvenir") },
     { localPath: CATERING_PATH, sectionClass: "catering-page", content: cateringContent() },
@@ -3298,6 +3862,22 @@ function syncStaticSnapshotContent() {
       .replace(/(<div class="hero-banner-title"><p>\/頂家彌月<\/p><h1>)[^<]+(<\/h1>)/, "$1頂家彌月專區$2");
     if (updated !== html) fs.writeFileSync(topHouseFile, updated);
   }
+}
+
+function syncHomeSnapshotContent() {
+  const homeFile = path.join(OUT_DIR, "index.html");
+  if (!fs.existsSync(homeFile)) return;
+  const html = fs.readFileSync(homeFile, "utf8");
+  const generated = layout({
+    title: "森森點心坊",
+    pathLabel: "/",
+    content: normalizeHeadingStructure(homeContent(), "/"),
+    isHome: true,
+  });
+  const generatedMain = generated.match(/<main class="home-main">[\s\S]*?<\/main>/)?.[0];
+  if (!generatedMain) return;
+  const updated = html.replace(/<main class="home-main">[\s\S]*?<\/main>/, generatedMain);
+  if (updated !== html) fs.writeFileSync(homeFile, updated);
 }
 
 function syncNewProductImageGalleries() {
@@ -3464,7 +4044,7 @@ function syncProductDetailSnapshot() {
       const productTitle = escapeHtml(productDetailTitleForPath(localPath));
       updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1><p[^>]*>[\s\S]*?<\/p><\/div>/, (_, prefix) => `${prefix} data-product-hero-title>${productTitle}</h1><p data-product-hero-category>▱ 產品介紹</p></div>`);
     }
-    if (html.includes("data-storefront-catalog")) {
+    if (html.includes("data-product-paths")) {
       updated = updated.replace(/data-product-paths="[^"]*"/, `data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"`);
     }
     updated = updated
@@ -3475,6 +4055,14 @@ function syncProductDetailSnapshot() {
     if (updated !== html) fs.writeFileSync(filePath, updated);
   }
   syncTopHouseProductDetailSnapshot();
+}
+
+function rewriteHomeNewsLink() {
+  const homeFile = path.join(OUT_DIR, "index.html");
+  if (!fs.existsSync(homeFile)) return;
+  const html = fs.readFileSync(homeFile, "utf8");
+  const updated = html.replace(/(<section class="home-section"[\s\S]*?<a href=")[^"]*("[^>]*>更多訊息<\/a>)/, (_, prefix, suffix) => `${prefix}/最新消息/${suffix}`);
+  if (updated !== html) fs.writeFileSync(homeFile, updated);
 }
 
 function main() {
@@ -3489,9 +4077,12 @@ function main() {
     fs.copyFileSync(path.join(__dirname, "cart-drawer.js"), path.join(OUT_DIR, "assets", "cart-drawer.js"));
     fs.copyFileSync(path.join(__dirname, "cart-page.js"), path.join(OUT_DIR, "assets", "cart-page.js"));
     fs.copyFileSync(path.join(__dirname, "checkout-page.js"), path.join(OUT_DIR, "assets", "checkout-page.js"));
+    fs.copyFileSync(path.join(__dirname, "orders-page.js"), path.join(OUT_DIR, "assets", "orders-page.js"));
     fs.copyFileSync(path.join(__dirname, "checkout.css"), path.join(OUT_DIR, "assets", "checkout.css"));
     fs.copyFileSync(path.join(__dirname, "top-house-purchase.js"), path.join(OUT_DIR, "assets", "top-house-purchase.js"));
     fs.copyFileSync(path.join(__dirname, "home-news.js"), path.join(OUT_DIR, "assets", "home-news.js"));
+    fs.copyFileSync(path.join(__dirname, "latest-news.js"), path.join(OUT_DIR, "assets", "latest-news.js"));
+    fs.copyFileSync(path.join(__dirname, "latest-news-article.js"), path.join(OUT_DIR, "assets", "latest-news-article.js"));
     const faviconSource = path.join(IMAGE_DATA_DIR, "sensen-favicon.jpg");
     if (fs.existsSync(faviconSource)) {
       fs.copyFileSync(faviconSource, path.join(OUT_DIR, "assets", "images", "sensen-favicon.jpg"));
@@ -3503,9 +4094,16 @@ function main() {
     syncCustomerAccountSnapshots();
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
+    syncHomeSnapshotContent();
+    rewriteHomeNewsLink();
     syncNewProductImageGalleries();
     rewriteStaticSnapshotNavigation();
+    syncStaticSnapshotSeoMetadata();
+    syncStaticSnapshotStructuredData();
     rewriteR2ImagePaths();
+    writeSitemapXml();
+    copyCustom404Page();
+    writeRobotsTxt();
     process.stdout.write("No crawler/export sources found; preserving the committed static site snapshot.\n");
     return;
   }
@@ -3656,6 +4254,7 @@ function main() {
     .join("\n")}\n`);
 
   copyHomeFallback();
+  copyCustom404Page();
   fs.writeFileSync(path.join(OUT_DIR, "site-map.json"), JSON.stringify(pages.map((page) => ({
     title: titleFromPage(page),
     url: page.url,
@@ -3663,6 +4262,9 @@ function main() {
   })), null, 2));
 
   rewriteR2ImagePaths();
+  rewriteHomeNewsLink();
+  writeSitemapXml();
+  writeRobotsTxt();
   console.log(`Built ${pages.length} pages in ${path.relative(ROOT, OUT_DIR)}`);
 }
 

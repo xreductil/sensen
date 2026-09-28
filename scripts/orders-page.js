@@ -5,6 +5,12 @@
   const requestedOrderId = query.get('order') || '';
   const paymentResult = query.get('payment') || '';
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const readableError = error => {
+    if (error?.status === 401) return '請先登入會員中心查看訂單。';
+    const message = String(error?.message || '');
+    if (!message || message === 'Failed to fetch' || message === 'Load failed' || message === '操作失敗。') return '訂單資料暫時無法載入，請重新整理頁面後再試。';
+    return message;
+  };
   const labels = { created: '訂單已建立', pending: '待付款', pending_payment: '待付款', processing: '準備中', shipped: '配送中', ready_for_pickup: '可取貨', completed: '已完成', picked_up: '已取貨', cancelled: '已取消' };
   const parseOrderDate = value => { const text = String(value || '').trim(); if (!text) return null; const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(text) ? text.replace(' ', 'T') + 'Z' : text; const date = new Date(normalized); return Number.isNaN(date.getTime()) ? null : date; };
   const formatOrderDate = value => { const date = parseOrderDate(value); return date ? new Intl.DateTimeFormat('zh-TW', { timeZone: 'Asia/Taipei', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }).format(date) : ''; };
@@ -28,5 +34,23 @@
           : '';
     root.innerHTML = '<div class="order-confirmation-message"><p class="eyebrow">ORDER CONFIRMATION</p><h2>訂單已建立</h2><p>感謝您的訂購，以下是本次訂單資訊。</p>' + paymentNotice + '<p>訂單編號：<strong>#' + escapeHtml(order.id) + '</strong></p></div>' + render(order);
   };
-  fetch('/api/orders', { credentials: 'include' }).then(async response => { const data = await response.json(); if (!response.ok) throw new Error(data.error || '請先登入會員中心。'); const orders = (data.orders || []).slice().sort((left, right) => (parseOrderDate(right.createdAt)?.getTime() || 0) - (parseOrderDate(left.createdAt)?.getTime() || 0)); const confirmedOrder = requestedOrderId ? orders.find(order => String(order.id) === requestedOrderId) : null; if (requestedOrderId && confirmedOrder) renderConfirmation(confirmedOrder); else if (requestedOrderId) root.innerHTML = '<p class="account-error">找不到這筆訂單，請至會員中心查看。</p>'; else root.innerHTML = orders.length ? orders.map(render).join('') : '<p>目前沒有訂單。</p>'; }).catch(error => { root.innerHTML = '<p class="account-error">' + escapeHtml(error.message) + '</p>'; });
+  const load = async () => {
+    const response = await fetch('/api/orders', { credentials: 'include' });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.error || '訂單資料暫時無法載入。');
+      error.status = response.status;
+      throw error;
+    }
+    const orders = (data.orders || []).slice().sort((left, right) => (parseOrderDate(right.createdAt)?.getTime() || 0) - (parseOrderDate(left.createdAt)?.getTime() || 0));
+    const confirmedOrder = requestedOrderId ? orders.find(order => String(order.id) === requestedOrderId) : null;
+    if (requestedOrderId && confirmedOrder) renderConfirmation(confirmedOrder);
+    else if (requestedOrderId) root.innerHTML = '<p class="account-error">找不到這筆訂單，請至會員中心查看。</p>';
+    else root.innerHTML = orders.length ? orders.map(render).join('') : '<p>目前沒有訂單。</p>';
+  };
+  const showError = error => {
+    root.innerHTML = '<p class="account-error">' + escapeHtml(readableError(error)) + '</p><button type="button" class="button orders-retry" data-orders-retry>重新載入訂單</button>';
+    root.querySelector('[data-orders-retry]')?.addEventListener('click', () => { root.innerHTML = '<p>正在讀取訂單資料…</p>'; load().catch(showError); });
+  };
+  load().catch(showError);
 })();

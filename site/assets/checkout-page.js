@@ -4,10 +4,15 @@
 
   const money = value => '$' + Number(value || 0).toFixed(2);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const readableError = (error, fallback) => {
+    const message = String(error?.message || '');
+    if (!message || message === 'Failed to fetch' || message === 'Load failed' || message === '操作失敗。') return fallback;
+    return message;
+  };
   const api = async (path, options = {}) => {
     const response = await fetch(path, { ...options, credentials: 'include', headers: { Accept: 'application/json', ...(options.body ? { 'Content-Type': 'application/json' } : {}) } });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || '操作失敗。');
+    if (!response.ok) throw new Error(data.error || '結帳服務暫時無法使用。');
     return data;
   };
   const loginUrl = () => '/customer/admin/?return=' + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
@@ -84,7 +89,7 @@
       const data = await api('/api/cart/quote', { method: 'POST', body: JSON.stringify({ couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value }) });
       renderQuote(data); save();
       if (fields.coupon.value.trim()) setMessage('[data-checkout-quote-message]', Number(data.discount) ? '優惠碼已套用。' : '優惠碼有效，但目前沒有折扣。');
-    } catch (error) { setMessage('[data-checkout-quote-message]', error.message, true); }
+    } catch (error) { setMessage('[data-checkout-quote-message]', readableError(error, '訂單金額暫時無法更新，請稍後再試。'), true); }
   };
   const submit = async button => {
     setMessage('[data-checkout-submit-message]', ''); setMessage('[data-checkout-submit-message-secondary]', '');
@@ -100,9 +105,18 @@
       localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping'); localStorage.removeItem('sensen-cart-recipient'); localStorage.removeItem('sensen-cart-phone'); localStorage.removeItem('sensen-cart-address'); localStorage.removeItem('sensen-cart-note');
       window.location.assign(payment.paymentUrl);
     } catch (error) {
-      setMessage('[data-checkout-submit-message]', error.message, true);
+      setMessage('[data-checkout-submit-message]', readableError(error, '訂單送出失敗，請確認資料後再試。'), true);
       root.querySelectorAll('[data-checkout-submit]').forEach(item => { item.disabled = false; item.textContent = '前往結帳'; });
     }
+  };
+
+  const showLoadError = error => {
+    const message = readableError(error, '結帳資料暫時無法載入，請重新整理頁面後再試。');
+    const items = root.querySelector('[data-checkout-items]');
+    if (items) items.innerHTML = '<p class="checkout-form-message is-error">' + escapeHtml(message) + '</p><button type="button" class="checkout-retry" data-checkout-retry>重新載入結帳資料</button>';
+    setMessage('[data-checkout-submit-message]', message, true);
+    root.querySelectorAll('[data-checkout-submit]').forEach(button => { button.disabled = true; });
+    root.querySelector('[data-checkout-retry]')?.addEventListener('click', () => window.location.reload());
   };
 
   const load = async () => {
@@ -131,5 +145,5 @@
   root.querySelector('[data-checkout-apply-coupon]').addEventListener('click', quote);
   fields.pickup.addEventListener('change', syncDateLabel);
   root.querySelectorAll('[data-checkout-submit]').forEach(button => button.addEventListener('click', () => submit(button)));
-  load().catch(error => { setMessage('[data-checkout-quote-message]', error.message, true); });
+  load().catch(showLoadError);
 })();

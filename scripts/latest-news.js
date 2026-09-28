@@ -4,7 +4,10 @@
 
   const list = page.querySelector('[data-news-list]');
   const buttons = [...page.querySelectorAll('[data-news-filter]')];
-  let articles = [];
+  let articles = (() => {
+    try { return JSON.parse(list.dataset.newsSnapshot || '[]'); } catch { return []; }
+  })();
+  const staticArticles = articles.slice();
   const requestedFilter = new URLSearchParams(window.location.search).get('category');
   let activeFilter = buttons.some(button => button.dataset.newsFilter === requestedFilter) ? requestedFilter : 'all';
   const categoryAliases = { '森森飲品': 'sensen-coffee', '生日蛋糕': 'sensen-coffee' };
@@ -80,16 +83,20 @@
     });
   }
 
+  render();
+
   fetch('/api/news', { credentials: 'include', headers: { Accept: 'application/json' } })
     .then(response => {
       if (!response.ok) throw new Error('Unable to load news.');
       return response.json();
     })
     .then(data => {
-      articles = Array.isArray(data.news) ? data.news : [];
+      const incoming = Array.isArray(data.news) ? data.news : [];
+      articles = incoming.length ? incoming : staticArticles;
       render();
     })
     .catch(() => {
-      list.innerHTML = '<p class="latest-news-empty">目前沒有最新消息。</p>';
+      articles = staticArticles;
+      render();
     });
 })();

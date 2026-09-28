@@ -23,6 +23,11 @@
   if (applyCouponButton) applyCouponButton.hidden = true;
   const money = (value) => `$${Number(value || 0).toFixed(2)}`;
   const escapeHtml = (value) => String(value ?? '').replace(/[&<>"']/g, (char) => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;', "'":'&#39;' }[char]));
+  const readableError = (error, fallback) => {
+    const message = String(error?.message || '');
+    if (!message || message === 'Failed to fetch' || message === 'Load failed' || message === '操作失敗。') return fallback;
+    return message;
+  };
   const toIsoDate = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
   const saveFields = () => {
     localStorage.setItem('sensen-cart-coupon', couponInput.value.trim().toUpperCase());
@@ -61,13 +66,13 @@
     } catch (error) {
       discountRowEl.hidden = true;
       totalEl.textContent = money(cart.total);
-      showQuoteMessage(error.message, true);
+      showQuoteMessage(readableError(error, '優惠碼暫時無法驗證，請稍後再試。'), true);
     }
   };
   async function loadCart() {
     try {
       const response = await fetch('/api/cart', { credentials: 'include' });
-      if (!response.ok) throw new Error('森森購物車後端尚未啟動。');
+      if (!response.ok) throw new Error('購物車服務暫時無法使用。');
       const cart = await response.json();
       const products = cart.items || [];
       const count = products.reduce((sum, item) => sum + Number(item.qty || 0), 0);
@@ -92,7 +97,7 @@
       if (products.length && couponInput.value.trim()) await applyQuote(cart);
     } catch (error) {
       messageEl.hidden = false;
-      messageEl.textContent = error.message;
+      messageEl.textContent = readableError(error, '購物車暫時無法載入，請重新整理頁面後再試。');
       itemsEl.innerHTML = '';
       optionsEl.hidden = true;
       priceLinesEl.hidden = true;
@@ -116,25 +121,49 @@
     checkoutLink.setAttribute('aria-busy', 'true');
     try {
       if (await requireLoginForCheckout()) window.location.assign('/checkout/');
-    } catch (_) {
-      window.location.assign('/checkout/');
+    } catch (error) {
+      messageEl.hidden = false;
+      messageEl.textContent = readableError(error, '目前無法確認會員登入狀態，請稍後再試。');
     }
   });
   drawer.querySelector('[data-cart-apply-coupon]').addEventListener('click', async () => {
-    const response = await fetch('/api/cart', { credentials: 'include' });
-    if (response.ok) await applyQuote(await response.json());
+    try {
+      const response = await fetch('/api/cart', { credentials: 'include' });
+      if (!response.ok) throw new Error('購物車暫時無法載入，請稍後再試。');
+      await applyQuote(await response.json());
+    } catch (error) {
+      showQuoteMessage(readableError(error, '優惠碼暫時無法驗證，請稍後再試。'), true);
+    }
   });
   couponInput.addEventListener('input', () => {
     showQuoteMessage('');
     clearTimeout(quoteTimer);
     quoteTimer = setTimeout(async () => {
-      const response = await fetch('/api/cart', { credentials: 'include' });
-      if (response.ok) await applyQuote(await response.json());
+      try {
+        const response = await fetch('/api/cart', { credentials: 'include' });
+        if (!response.ok) throw new Error('購物車暫時無法載入，請稍後再試。');
+        await applyQuote(await response.json());
+      } catch (error) {
+        showQuoteMessage(readableError(error, '優惠碼暫時無法驗證，請稍後再試。'), true);
+      }
     }, 500);
   });
   couponInput.addEventListener('change', saveFields);
   pickupInput.addEventListener('change', saveFields);
-  itemsEl.addEventListener('click', async (event) => { const button = event.target.closest('[data-cart-id]'); if (!button) return; await fetch('/api/cart/item', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) }); loadCart(); });
+  itemsEl.addEventListener('click', async (event) => {
+    const button = event.target.closest('[data-cart-id]');
+    if (!button) return;
+    button.disabled = true;
+    try {
+      const response = await fetch('/api/cart/item', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) });
+      if (!response.ok) throw new Error('購物車內容更新失敗，請稍後再試。');
+      await loadCart();
+    } catch (error) {
+      messageEl.hidden = false;
+      messageEl.textContent = readableError(error, '購物車內容更新失敗，請稍後再試。');
+      button.disabled = false;
+    }
+  });
   if (shouldOpenFromQuery) {
     window.history.replaceState({}, document.title, window.location.pathname + window.location.hash);
     toggle(true);
