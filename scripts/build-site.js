@@ -40,6 +40,7 @@ const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/2024母親節蛋糕/", "latest-detail-11.md"],
 ];
 const SOURCE_ORIGIN = "https://www.sensen.com.tw";
+const SOCIAL_IMAGE_URL = `${SOURCE_ORIGIN}/images/logo.webp`;
 const SITEMAP_EXCLUDED_PATHS = new Set([
   "/404-error",
   "/product-item/123",
@@ -1484,10 +1485,10 @@ const JSON_LD_ORGANIZATION_ID = `${SOURCE_ORIGIN}/#organization`;
 const JSON_LD_WEBSITE_ID = `${SOURCE_ORIGIN}/#website`;
 const JSON_LD_BAKERY_ID = `${SOURCE_ORIGIN}/#bakery`;
 const JSON_LD_STORE_LOCATIONS = [
-  { id: "chenghe", name: "澄和店", image: "/images/store-1.jpg", address: "高雄市三民區澄和路78號", phone: "07-3816662", hours: "08:00-22:00", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
-  { id: "xinfu", name: "新富店", image: "/images/store-2.jpg", address: "高雄市鳳山區新富路276號", phone: "07-7675992", hours: "08:00-22:30", map: "https://goo.gl/maps/EZFqqQPeh6z" },
-  { id: "boai", name: "博愛店", image: "/images/store-3.jpg", address: "高雄市三民區博愛路219號", phone: "07-7993070", hours: "07:30-22:30", map: "https://goo.gl/maps/rYLh32wnRdm" },
-  { id: "wenlong", name: "文龍店", image: "/images/store-4.jpg", address: "高雄市鳳山區文龍東路336號", phone: "07-7335812", hours: "12:30-21:30", map: "https://goo.gl/maps/5hoEqTmHsuF2" },
+  { id: "chenghe", name: "澄和店", image: "/images/store-1.webp", address: "高雄市三民區澄和路78號", phone: "07-3816662", hours: "08:00-22:00", map: "https://goo.gl/maps/WQFSnvZ8iP22" },
+  { id: "xinfu", name: "新富店", image: "/images/store-2.webp", address: "高雄市鳳山區新富路276號", phone: "07-7675992", hours: "08:00-22:30", map: "https://goo.gl/maps/EZFqqQPeh6z" },
+  { id: "boai", name: "博愛店", image: "/images/store-3.webp", address: "高雄市三民區博愛路219號", phone: "07-7993070", hours: "07:30-22:30", map: "https://goo.gl/maps/rYLh32wnRdm" },
+  { id: "wenlong", name: "文龍店", image: "/images/store-4.webp", address: "高雄市鳳山區文龍東路336號", phone: "07-7335812", hours: "12:30-21:30", map: "https://goo.gl/maps/5hoEqTmHsuF2" },
 ];
 
 function absoluteSiteUrl(value) {
@@ -1550,7 +1551,7 @@ function structuredDataForPage({ title, pathLabel, canonical, description, isHom
     "@id": JSON_LD_ORGANIZATION_ID,
     name: "森森點心坊",
     url: SOURCE_ORIGIN,
-    logo: absoluteSiteUrl("/images/logo.png"),
+    logo: absoluteSiteUrl("/images/logo.webp"),
     sameAs: ["https://www.facebook.com/sensenbakery/"],
   };
   const website = {
@@ -1568,7 +1569,7 @@ function structuredDataForPage({ title, pathLabel, canonical, description, isHom
       "@id": JSON_LD_BAKERY_ID,
       name: "森森點心坊",
       url: `${SOURCE_ORIGIN}/`,
-      image: absoluteSiteUrl("/images/logo.png"),
+      image: absoluteSiteUrl("/images/logo.webp"),
       telephone: "07-3816662",
       priceRange: "$$",
       servesCuisine: ["蛋糕", "麵包", "中式點心"],
@@ -1815,6 +1816,15 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <meta property="og:title" content="${escapeAttr(title)}">
   <meta property="og:description" content="${escapeAttr(description)}">
   <meta property="og:url" content="${escapeAttr(canonical)}">
+  <meta property="og:image" content="${escapeAttr(SOCIAL_IMAGE_URL)}">
+  <meta property="og:image:secure_url" content="${escapeAttr(SOCIAL_IMAGE_URL)}">
+  <meta property="og:image:type" content="image/webp">
+  <meta property="og:image:alt" content="森森點心坊">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${escapeAttr(title)}">
+  <meta name="twitter:description" content="${escapeAttr(description)}">
+  <meta name="twitter:image" content="${escapeAttr(SOCIAL_IMAGE_URL)}">
+  <meta name="twitter:image:alt" content="森森點心坊">
   <link rel="icon" type="image/jpeg" href="/assets/images/sensen-favicon.jpg">
   <link rel="apple-touch-icon" href="/assets/images/sensen-favicon.jpg">
   ${structuredData}
@@ -3792,6 +3802,15 @@ function syncStaticSnapshotSeoMetadata() {
     updated = replaceHeadTag(updated, /<meta\s+property=["']og:title["'][^>]*>/i, `<meta property="og:title" content="${escapeAttr(title)}">`);
     updated = replaceHeadTag(updated, /<meta\s+property=["']og:description["'][^>]*>/i, `<meta property="og:description" content="${escapeAttr(description)}">`);
     updated = replaceHeadTag(updated, /<meta\s+property=["']og:url["'][^>]*>/i, `<meta property="og:url" content="${escapeAttr(canonical)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:image["'][^>]*>/i, `<meta property="og:image" content="${escapeAttr(SOCIAL_IMAGE_URL)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:image:secure_url["'][^>]*>/i, `<meta property="og:image:secure_url" content="${escapeAttr(SOCIAL_IMAGE_URL)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:image:type["'][^>]*>/i, '<meta property="og:image:type" content="image/webp">');
+    updated = replaceHeadTag(updated, /<meta\s+property=["']og:image:alt["'][^>]*>/i, '<meta property="og:image:alt" content="森森點心坊">');
+    updated = replaceHeadTag(updated, /<meta\s+name=["']twitter:card["'][^>]*>/i, '<meta name="twitter:card" content="summary">');
+    updated = replaceHeadTag(updated, /<meta\s+name=["']twitter:title["'][^>]*>/i, `<meta name="twitter:title" content="${escapeAttr(title)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+name=["']twitter:description["'][^>]*>/i, `<meta name="twitter:description" content="${escapeAttr(description)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+name=["']twitter:image["'][^>]*>/i, `<meta name="twitter:image" content="${escapeAttr(SOCIAL_IMAGE_URL)}">`);
+    updated = replaceHeadTag(updated, /<meta\s+name=["']twitter:image:alt["'][^>]*>/i, '<meta name="twitter:image:alt" content="森森點心坊">');
     if (updated !== entry.html) fs.writeFileSync(entry.filePath, updated);
   }
 }
