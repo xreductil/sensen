@@ -6916,6 +6916,73 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
 .bean-tart-hero .hero-banner > .image-slot {
   background: linear-gradient(rgba(47, 36, 32, .40), rgba(47, 36, 32, .40)), url("/images/headtitle-bg2.webp") center 10% / cover no-repeat;
 }
+.page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner,
+.page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner > .image-slot,
+.page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner-title {
+  min-height: 170px;
+}
+.page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner > .image-slot {
+  background: #382a27 url("/images/headtitle-bg2.webp") center 10% / cover no-repeat;
+}
+.page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner::after {
+  position: absolute;
+  inset: 0;
+  background: rgba(35, 24, 22, .10);
+  content: "";
+}
+.page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner-title h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(32px, 2.6vw, 42px);
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.page-main:has(.top-house-product-page) .product-detail-hero .hero-banner,
+.page-main:has(.top-house-product-page) .product-detail-hero .hero-banner > .image-slot,
+.page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title {
+  min-height: 170px;
+}
+.page-main:has(.top-house-product-page) .product-detail-hero .hero-banner > .image-slot {
+  background: #382a27 url("/images/headtitle-bg2.webp") center 10% / cover no-repeat;
+}
+.page-main:has(.top-house-hero-boston) .product-detail-hero .hero-banner > .image-slot,
+.page-main:has(.top-house-hero-bear) .product-detail-hero .hero-banner > .image-slot,
+.page-main:has(.top-house-hero-country) .product-detail-hero .hero-banner > .image-slot,
+.page-main:has(.top-house-hero-pairing) .product-detail-hero .hero-banner > .image-slot {
+  background-image: url("/images/headtitle-bg8.webp");
+}
+.page-main:has(.top-house-hero-round-pie) .product-detail-hero .hero-banner > .image-slot {
+  background-image: url("/images/long-cake-banner.webp");
+}
+.page-main:has(.top-house-hero-long-cake) .product-detail-hero .hero-banner > .image-slot {
+  background-image: url("/images/headtitle-bg9.webp");
+}
+.page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(32px, 2.6vw, 42px);
+  font-weight: 800;
+  letter-spacing: .04em;
+}
+.page-main:has(.souvenir-product-page) .product-detail-template .emerald-product-feature {
+  padding-top: 104px;
+}
+.souvenir-detail-icon {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  width: min(1440px, calc(100% - 64px));
+  height: 0;
+  margin: 0 auto;
+  place-items: start center;
+}
+.souvenir-detail-icon img {
+  display: block;
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+  transform: translateY(-56px);
+}
 .bean-tart-product-page { width: min(1220px, calc(100% - 80px)); margin: 0 auto; }
 .bean-tart-feature {
   display: grid;
@@ -7045,7 +7112,15 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .product-detail-hero .hero-banner,
   .product-detail-hero .hero-banner > .image-slot,
   .product-detail-hero .hero-banner-title { min-height: 360px; }
+  .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner,
+  .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner > .image-slot,
+  .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner-title { min-height: 190px; }
+  .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner,
+  .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner > .image-slot,
+  .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title { min-height: 190px; }
   .product-detail-hero .hero-banner-title h1 { max-width: calc(100% - 32px); margin-bottom: 14px; font-size: clamp(18px, 6vw, 22px); letter-spacing: .02em; white-space: nowrap !important; }
+  .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner-title h1 { margin: 0; font-size: 32px; letter-spacing: .04em; }
+  .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title h1 { margin: 0; font-size: 32px; letter-spacing: .04em; }
   .product-detail-hero .hero-banner-title p { font-size: 15px; }
   .emerald-product-page { width: calc(100% - 28px); }
   .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
@@ -7082,6 +7157,9 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .bean-tart-specs > div { grid-template-columns: 100px minmax(0, 1fr); gap: 8px; margin: 16px 0; }
   .souvenir-related .emerald-related-card:not(.product-thumbnail-managed) img { height: auto; aspect-ratio: 1; object-fit: cover; }
   .product-detail-template .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
+  .page-main:has(.souvenir-product-page) .product-detail-template .emerald-product-feature { padding-top: 76px; }
+  .souvenir-detail-icon { width: calc(100% - 28px); }
+  .souvenir-detail-icon img { width: 68px; height: 68px; transform: translateY(-40px); }
   .product-detail-template .product-detail-gallery { min-height: 0; gap: 36px; }
   .product-detail-template .product-detail-gallery img { width: min(100%, 300px); }
   .product-detail-template .product-detail-gallery.is-carousel { min-height: 0; }
