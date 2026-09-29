@@ -22,9 +22,9 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const SITE_CSS_URL = "/assets/site.css?v=20260918-related-thumbnail-mobile-2";
+const SITE_CSS_URL = "/assets/site.css?v=20260929-product-gallery-carousel-1";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20260918-thumbnail-mobile-sync-1";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260918-related-thumbnail-mobile-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260929-product-gallery-carousel-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -46,6 +46,13 @@ const SITEMAP_EXCLUDED_PATHS = new Set([
   "/product-item/123",
   "/product-item/_template",
   "/product-item/codex-excel-test",
+  "/product-item/rose-salt-red-bean-egg-yolk-gift",
+  "/product-item/rose-salt-taro-egg-yolk-gift",
+  "/product-item/rose-salt-matcha-egg-yolk-gift",
+  "/product-item/rose-salt-date-egg-yolk-gift",
+  "/product-item/伴手禮新品圖片-02",
+  "/product-item/伴手禮新品圖片-03",
+  "/product-item/伴手禮新品圖片-04",
 ]);
 const ROBOTS_TXT = `User-agent: *
 Allow: /
@@ -678,7 +685,7 @@ const NEW_SOUVENIR_PRODUCT_TITLES = {
   5: "經典奶油餅禮盒",
   6: "經典禮盒",
   7: "玫瑰鹽菠蘿蛋黃酥禮盒",
-  8: "純綠豆椪禮盒",
+  8: "綠豆椪禮盒（6入）",
   11: "月光禮盒",
 };
 const NEW_SOUVENIR_PRODUCT_NUMBERS = [2, 3, 4, 5, 6, 7, 8, 11];
@@ -696,6 +703,7 @@ const NEW_IMAGE_PRODUCT_RECORDS = [
   ...NEW_PRODUCT_IMAGE_GALLERIES.souvenirs.map((image, index) => {
     const number = NEW_SOUVENIR_PRODUCT_NUMBERS[index];
     const paddedNumber = String(number).padStart(2, "0");
+    const isMungBeanPastry = number === 8;
     return {
       id: `new-souvenir-image-${paddedNumber}`,
       title: NEW_SOUVENIR_PRODUCT_TITLES[number],
@@ -703,6 +711,16 @@ const NEW_IMAGE_PRODUCT_RECORDS = [
       image,
       kind: "souvenir",
       category: "伴手禮",
+      ...(isMungBeanPastry ? {
+        description: "綠豆椪禮盒（6入），可選純綠豆椪、蛋黃綠豆椪或綜合綠豆椪。",
+        priceValue: 450,
+        variants: {
+          sizes: { "6入": 450 },
+          flavors: ["純綠豆椪", "蛋黃綠豆椪", "綜合綠豆椪"],
+          flavorCount: 1,
+          flavorPrices: { "純綠豆椪": 450, "蛋黃綠豆椪": 450, "綜合綠豆椪": 450 },
+        },
+      } : {}),
     };
   }),
   ...NEW_PRODUCT_IMAGE_GALLERIES.birthdayCakes.map((image, index) => ({
@@ -745,6 +763,12 @@ function readAutomaticProductDetailRecords() {
     const image = String(product.img || product.image || "").trim()
       .replace(/^\/assets\/images\//i, "/images/")
       .replace(/^\/data\/images\//i, "/images/");
+    const images = [...new Set([
+      image,
+      ...(Array.isArray(product.images) ? product.images : []),
+    ].map((value) => String(value || "").trim()
+      .replace(/^\/assets\/images\//i, "/images/")
+      .replace(/^\/data\/images\//i, "/images/")) .filter(Boolean))];
     const priceValue = Number(product.priceValue || String(product.price || "").replace(/[^0-9.]/g, "")) || 0;
     records.set(id, {
       id,
@@ -755,6 +779,12 @@ function readAutomaticProductDetailRecords() {
       category,
       description: String(product.desc || product.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。"),
       priceValue,
+      images,
+      ...(product.size ? { size: String(product.size) } : {}),
+      ...(product.storage ? { storage: String(product.storage) } : {}),
+      ...(product.dietary ? { dietary: String(product.dietary) } : {}),
+      ...(product.dietaryImage ? { dietaryImage: String(product.dietaryImage) } : {}),
+      ...(product.variants && typeof product.variants === "object" && !Array.isArray(product.variants) ? { variants: product.variants } : {}),
     });
   }
   return [...records.values()];
@@ -765,14 +795,28 @@ function readAutomaticProductDetailRecords() {
 // detail pages do not return a Vercel 404 before the next catalog export.
 const DYNAMIC_PRODUCT_DETAIL_RECORDS = [
   {
-    id: "rose-salt-assorted-egg-yolk-gift",
-    title: "玫瑰鹽綜合蛋黃酥禮盒",
-    path: "/product-item/玫瑰鹽綜合蛋黃酥禮盒",
-    image: "/images/products/1789651471278-c3367963-eaa1-4cca-b469-fc2ef37e8df3.jpg",
+    id: "rose-salt-egg-yolk-gift",
+    title: "玫瑰鹽蛋黃酥禮盒（9入）",
+    path: "/product-item/玫瑰鹽蛋黃酥禮盒",
+    image: "/images/S__294150156_0.webp",
     kind: "souvenir",
     category: "伴手禮",
-    description: "烏豆沙、芋頭、抹茶、棗泥任選三入。",
-    variants: { flavors: ["烏豆沙", "芋頭", "抹茶", "棗泥"], flavorCount: 3 },
+    description: "玫瑰鹽蛋黃酥禮盒（9入），可選烏豆沙、芋頭、抹茶或棗泥其中一種口味。",
+    priceValue: 675,
+    size: "9入",
+    variants: { sizes: { "9入": 675 }, flavors: ["烏豆沙", "芋頭", "抹茶", "棗泥"], flavorCount: 1, flavorPrices: { "烏豆沙": 675, "芋頭": 675, "抹茶": 675, "棗泥": 675 } },
+  },
+  {
+    id: "玫瑰鹽綜合蛋黃酥禮盒",
+    title: "玫瑰鹽綜合蛋黃酥禮盒（9入）",
+    path: "/product-item/玫瑰鹽綜合蛋黃酥禮盒",
+    image: "/images/S__294150156_0.webp",
+    kind: "souvenir",
+    category: "伴手禮",
+    description: "玫瑰鹽綜合蛋黃酥禮盒（9入），烏豆沙、芋頭、抹茶、棗泥任選三入。",
+    priceValue: 675,
+    size: "9入",
+    variants: { sizes: { "9入": 675 }, flavors: ["烏豆沙", "芋頭", "抹茶", "棗泥"], flavorCount: 3 },
   },
   {
     id: "蛋黃綠豆椪禮盒-mu5bhpph",
@@ -2435,8 +2479,10 @@ const SOUVENIR_PRODUCTS = [
   ["手工蛋捲", "/product-item/手工蛋捲", "egg-roll-2.jpg", 4],
   ["鈕釦牛軋餅", "/product-item/鈕扣餅乾", "button-nougat-pastry-inside-page-3-1.jpg", 7],
   ["達克瓦茲禮盒", "/product-item/鳳梨酥禮盒", "dacquoise.jpg", 4],
-  ["土鳳梨酥禮盒", "/product-item/土鳳梨酥禮盒", "pineapple-cake-copy.jpg", 7],
+  ["土鳳梨酥禮盒（12入）", "/product-item/土鳳梨酥禮盒", "S__294150148_0.webp", 7],
   ["日式大福禮盒", "/product-item/日式大福禮盒", "daifuku-3.jpg", 10],
+  ["玫瑰鹽蛋黃酥禮盒（9入）", "/product-item/玫瑰鹽蛋黃酥禮盒", "S__294150156_0.webp", 0],
+  ["玫瑰鹽綜合蛋黃酥禮盒（9入）", "/product-item/玫瑰鹽綜合蛋黃酥禮盒", "S__294150156_0.webp", 0],
 ];
 
 const STOREFRONT_PRODUCT_ID_PATHS = {
@@ -2478,7 +2524,10 @@ const STOREFRONT_PRODUCT_ID_PATHS = {
   "souvenir-dacquoise": "/product-item/鳳梨酥禮盒",
   "souvenir-pineapple-cake": "/product-item/土鳳梨酥禮盒",
   "souvenir-daifuku": "/product-item/日式大福禮盒",
-  ...Object.fromEntries(NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record.path])),
+  "玫瑰鹽綜合蛋黃酥禮盒": "/product-item/玫瑰鹽綜合蛋黃酥禮盒",
+  ...Object.fromEntries(NEW_IMAGE_PRODUCT_RECORDS
+    .filter((record) => !["new-souvenir-image-02", "new-souvenir-image-03", "new-souvenir-image-04"].includes(record.id))
+    .map((record) => [record.id, record.path])),
 };
 
 function productIdForDetailPath(localPath) {
@@ -2518,9 +2567,19 @@ function productFallbackForPath(localPath) {
     || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId)
     || DYNAMIC_PRODUCT_DETAIL_BY_ID.get(productId);
   if (automatic) {
+    const normalizedImage = automatic.image
+      ? (String(automatic.image).startsWith("/") ? automatic.image : `/images/${automatic.image}`)
+      : "";
+    const normalizedImages = [...new Set([
+      normalizedImage,
+      ...(Array.isArray(automatic.images) ? automatic.images : []),
+    ].map((value) => String(value || "").trim()
+      .replace(/^\/assets\/images\//i, "/images/")
+      .replace(/^\/data\/images\//i, "/images/")) .filter(Boolean))];
     return {
       ...automatic,
-      image: automatic.image || "",
+      image: normalizedImage,
+      images: normalizedImages,
       description: automatic.description || "商品詳細資料整理中。",
     };
   }
@@ -2571,13 +2630,16 @@ function productDetailShell({ localPath, kind = "cake" }) {
     : "product-detail-template cake-product-page";
   const initialTitle = fallback?.title || productDetailTitleForPath(localPath);
   const initialImage = fallback?.image || "";
+  const initialImages = Array.isArray(fallback?.images) && fallback.images.length
+    ? fallback.images
+    : (initialImage ? [initialImage] : []);
   const initialDescription = fallback?.description || "商品資料載入中…";
   const initialSize = fallback?.size || "—";
   const initialStorage = fallback?.storage || "—";
   const initialDietary = fallback?.dietary || "—";
   return `<section class="emerald-product-page ${pageClass}" data-product-kind="${escapeAttr(kind)}" ${productDetailDataAttributes(localPath)}>
     <section class="emerald-product-feature" aria-labelledby="product-detail-title">
-      <div class="product-detail-gallery" data-product-gallery>${initialImage ? `<img src="${escapeAttr(initialImage)}" alt="${escapeAttr(initialTitle)}" loading="lazy">` : `<p class="product-detail-loading">商品圖片載入中…</p>`}</div>
+      <div class="product-detail-gallery" data-product-gallery>${initialImages.length ? initialImages.map((image, index) => `<img src="${escapeAttr(image)}" alt="${escapeAttr(initialTitle)}${index ? ` 商品圖片 ${index + 1}` : ""}" loading="lazy">`).join("") : `<p class="product-detail-loading">商品圖片載入中…</p>`}</div>
       <div class="emerald-product-copy">
         <h2 id="product-detail-title" data-product-title>${escapeHtml(initialTitle)}</h2>
         <div class="emerald-product-description" data-product-description><span>產品說明</span><p data-product-description-value>${escapeHtml(initialDescription)}</p></div>

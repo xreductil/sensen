@@ -6,15 +6,13 @@
   const value = id => document.getElementById(id)?.value.trim() || '';
   const imageInput = document.getElementById('productImage');
   const imagePreview = form.querySelector('[data-product-image-preview]');
-  let imagePreviewUrl = '';
+  let imagePreviewUrls = [];
 
   imageInput?.addEventListener('change', () => {
-    const file = imageInput.files?.[0];
-    if (imagePreviewUrl) URL.revokeObjectURL(imagePreviewUrl);
-    imagePreviewUrl = file ? URL.createObjectURL(file) : '';
+    imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+    imagePreviewUrls = [...(imageInput.files || [])].map(file => URL.createObjectURL(file));
     if (!imagePreview) return;
-    imagePreview.src = imagePreviewUrl;
-    imagePreview.classList.toggle('d-none', !imagePreviewUrl);
+    imagePreview.innerHTML = [...(imageInput.files || [])].map((file, index) => `<figure class="mb-0 text-center"><img src="${imagePreviewUrls[index]}" alt="${file.name.replace(/[&<>\"']/g, '')}" class="img-thumbnail" style="width:120px;height:96px;object-fit:contain;"><figcaption class="small text-secondary text-truncate" style="max-width:120px;">${file.name.replace(/[&<>\"']/g, '')}</figcaption></figure>`).join('');
   });
 
   const uploadProductImage = async file => {
@@ -89,7 +87,7 @@
     event.preventDefault();
     event.stopImmediatePropagation();
     const button = form.querySelector('[type="submit"]');
-    const file = imageInput?.files?.[0];
+    const files = [...(imageInput?.files || [])];
     const title = value('productName');
     button.disabled = true;
     button.textContent = '儲存中…';
@@ -97,13 +95,17 @@
     status.textContent = '';
 
     try {
-      if (!file) throw new Error('請先選擇商品圖片。');
+      if (!files.length) throw new Error('請至少選擇一張商品圖片。');
       const sizes = collectPriceOptions();
       if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
       document.getElementById('productPrice').value = Object.values(sizes)[0];
       document.getElementById('productSize').value = Object.keys(sizes).join('、');
-      status.textContent = '圖片上傳中…';
-      const imagePath = await uploadProductImage(file);
+      status.textContent = `正在上傳 ${files.length} 張圖片…`;
+      const imagePaths = [];
+      for (const [index, file] of files.entries()) {
+        status.textContent = `正在上傳圖片 ${index + 1}/${files.length}…`;
+        imagePaths.push(await uploadProductImage(file));
+      }
       status.textContent = '圖片已上傳，正在儲存商品…';
       const response = await fetch('/api/admin/products', {
         method: 'POST',
@@ -115,7 +117,8 @@
           priceValue: Number(value('productPrice')),
           quantity: Number(value('productStock')),
           cat: value('productCategory'),
-          img: imagePath,
+          img: imagePaths[0],
+          images: imagePaths,
           desc: value('productDescription'),
           size: value('productSize'),
           storage: value('productStorage'),
@@ -129,6 +132,9 @@
       const pageUrl = String(data.pageUrl || data.product?.url || '').trim();
       if (!pageUrl) throw new Error('商品已儲存，但沒有建立商品詳細頁網址。');
       form.reset();
+      imagePreviewUrls.forEach(url => URL.revokeObjectURL(url));
+      imagePreviewUrls = [];
+      if (imagePreview) imagePreview.replaceChildren();
       const priceOptions = form.querySelector('[data-create-price-options]');
       if (priceOptions) priceOptions.innerHTML = '';
       addPriceOptionRow();

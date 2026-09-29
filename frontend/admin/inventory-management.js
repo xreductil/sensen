@@ -44,6 +44,48 @@
   let currentPage = 1;
   const dialog = $('#inventory-product-dialog');
 
+  const normalizeImagePath = value => String(value || '').trim();
+  const uploadProductImages = async files => {
+    const uploaded = [];
+    for (const [index, file] of files.entries()) {
+      const body = new FormData();
+      body.append('image', file);
+      body.append('folder', 'products');
+      const response = await fetch('/api/admin/images', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { Accept: 'application/json' },
+        body,
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || `第 ${index + 1} 張商品圖片上傳失敗。`);
+      if (!data.image) throw new Error('商品圖片上傳後沒有取得圖片路徑。');
+      uploaded.push(data.image);
+    }
+    return uploaded;
+  };
+
+  function clearPendingImagePreviews(form) {
+    (form._pendingImagePreviewUrls || []).forEach(url => URL.revokeObjectURL(url));
+    form._pendingImagePreviewUrls = [];
+  }
+
+  function renderImagePreview(form) {
+    const preview = form.querySelector('[data-inventory-image-preview]');
+    if (!preview) return;
+    clearPendingImagePreviews(form);
+    const existingImages = Array.isArray(form._editingImages) ? form._editingImages : [];
+    const files = [...(form.elements.imageFiles?.files || [])];
+    const pendingUrls = files.map(file => URL.createObjectURL(file));
+    form._pendingImagePreviewUrls = pendingUrls;
+    preview.innerHTML = existingImages.map((src, index) => `<figure class="mb-0 position-relative text-center"><img src="${escapeHtml(src)}" alt="商品圖片 ${index + 1}" class="img-thumbnail" style="width:120px;height:96px;object-fit:contain;"><button type="button" class="btn btn-sm btn-danger position-absolute top-0 end-0" data-remove-product-image="${index}" aria-label="移除第 ${index + 1} 張圖片">×</button><figcaption class="small text-secondary">已儲存${index === 0 ? '（主圖）' : ''}</figcaption></figure>`).join('') + files.map((file, index) => `<figure class="mb-0 text-center"><img src="${pendingUrls[index]}" alt="${escapeHtml(file.name)}" class="img-thumbnail" style="width:120px;height:96px;object-fit:contain;"><figcaption class="small text-secondary text-truncate" style="max-width:120px;">待上傳</figcaption></figure>`).join('');
+    preview.querySelectorAll('[data-remove-product-image]').forEach(button => button.addEventListener('click', () => {
+      form._editingImages.splice(Number(button.dataset.removeProductImage), 1);
+      form.elements.img.value = form._editingImages[0] || '';
+      renderImagePreview(form);
+    }));
+  }
+
   function addCategory(select) {
     const name = window.prompt('請輸入新的商品分類');
     const categoryName = String(name || '').trim();
@@ -309,6 +351,8 @@
     form.elements.quantity.value = product?.quantity ?? 0;
     form.elements.day.value = product?.day || 5;
     form.elements.img.value = product?.img || '';
+    form._editingImages = [...new Set((Array.isArray(product?.images) && product.images.length ? product.images : [product?.img]).map(normalizeImagePath).filter(Boolean))];
+    renderImagePreview(form);
     form.elements.desc.value = product?.desc || '';
     form._editingVariants = product?.variants && typeof product.variants === 'object' ? { ...product.variants } : {};
     const flavors = Array.isArray(form._editingVariants.flavors) ? form._editingVariants.flavors.map(value => String(value || '').trim()).filter(Boolean) : [];
@@ -339,6 +383,7 @@
   ensureThumbnailEditor();
   ensureDietaryEditor();
   ensureFlavorEditor();
+  $('#inventory-product-form').elements.imageFiles?.addEventListener('change', () => renderImagePreview($('#inventory-product-form')));
   $('#inventory-product-form').addEventListener('submit', async event => {
     event.preventDefault();
     const form = event.currentTarget;
@@ -347,6 +392,7 @@
     const dietaryInput = form.querySelector('input[name="dietary"]') || ensureDietaryEditor();
     const dietary = dietaryInput?.checked === true ? '蛋奶素' : '';
     const data = Object.fromEntries(new FormData(form));
+    const files = [...(form.elements.imageFiles?.files || [])];
     button.disabled = true;
     button.textContent = '儲存中…';
     message.textContent = '';
@@ -366,10 +412,20 @@
       data.priceValue = Number(Object.values(sizes)[0]);
       data.spec = Object.keys(sizes).join('、');
       data.size = data.spec;
+      let images = [...new Set((form._editingImages || []).map(normalizeImagePath).filter(Boolean))];
+      if (data.img && data.img !== images[0]) images = [normalizeImagePath(data.img), ...images.filter(image => image !== normalizeImagePath(data.img))];
+      if (files.length) {
+        message.textContent = `正在上傳 ${files.length} 張商品圖片…`;
+        images = [...images, ...(await uploadProductImages(files))];
+      }
+      if (!images.length) throw new Error('請至少提供一張商品圖片。');
+      data.img = images[0];
+      delete data.imageFiles;
       const result = await api('/api/admin/products', {
         method: data.id ? 'PATCH' : 'POST',
         body: JSON.stringify({
           ...data,
+          images,
           priceValue: Number(data.priceValue),
           quantity: Number(data.quantity),
           variants,
@@ -383,6 +439,7 @@
         throw new Error('蛋奶素設定未成功儲存，請重新整理頁面後再試。');
       }
       notifyProductUpdate(result.product?.id || data.id);
+      clearPendingImagePreviews(form);
       dialog.close();
       await load();
     } catch (error) {

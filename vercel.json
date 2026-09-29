@@ -13,6 +13,106 @@
       "source": "/latest-news/article/birthday-cake-2026",
       "destination": "/產品介紹/生日蛋糕-下方有dm供下載-264/",
       "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-red-bean-egg-yolk-gift",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-red-bean-egg-yolk-gift/",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-taro-egg-yolk-gift",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-taro-egg-yolk-gift/",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-matcha-egg-yolk-gift",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-matcha-egg-yolk-gift/",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-date-egg-yolk-gift",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-date-egg-yolk-gift/",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-02",
+      "destination": "/product-item/土鳳梨酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-02/",
+      "destination": "/product-item/土鳳梨酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-03",
+      "destination": "/product-item/土鳳梨酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-03/",
+      "destination": "/product-item/土鳳梨酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-04",
+      "destination": "/product-item/土鳳梨酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-04/",
+      "destination": "/product-item/土鳳梨酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-02",
+      "destination": "/product-item/%E5%9C%9F%E9%B3%B3%E6%A2%A8%E9%85%A5%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-02/",
+      "destination": "/product-item/%E5%9C%9F%E9%B3%B3%E6%A2%A8%E9%85%A5%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-03",
+      "destination": "/product-item/%E5%9C%9F%E9%B3%B3%E6%A2%A8%E9%85%A5%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-03/",
+      "destination": "/product-item/%E5%9C%9F%E9%B3%B3%E6%A2%A8%E9%85%A5%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-04",
+      "destination": "/product-item/%E5%9C%9F%E9%B3%B3%E6%A2%A8%E9%85%A5%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-04/",
+      "destination": "/product-item/%E5%9C%9F%E9%B3%B3%E6%A2%A8%E9%85%A5%E7%A6%AE%E7%9B%92/",
+      "permanent": true
     }
   ],
   "rewrites": [

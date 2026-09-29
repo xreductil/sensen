@@ -829,6 +829,27 @@ const imagePathFromKey = (value: unknown) => {
   return key ? `/images/${key}` : "";
 };
 
+const imageKeyFromValue = (value: unknown) => String(value || "")
+  .trim()
+  .replace(/^\/?(?:assets\/)?images\//i, "")
+  .replace(/^\/+/, "");
+
+const imageKeysFromValues = (value: unknown) => {
+  const values = Array.isArray(value) ? value : [value];
+  return [...new Set(values.map(imageKeyFromValue).filter(Boolean))];
+};
+
+const replaceProductImages = async (env: Env, productId: number, imageKeys: string[]) => {
+  const statements = [env.DB.prepare("DELETE FROM product_images WHERE product_id = ?1").bind(productId)];
+  imageKeys.forEach((key, index) => {
+    statements.push(env.DB.prepare(`
+      INSERT INTO product_images (product_id, image_key, sort_order, is_primary)
+      VALUES (?1, ?2, ?3, ?4)
+    `).bind(productId, `images/${key}`, index, index === 0 ? 1 : 0));
+  });
+  await env.DB.batch(statements);
+};
+
 const adminOrderItemFromRow = (item: Record<string, unknown>) => ({
   ...item,
   cat: String(item.category || "Menu"),
@@ -1106,8 +1127,8 @@ export default {
 
         if (url.pathname === "/api/admin/images" && request.method === "POST") {
           const form = await request.formData();
-          const file = form.get("image");
-          if (!(file instanceof File) || file.size === 0) {
+          const files = form.getAll("image").filter((value): value is File => value instanceof File && value.size > 0);
+          if (!files.length) {
             return json(request, { error: "請選擇圖片檔案。" }, 400);
           }
           const extensions: Record<string, string> = {
@@ -1117,19 +1138,22 @@ export default {
             "image/png": "png",
             "image/webp": "webp",
           };
-          const extension = extensions[file.type];
-          if (!extension) return json(request, { error: "僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。" }, 415);
-          if (file.size > 8 * 1024 * 1024) return json(request, { error: "圖片不可超過 8 MB。" }, 413);
-
           const requestedFolder = form.get("folder");
           const folder = typeof requestedFolder === "string"
             ? requestedFolder.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "news"
             : "news";
-          const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
-          await env.BUCKET.put(`images/${key}`, file.stream(), {
-            httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
-          });
-          return json(request, { image: `/images/${key}` }, 201);
+          const uploaded = [];
+          for (const file of files) {
+            const extension = extensions[file.type];
+            if (!extension) return json(request, { error: "僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。" }, 415);
+            if (file.size > 8 * 1024 * 1024) return json(request, { error: "單張圖片不可超過 8 MB。" }, 413);
+            const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+            await env.BUCKET.put(`images/${key}`, file.stream(), {
+              httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
+            });
+            uploaded.push(`/images/${key}`);
+          }
+          return json(request, { image: uploaded[0], images: uploaded }, 201);
         }
 
         if (url.pathname === "/api/admin/categories" && request.method === "GET") {
@@ -1182,10 +1206,14 @@ export default {
             const insertedCategory = await env.DB.prepare("INSERT INTO categories (name, slug) VALUES (?1, ?2)").bind(categoryName, slugify(categoryName)).run();
             category = { id: Number(insertedCategory.meta.last_row_id) };
           }
-          const imageValue = String(body.img ?? existingMetadata.img ?? existing?.image_key ?? "").trim();
-          const imageKey = imageValue
-            .replace(/^\/?assets\/images\//, "")
-            .replace(/^\/?images\//, "");
+          const existingImageValues = [existing?.image_key, ...parseJson<unknown[]>(existing?.gallery_json, [])];
+          const imageKeys = body.images !== undefined
+            ? imageKeysFromValues(body.images)
+            : request.method === "PATCH"
+              ? imageKeysFromValues([body.img ?? existing?.image_key, ...existingImageValues])
+              : imageKeysFromValues(body.img ?? existingMetadata.img ?? existing?.image_key ?? "");
+          const imageKey = imageKeys[0] || "";
+          const imageValue = imageKey ? `/images/${imageKey}` : String(body.img ?? existingMetadata.img ?? "").trim();
           const metadata = JSON.stringify({
             ...existingMetadata,
             sku: String(body.sku ?? existingMetadata.sku ?? "").trim(),
@@ -1208,7 +1236,9 @@ export default {
               INSERT INTO products (category_id, name, slug, description, price, stock, image_key, is_active, metadata_json)
               VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
             `).bind(category.id, title, slug, description, price, stock, imageKey, published ? 1 : 0, metadata).run();
-            const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(Number(result.meta.last_row_id)).first<ProductRow>();
+            const productId = Number(result.meta.last_row_id);
+            await replaceProductImages(env, productId, imageKeys);
+            const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(productId).first<ProductRow>();
             const product = row ? adminProductFromRow(row) : null;
             return json(request, {
               product,
@@ -1222,6 +1252,7 @@ export default {
               stock = ?5, image_key = ?6, is_active = ?7, metadata_json = ?8, updated_at = CURRENT_TIMESTAMP
             WHERE id = ?9
           `).bind(category.id, title, description, price, stock, imageKey, published ? 1 : 0, metadata, existing?.db_id).run();
+          await replaceProductImages(env, Number(existing?.db_id), imageKeys);
           const updated = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(existing?.db_id).first<ProductRow>();
           return json(request, { product: updated ? adminProductFromRow(updated) : null });
         }

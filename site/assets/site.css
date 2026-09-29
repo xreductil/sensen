@@ -6958,6 +6958,70 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   margin: 0 auto;
   object-fit: contain;
 }
+.product-detail-template .product-detail-gallery.is-carousel {
+  display: block;
+  position: relative;
+}
+.product-gallery-viewport {
+  position: relative;
+  width: min(100%, 450px);
+  margin: 0 auto;
+  overflow: hidden;
+}
+.product-gallery-track {
+  display: flex;
+  transition: transform .28s ease;
+  will-change: transform;
+}
+.product-gallery-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  margin: 0;
+  display: grid;
+  place-items: center;
+}
+.product-gallery-slide img {
+  width: 100% !important;
+  max-width: none !important;
+}
+.product-gallery-control {
+  position: absolute;
+  top: 50%;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(106, 102, 99, .28);
+  border-radius: 50%;
+  background: rgba(255, 255, 255, .9);
+  color: #6a6663;
+  font-size: 27px;
+  line-height: 1;
+  transform: translateY(-50%);
+  cursor: pointer;
+  z-index: 1;
+}
+.product-gallery-control:hover,
+.product-gallery-control:focus-visible { background: #fff; color: #17291e; }
+.product-gallery-control-previous { left: 10px; }
+.product-gallery-control-next { right: 10px; }
+.product-gallery-dots {
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 16px;
+}
+.product-gallery-dots button {
+  width: 9px;
+  height: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: #d8d2cc;
+  cursor: pointer;
+}
+.product-gallery-dots button.is-selected,
+.product-gallery-dots button:hover,
+.product-gallery-dots button:focus-visible { background: #6a6663; }
 .product-detail-template .emerald-product-copy {
   padding-top: 78px;
 }
@@ -7020,6 +7084,8 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .product-detail-template .emerald-product-feature { grid-template-columns: 1fr; gap: 12px; min-height: 0; padding: 28px 0 38px; }
   .product-detail-template .product-detail-gallery { min-height: 0; gap: 36px; }
   .product-detail-template .product-detail-gallery img { width: min(100%, 300px); }
+  .product-detail-template .product-detail-gallery.is-carousel { min-height: 0; }
+  .product-gallery-viewport { width: min(100%, 300px); }
   .product-detail-template .emerald-product-copy { padding-top: 0; }
   .product-detail-template .emerald-product-note,
   .product-detail-template .emerald-product-badge { margin-left: 0; }

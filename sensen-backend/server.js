@@ -521,7 +521,10 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
     flavorCount: Math.max(0, Number(variants.flavorCount || 0)),
     temperatures: temperatures.length ? [...new Set(temperatures)] : ['冷'],
     sugars: sugars.length ? [...new Set(sugars)] : ['正常甜'],
-    sizes: Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 }
+    sizes: Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 },
+    ...(variants.flavorImages && typeof variants.flavorImages === 'object' && !Array.isArray(variants.flavorImages)
+      ? { flavorImages: Object.fromEntries(Object.entries(variants.flavorImages).map(([flavor, image]) => [String(flavor).trim(), Array.isArray(image) ? image.map(item => String(item).trim()).filter(Boolean) : String(image || '').trim()]).filter(([flavor, image]) => flavor && (Array.isArray(image) ? image.length : image))) }
+      : {})
   };
 }
 
@@ -1068,7 +1071,8 @@ async function handleApi(req, res) {
         newArrival,
         thumbnail,
         day,
-        img,
+        img: (Array.isArray(body.images) && body.images.length ? body.images[0] : img),
+        images: [...new Set((Array.isArray(body.images) && body.images.length ? body.images : [img]).map(value => String(value || '').trim()).filter(Boolean))],
         desc,
         rating: '4.8',
         reviews: '24',
@@ -1111,7 +1115,8 @@ async function handleApi(req, res) {
         cat,
         sku,
         spec,
-        img,
+        img: Array.isArray(body.images) && body.images.length ? String(body.images[0]).trim() : img,
+        ...(body.images !== undefined ? { images: [...new Set((Array.isArray(body.images) ? body.images : [body.images]).map(value => String(value || '').trim()).filter(Boolean))] } : {}),
         desc,
         quantity,
         day,

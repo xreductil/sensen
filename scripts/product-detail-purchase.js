@@ -102,6 +102,19 @@
       ? [...new Set(variants.flavors.map(value => String(value || '').trim()).filter(Boolean))]
       : [];
   };
+  const imagePath = value => String(value || '').trim();
+  const imageList = value => Array.isArray(value)
+    ? value.flatMap(imageList)
+    : (imagePath(value) ? [imagePath(value)] : []);
+  const flavorImages = product => {
+    const variants = product.variants && typeof product.variants === 'object' ? product.variants : {};
+    const source = variants.flavorImages && typeof variants.flavorImages === 'object' && !Array.isArray(variants.flavorImages)
+      ? variants.flavorImages
+      : {};
+    return Object.fromEntries(Object.entries(source)
+      .map(([flavor, image]) => [String(flavor || '').trim(), [...new Set(imageList(image))]])
+      .filter(([flavor, images]) => flavor && images.length));
+  };
   const productOriginalPrice = product => Number(product.originalPrice || product.priceOriginal || topHouseOriginalPrices[product.id] || 0);
   const priceMarkup = (product, value) => {
     const amount = Number(value || 0);
@@ -125,7 +138,6 @@
   const setHidden = (element, hidden) => {
     if (element) element.hidden = hidden;
   };
-  const imagePath = value => String(value || '').trim();
   const productPath = product => {
     if (pathMap[product.id]) return pathMap[product.id];
     if (pathMap[normalize(product.title)]) return pathMap[normalize(product.title)];
@@ -216,13 +228,35 @@
   };
 
   const renderGallery = product => {
-    const images = [...new Set((Array.isArray(product.images) ? product.images : [product.img]).map(imagePath).filter(Boolean))];
+    const sourceImages = Array.isArray(product.images) && product.images.length ? product.images : [product.img];
+    const images = [...new Set(sourceImages.flatMap(imageList))];
     const gallery = productPage.querySelector('[data-product-gallery]');
     const mainImage = productPage.querySelector('[data-product-main-image]');
     if (gallery) {
-      gallery.innerHTML = images.length
-        ? images.map((src, index) => `<img src="${escapeHtml(src)}" alt="${escapeHtml(product.title || '商品')}${index ? ` 商品圖片 ${index + 1}` : ''}" loading="lazy">`).join('')
-        : '<p class="product-detail-empty">尚未提供商品圖片。</p>';
+      gallery.classList.toggle('is-carousel', images.length > 1);
+      if (!images.length) {
+        gallery.innerHTML = '<p class="product-detail-empty">尚未提供商品圖片。</p>';
+      } else if (images.length === 1) {
+        gallery.innerHTML = `<img src="${escapeHtml(images[0])}" alt="${escapeHtml(product.title || '商品')}" loading="lazy">`;
+      } else {
+        const title = escapeHtml(product.title || '商品');
+        gallery.innerHTML = `<div class="product-gallery-viewport" data-product-gallery-viewport><div class="product-gallery-track" data-product-gallery-track>${images.map((src, index) => `<figure class="product-gallery-slide"><img src="${escapeHtml(src)}" alt="${title} 商品圖片 ${index + 1}" loading="lazy"></figure>`).join('')}</div><button class="product-gallery-control product-gallery-control-previous" type="button" data-product-gallery-previous aria-label="上一張商品圖片">‹</button><button class="product-gallery-control product-gallery-control-next" type="button" data-product-gallery-next aria-label="下一張商品圖片">›</button></div><div class="product-gallery-dots" data-product-gallery-dots role="tablist" aria-label="商品圖片選擇">${images.map((_, index) => `<button type="button" role="tab" data-product-gallery-dot="${index}" aria-label="查看第 ${index + 1} 張商品圖片" aria-selected="${index === 0 ? 'true' : 'false'}"${index === 0 ? ' class="is-selected"' : ''}></button>`).join('')}</div>`;
+        const track = gallery.querySelector('[data-product-gallery-track]');
+        const dots = [...gallery.querySelectorAll('[data-product-gallery-dot]')];
+        let currentIndex = 0;
+        const goTo = index => {
+          currentIndex = (index + images.length) % images.length;
+          if (track) track.style.transform = `translateX(-${currentIndex * 100}%)`;
+          dots.forEach((dot, dotIndex) => {
+            const selected = dotIndex === currentIndex;
+            dot.classList.toggle('is-selected', selected);
+            dot.setAttribute('aria-selected', String(selected));
+          });
+        };
+        gallery.querySelector('[data-product-gallery-previous]')?.addEventListener('click', () => goTo(currentIndex - 1));
+        gallery.querySelector('[data-product-gallery-next]')?.addEventListener('click', () => goTo(currentIndex + 1));
+        dots.forEach(dot => dot.addEventListener('click', () => goTo(Number(dot.dataset.productGalleryDot || 0))));
+      }
     }
     if (mainImage) {
       if (images[0]) {
@@ -342,6 +376,7 @@
     };
     const options = sizeOptions(product);
     const flavors = flavorOptions(product);
+    const imageOptions = flavorImages(product);
     const flavorCount = Number(product.variants?.flavorCount || 0);
     let selectedSize = options[0]?.[0] || '';
     let selectedFlavors = flavorCount > 1 ? [] : (flavors[0] ? [flavors[0]] : []);
@@ -404,6 +439,13 @@
         addButton.disabled = !available;
         addButton.textContent = available ? '加入購物車' : (flavorCount > 1 ? `請選擇${flavorCount}種口味` : '暫停供應');
       }
+      const selectedImages = selectedFlavors.flatMap(flavor => imageOptions[flavor] || []);
+      if (selectedImages.length) {
+        const images = [...new Set(selectedImages)];
+        renderGallery({ ...product, img: images[0], images });
+      } else {
+        renderGallery(product);
+      }
     };
 
     section.querySelectorAll('[data-product-size]').forEach(button => button.addEventListener('click', () => {
@@ -420,6 +462,8 @@
       }
       updateVariant();
     }));
+
+    updateVariant();
 
     section.querySelectorAll('[data-cake-quantity-change]').forEach(button => button.addEventListener('click', () => {
       const output = section.querySelector('[data-cake-quantity]');
