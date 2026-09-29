@@ -2665,6 +2665,7 @@ const SOUVENIR_PRODUCT_DATA = new Map(SOUVENIR_PRODUCTS.map(([title, href, image
 // Keep a compatibility route for the misspelled URL that has been shared previously.
 const PRODUCT_ROUTE_ALIASES = new Map([
   ["/product-item/法式蝶蝨酥-1657", "/product-item/法式蝴蝶酥-1657"],
+  ["/product-item/rose-salt-egg-yolk-gift", "/product-item/玫瑰鹽蛋黃酥禮盒"],
   ["/隱私權條件", "/隱私權條款"],
 ]);
 
@@ -3660,7 +3661,9 @@ function pruneRetiredStaticSnapshot() {
         }
       });
     });
-    fs.writeFileSync(redirectsFile, `${redirects.join("\n").replace(/\n+$/, "")}\n`);
+    const compatibilityRedirects = [...PRODUCT_ROUTE_ALIASES]
+      .map(([aliasPath, canonicalPath]) => `${encodeURI(aliasPath)}/ ${encodeURI(canonicalPath)}/ 301`);
+    fs.writeFileSync(redirectsFile, `${[...new Set([...redirects, ...compatibilityRedirects])].join("\n").replace(/\n+$/, "")}\n`);
   }
 }
 

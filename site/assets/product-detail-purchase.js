@@ -378,6 +378,7 @@
     const flavors = flavorOptions(product);
     const imageOptions = flavorImages(product);
     const flavorCount = Number(product.variants?.flavorCount || 0);
+    let flavorHasBeenChanged = false;
     let selectedSize = options[0]?.[0] || '';
     let selectedFlavors = flavorCount > 1 ? [] : (flavors[0] ? [flavors[0]] : []);
     const selectedFlavor = () => selectedFlavors.join('、');
@@ -440,7 +441,7 @@
         addButton.textContent = available ? '加入購物車' : (flavorCount > 1 ? `請選擇${flavorCount}種口味` : '暫停供應');
       }
       const selectedImages = selectedFlavors.flatMap(flavor => imageOptions[flavor] || []);
-      if (selectedImages.length) {
+      if (selectedImages.length && (flavorCount > 1 || flavorHasBeenChanged)) {
         const images = [...new Set(selectedImages)];
         renderGallery({ ...product, img: images[0], images });
       } else {
@@ -454,6 +455,7 @@
     }));
     section.querySelectorAll('[data-product-flavor]').forEach(button => button.addEventListener('click', () => {
       const flavor = button.dataset.productFlavor || '';
+      flavorHasBeenChanged = true;
       if (flavorCount > 1) {
         if (selectedFlavors.includes(flavor)) selectedFlavors = selectedFlavors.filter(item => item !== flavor);
         else if (selectedFlavors.length < flavorCount) selectedFlavors = [...selectedFlavors, flavor];
@@ -510,13 +512,17 @@
     if (!title || !image) return null;
     let variants = {};
     try { variants = JSON.parse(productPage.dataset.productFallbackVariants || '{}'); } catch { variants = {}; }
+    const flavorGalleryImages = variants.flavorImages && typeof variants.flavorImages === 'object' && !Array.isArray(variants.flavorImages)
+      ? Object.values(variants.flavorImages).flatMap(imageList)
+      : [];
+    const images = [...new Set([image, ...flavorGalleryImages].filter(Boolean))];
     return {
       id: productId,
       title,
       cat: productPage.dataset.productFallbackCategory || '產品介紹',
       desc: productPage.dataset.productFallbackDescription || '商品詳細資料整理中。',
       img: image,
-      images: [image],
+      images,
       published: Number(productPage.dataset.productFallbackPrice || 0) > 0,
       quantity: Number(productPage.dataset.productFallbackPrice || 0) > 0 ? 1 : 0,
       priceValue: Number(productPage.dataset.productFallbackPrice || 0),

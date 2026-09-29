@@ -55,6 +55,16 @@
       "permanent": true
     },
     {
+      "source": "/product-item/rose-salt-egg-yolk-gift",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-egg-yolk-gift/",
+      "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
       "source": "/product-item/伴手禮新品圖片-02",
       "destination": "/product-item/土鳳梨酥禮盒/",
       "permanent": true
