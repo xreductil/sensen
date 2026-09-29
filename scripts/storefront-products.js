@@ -145,6 +145,8 @@
   const storefrontProductCard = (product, { articleClass, badge = '' } = {}) => {
     const name = String(product.title || '商品');
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
+    const amount = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
+    const price = amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
     const thumbnail = thumbnailSettings(product);
     const legacyOffset = thumbnailLegacyOffset(product, thumbnail);
     const thumbnailStyle = `--product-thumbnail-x:${thumbnail.offsetX}px;--product-thumbnail-y:${thumbnail.offsetY}px;--product-thumbnail-scale:${thumbnail.scale / 100};--product-thumbnail-legacy-y:${legacyOffset.desktop}px;--product-thumbnail-legacy-y-mobile:${legacyOffset.mobile}px;`;
@@ -152,7 +154,7 @@
       ? ' product-thumbnail-adjustable'
       : '';
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;
-    const meta = `<span class="cake-product-title">${title}</span>`;
+    const meta = `<span class="cake-product-title">${title}</span><span class="cake-product-price">${escapeHtml(price)}</span>`;
     const thumbnailClass = referenceThumbnailProductIds.has(product.id)
       ? ' product-thumbnail-reference'
       : liftedThumbnailProductIds.has(product.id) ? ' product-thumbnail-lifted' : '';

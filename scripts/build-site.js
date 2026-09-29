@@ -388,16 +388,22 @@ function topHouseProductPath(id) {
   return `${TOP_HOUSE_PRODUCT_PATH_PREFIX}/${id}`;
 }
 
+function formatProductPrice(value) {
+  const amount = Number(value || 0);
+  return amount > 0 ? `NT$${amount.toLocaleString("zh-TW")}` : "價格洽詢";
+}
+
 function topHouseProductCardMarkup([title, image, price, id], className = "", description = "", withPurchase = false) {
   const href = topHouseProductPath(id);
   const details = TOP_HOUSE_CARD_DETAILS.get(id) || {};
   const displayTitle = details.title || title;
   const displayDescription = details.description || description;
+  const priceMarkup = `<span class="cake-product-price">${escapeHtml(formatProductPrice(price))}</span>`;
   const descriptionMarkup = displayDescription ? `<span class="cake-product-description">${escapeHtml(displayDescription)}</span>` : "";
   const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id) : "";
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">
     <a class="cake-product-card-link" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span></a>
-    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(displayTitle)}</span>${descriptionMarkup}</a>${purchaseMarkup}</div>
+    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(displayTitle)}</span>${priceMarkup}${descriptionMarkup}</a>${purchaseMarkup}</div>
   </article>`;
 }
 
@@ -3090,7 +3096,8 @@ function staticCatalogCard(product) {
   const isSouvenir = product.cat === "伴手禮";
   const cardClass = isSouvenir ? "souvenir-card cake-product-card" : "cake-product-card";
   const linkClass = isSouvenir ? "souvenir-card-link" : "cake-product-card-link";
-  return `<article class="${cardClass}"><a class="${linkClass}" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span><div class="${isSouvenir ? "souvenir-card-meta" : "cake-product-meta"}"><span class="${isSouvenir ? "souvenir-card-title" : "cake-product-title"}">${escapeHtml(title)}</span></div></a></article>`;
+  const priceClass = isSouvenir ? "souvenir-card-price" : "cake-product-price";
+  return `<article class="${cardClass}"><a class="${linkClass}" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span><div class="${isSouvenir ? "souvenir-card-meta" : "cake-product-meta"}"><span class="${isSouvenir ? "souvenir-card-title" : "cake-product-title"}">${escapeHtml(title)}</span><span class="${priceClass}">${escapeHtml(formatProductPrice(product.priceValue))}</span></div></a></article>`;
 }
 
 function staticCatalogSection(title, products, className = "cake-category") {
