@@ -293,9 +293,10 @@
     // the banner showing a stale route title.
     const heroTitleElement = productPage.querySelector('[data-product-hero-title]');
     const isTopHouseDetail = productPage.dataset.productId?.startsWith('top-house-') || productPage.classList.contains('top-house-product-page');
+    const isLongCakeDetail = productPage.classList.contains('long-cake-product-page');
     const topHouseHeroTitle = heroTitleElement?.dataset.topHouseHeroTitle || heroTitleElement?.textContent.trim();
-    setText(heroTitleElement, productPage.classList.contains('souvenir-product-page') ? '伴手禮' : isTopHouseDetail ? topHouseHeroTitle : apiTitle, '商品');
-    setText(productPage.querySelector('[data-product-hero-category]'), String(product.cat || '').trim() || '產品介紹');
+    setText(heroTitleElement, productPage.classList.contains('souvenir-product-page') ? '伴手禮' : isLongCakeDetail ? '長條蛋糕' : isTopHouseDetail ? topHouseHeroTitle : apiTitle, '商品');
+    if (!isLongCakeDetail) setText(productPage.querySelector('[data-product-hero-category]'), String(product.cat || '').trim() || '產品介紹');
     setText(productPage.querySelector('[data-product-description-value]'), product.desc, '尚未提供商品說明。');
     updateSpec(['商品尺寸', '蛋糕吋數', '規格'], product.size);
     updateSpec(['保存方式'], product.storage);

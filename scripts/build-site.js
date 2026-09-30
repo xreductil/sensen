@@ -22,9 +22,9 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const SITE_CSS_URL = "/assets/site.css?v=20260929-product-gallery-carousel-1";
+const SITE_CSS_URL = "/assets/site.css?v=20261001-category-hero-1";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261001-product-sort-1";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260929-product-gallery-carousel-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261001-category-hero-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -1748,7 +1748,7 @@ function normalizeHeadingStructure(content, localPath) {
   return content;
 }
 
-function layout({ title, pathLabel, content, isHome = false, isAbout = false, isEmeraldLysk = false, isCakeProduct = false, isBeanTartProduct = false, isSouvenirProduct = false, isTopHouseProduct = false, heroCategoryLabel = "所有蛋糕, 生日蛋糕", hasBrandedHero = false, heroSource = "/images/headtitle-bg2.jpg", showHero = true }) {
+function layout({ title, pathLabel, content, isHome = false, isAbout = false, isEmeraldLysk = false, isCakeProduct = false, isBeanTartProduct = false, isSouvenirProduct = false, isLongCakeProduct = false, isTopHouseProduct = false, heroCategoryLabel = "所有蛋糕, 生日蛋糕", hasBrandedHero = false, heroSource = "/images/headtitle-bg2.jpg", showHero = true }) {
   const checkoutStyle = pathLabel === "/checkout" ? '<link rel="stylesheet" href="/assets/checkout.css">' : "";
   const normalizedPath = pathLabel === "/" ? "/" : `/${String(pathLabel || "").replace(/^\/+|\/+$/g, "")}/`;
   const canonical = `${SOURCE_ORIGIN}${encodeURI(normalizedPath)}`;
@@ -1798,8 +1798,8 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     ? `<a class="cake-hero-scroll" href="#cake-dm">${escapeHtml(heroTitle)}</a>`
     : escapeHtml(heroTitle);
   const hero = isHome || !showHero ? "" : (isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct || isTopHouseProduct)
-    ? `<section class="page-hero product-detail-hero${isBeanTartProduct ? " bean-tart-hero" : ""}${isTopHouseProduct ? " top-house-product-hero" : ""}">
-      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1 data-product-hero-title${isTopHouseProduct ? ` data-top-house-hero-title="${escapeAttr(topHouseHeroTitleForPath(pathLabel))}"` : ""}>${isBeanTartProduct || isSouvenirProduct ? "伴手禮" : isTopHouseProduct ? topHouseHeroTitleForPath(pathLabel) : "商品資料載入中…"}</h1>${isBeanTartProduct || isSouvenirProduct || isTopHouseProduct ? '' : '<p data-product-hero-category>產品介紹</p>'}</div></div>
+    ? `<section class="page-hero product-detail-hero${isBeanTartProduct ? " bean-tart-hero" : ""}${isLongCakeProduct ? " long-cake-product-hero" : ""}${isTopHouseProduct ? " top-house-product-hero" : ""}">
+      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1 data-product-hero-title${isTopHouseProduct ? ` data-top-house-hero-title="${escapeAttr(topHouseHeroTitleForPath(pathLabel))}"` : ""}>${isBeanTartProduct || isSouvenirProduct ? "伴手禮" : isLongCakeProduct ? "長條蛋糕" : isTopHouseProduct ? topHouseHeroTitleForPath(pathLabel) : "商品資料載入中…"}</h1>${isBeanTartProduct || isSouvenirProduct || isLongCakeProduct || isTopHouseProduct ? '' : '<p data-product-hero-category>產品介紹</p>'}</div></div>
     </section>`
     : `<section class="page-hero${hasBrandedHero ? " about-hero" : ""}">
       <div class="hero-banner">${heroImage}<div class="hero-banner-title"><p>${escapeHtml(pathLabel)}</p><h1>${heroTitleHtml}</h1></div></div>
@@ -2654,11 +2654,12 @@ function topHouseHeroTitleForPath(localPath) {
 function productDetailShell({ localPath, kind = "cake" }) {
   const fallback = productFallbackForPath(localPath);
   const souvenir = kind === "souvenir";
+  const longCake = ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(fallback?.category || "").trim());
   const topHouse = kind === "top-house";
   const topHouseHeroClass = topHouse ? ` top-house-hero-${topHouseHeroVariantForPath(localPath)}` : "";
   const pageClass = souvenir
     ? "product-detail-template bean-tart-product-page souvenir-product-page"
-    : `product-detail-template cake-product-page${topHouse ? ` top-house-product-page${topHouseHeroClass}` : ""}`;
+    : `product-detail-template cake-product-page${longCake ? " long-cake-product-page" : ""}${topHouse ? ` top-house-product-page${topHouseHeroClass}` : ""}`;
   const initialTitle = fallback?.title || productDetailTitleForPath(localPath);
   const initialImage = fallback?.image || "";
   const initialImages = Array.isArray(fallback?.images) && fallback.images.length
@@ -3028,6 +3029,7 @@ function syncAutomaticProductDetailSnapshots() {
       content,
       isCakeProduct: product.kind === "cake",
       isSouvenirProduct: product.kind === "souvenir",
+      isLongCakeProduct: ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(product.category || "").trim()),
       heroCategoryLabel: product.category,
       hasBrandedHero: true,
     }));
@@ -3122,10 +3124,12 @@ function staticCatalogCard(product) {
   return `<article class="${cardClass}"><a class="${linkClass}" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span><div class="${isSouvenir ? "souvenir-card-meta" : "cake-product-meta"}"><span class="${isSouvenir ? "souvenir-card-title" : "cake-product-title"}">${escapeHtml(title)}</span><span class="${priceClass}">${escapeHtml(formatProductPrice(product.priceValue))}</span></div></a></article>`;
 }
 
-function staticCatalogSection(title, products, className = "cake-category") {
+function staticCatalogSection(title, products, className = "cake-category", hideHeadingText = false) {
   if (!products.length) return "";
-  const icon = title === "伴手禮" ? "/images/icon-cupcake.png" : "/images/icon-cake.png";
-  return `<section class="${className}"><div class="cake-category-heading"><img class="cake-section-icon" src="${icon}" alt="" aria-hidden="true"><p>${escapeHtml(title === "伴手禮" ? "SOUVENIR" : title)}</p><h2>${escapeHtml(title)}</h2></div><div class="cake-product-grid">${products.map(staticCatalogCard).join("")}</div></section>`;
+  const icon = title === "伴手禮" ? "/images/icon-cupcake.png" : title === "長條蛋糕" ? "/images/icon-cake2.png" : "/images/icon-cake.png";
+  const eyebrow = title === "伴手禮" ? "SOUVENIR" : title === "長條蛋糕" ? "LONG CAKE" : title;
+  const headingText = hideHeadingText ? "" : `<p>${escapeHtml(eyebrow)}</p><h2>${escapeHtml(title)}</h2>`;
+  return `<section class="${className}"><div class="cake-category-heading"><img class="cake-section-icon" src="${icon}" alt="" aria-hidden="true">${headingText}</div><div class="cake-product-grid">${products.map(staticCatalogCard).join("")}</div></section>`;
 }
 
 function staticCatalogMarkup(view) {
@@ -3133,7 +3137,7 @@ function staticCatalogMarkup(view) {
     readStaticCatalogProducts().filter((product) => !String(product.cat).startsWith("頂家彌月")),
     "newest",
   );
-  if (view === "long-cakes") return staticCatalogSection("長條蛋糕", products.filter((product) => ["長條蛋糕", "長條蛋糕(冷凍)"].includes(product.cat)));
+  if (view === "long-cakes") return staticCatalogSection("長條蛋糕", products.filter((product) => ["長條蛋糕", "長條蛋糕(冷凍)"].includes(product.cat)), "cake-category", true);
   if (view === "souvenir") return staticCatalogSection("伴手禮", products.filter((product) => product.cat === "伴手禮"), "souvenir-products");
   if (view === "cakes") {
     return ["生日蛋糕", "造型蛋糕", "冰淇淋蛋糕"].map((category) => staticCatalogSection(category, products.filter((product) => product.cat === category))).join("");
@@ -4277,6 +4281,8 @@ function syncProductDetailSnapshot() {
     }
     if (isProductPage) {
       const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
+      const fallbackProduct = productFallbackForPath(localPath);
+      const isLongCakePage = ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(fallbackProduct?.category || "").trim());
       if (productId) {
         updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
       }
@@ -4286,8 +4292,9 @@ function syncProductDetailSnapshot() {
           updated = updated.replace(/(<section class="emerald-product-page[^>]*>)/, `$1\n    <div class="souvenir-detail-icon" aria-hidden="true"><img src="/images/icon-cupcake.webp" alt=""></div>`);
         }
       } else {
-        const productTitle = escapeHtml(productDetailTitleForPath(localPath));
-        updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1>(?:<p[^>]*>[\s\S]*?<\/p>)?(?:<img[^>]*class="souvenir-hero-icon"[^>]*>)?<\/div>/, (_, prefix) => `${prefix} data-product-hero-title>${productTitle}</h1><p data-product-hero-category>產品介紹</p></div>`);
+        const productTitle = isLongCakePage ? "長條蛋糕" : escapeHtml(productDetailTitleForPath(localPath));
+        const categoryMarkup = isLongCakePage ? "" : "<p data-product-hero-category>產品介紹</p>";
+        updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1>(?:<p[^>]*>[\s\S]*?<\/p>)?(?:<img[^>]*class="souvenir-hero-icon"[^>]*>)?<\/div>/, (_, prefix) => `${prefix} data-product-hero-title>${productTitle}</h1>${categoryMarkup}</div>`);
       }
     }
     if (html.includes("data-product-paths")) {

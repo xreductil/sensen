@@ -230,7 +230,7 @@
 
   const renderLongCakes = products => {
     const items = products.filter(product => ['長條蛋糕', '長條蛋糕(冷凍)'].includes(product.cat));
-    content.innerHTML = `<section class="cake-category long-cake-online-category is-first"><div class="cake-category-heading"><img class="cake-section-icon" src="/images/icon-cake2.webp" alt="" aria-hidden="true"><p>LONG CAKE</p><h2>長條蛋糕</h2></div><div class="cake-product-grid">${items.map(cakeCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的長條蛋糕。</p>'}</section>`;
+    content.innerHTML = `<section class="cake-category long-cake-online-category is-first"><div class="cake-category-heading"><img class="cake-section-icon" src="/images/icon-cake2.webp" alt="" aria-hidden="true"></div><div class="cake-product-grid">${items.map(cakeCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的長條蛋糕。</p>'}</section>`;
   };
 
   const renderSouvenirs = products => {

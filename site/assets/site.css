@@ -6963,6 +6963,21 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   font-weight: 800;
   letter-spacing: .04em;
 }
+.page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner,
+.page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner > .image-slot,
+.page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner-title {
+  min-height: 170px;
+}
+.page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner > .image-slot {
+  background: #382a27 url("/images/headtitle-bg2.webp") center 10% / cover no-repeat;
+}
+.page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner-title h1 {
+  margin: 0;
+  color: #fff;
+  font-size: clamp(32px, 2.6vw, 42px);
+  font-weight: 800;
+  letter-spacing: .04em;
+}
 .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner,
 .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner > .image-slot,
 .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title {
@@ -7141,11 +7156,15 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner,
   .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner > .image-slot,
   .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner-title { min-height: 190px; }
+  .page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner,
+  .page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner > .image-slot,
+  .page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner-title { min-height: 190px; }
   .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner,
   .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner > .image-slot,
   .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title { min-height: 190px; }
   .product-detail-hero .hero-banner-title h1 { max-width: calc(100% - 32px); margin-bottom: 14px; font-size: clamp(18px, 6vw, 22px); letter-spacing: .02em; white-space: nowrap !important; }
   .page-main:has(.souvenir-product-page) .product-detail-hero .hero-banner-title h1 { margin: 0; font-size: 32px; letter-spacing: .04em; }
+  .page-main:has(.long-cake-product-page) .product-detail-hero .hero-banner-title h1 { margin: 0; font-size: 32px; letter-spacing: .04em; }
   .page-main:has(.top-house-product-page) .product-detail-hero .hero-banner-title h1 { margin: 0; font-size: 32px; letter-spacing: .04em; }
   .product-detail-hero .hero-banner-title p { font-size: 15px; }
   .emerald-product-page { width: calc(100% - 28px); }
