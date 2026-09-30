@@ -878,6 +878,9 @@ CAKE_SECTIONS.forEach((section, index) => {
     CAKE_PRODUCT_CATEGORY_LABELS.set(localPathFromUrl(new URL(href, SOURCE_ORIGIN).href), cakeCategoryLabels[index]);
   });
 });
+NEW_IMAGE_PRODUCT_RECORDS
+  .filter((record) => record.kind === "cake")
+  .forEach((record) => CAKE_PRODUCT_CATEGORY_LABELS.set(record.path, "所有蛋糕, 生日蛋糕"));
 
 const NAV_ITEMS = [
   ["關於森森", "/%e9%97%9c%e6%96%bc%e6%a3%ae%e6%a3%ae/"],
@@ -1760,6 +1763,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     || SITEMAP_EXCLUDED_PATHS.has(normalizedLocalPath);
   const robotsMeta = privatePage ? '<meta name="robots" content="noindex, nofollow">' : '<meta name="robots" content="index, follow">';
   const isBirthdayCakePage = pathLabel === BIRTHDAY_CAKE_PATH || (title.includes("生日蛋糕") && title.includes("DM"));
+  const isBirthdayCakeProduct = isCakeProduct && String(heroCategoryLabel || "").includes("生日蛋糕");
   const isStructuredProductPage = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct || isTopHouseProduct
     || normalizedLocalPath.startsWith("/product-item/")
     || normalizedLocalPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
@@ -1880,8 +1884,8 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     ? `<a class="cake-hero-scroll" href="#cake-dm">${escapeHtml(heroTitle)}</a>`
     : escapeHtml(heroTitle);
   const hero = isHome || !showHero ? "" : (isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct || isTopHouseProduct)
-    ? `<section class="page-hero product-detail-hero${isBeanTartProduct ? " bean-tart-hero" : ""}${isLongCakeProduct ? " long-cake-product-hero" : ""}${isTopHouseProduct ? " top-house-product-hero" : ""}">
-      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1 data-product-hero-title${isTopHouseProduct ? ` data-top-house-hero-title="${escapeAttr(topHouseHeroTitleForPath(pathLabel))}"` : ""}>${isBeanTartProduct || isSouvenirProduct ? "伴手禮" : isLongCakeProduct ? "長條蛋糕" : isTopHouseProduct ? topHouseHeroTitleForPath(pathLabel) : "商品資料載入中…"}</h1>${isBeanTartProduct || isSouvenirProduct || isLongCakeProduct || isTopHouseProduct ? '' : '<p data-product-hero-category>產品介紹</p>'}</div></div>
+    ? `<section class="page-hero product-detail-hero${isBeanTartProduct ? " bean-tart-hero" : ""}${isBirthdayCakeProduct ? " birthday-cake-product-hero" : ""}${isLongCakeProduct ? " long-cake-product-hero" : ""}${isTopHouseProduct ? " top-house-product-hero" : ""}">
+      <div class="hero-banner"><div class="image-slot"><span>頁首背景圖片</span></div><div class="hero-banner-title"><h1 data-product-hero-title${isTopHouseProduct ? ` data-top-house-hero-title="${escapeAttr(topHouseHeroTitleForPath(pathLabel))}"` : ""}>${isBeanTartProduct || isSouvenirProduct ? "伴手禮" : isBirthdayCakeProduct ? "生日蛋糕" : isLongCakeProduct ? "長條蛋糕" : isTopHouseProduct ? topHouseHeroTitleForPath(pathLabel) : "商品資料載入中…"}</h1>${isBeanTartProduct || isSouvenirProduct || isBirthdayCakeProduct || isLongCakeProduct || isTopHouseProduct ? '' : '<p data-product-hero-category>產品介紹</p>'}</div></div>
     </section>`
     : `<section class="page-hero${hasBrandedHero ? " about-hero" : ""}">
       <div class="hero-banner">${heroImage}<div class="hero-banner-title"><p>${escapeHtml(pathLabel)}</p><h1>${heroTitleHtml}</h1></div></div>
@@ -2741,11 +2745,15 @@ function productDetailShell({ localPath, kind = "cake" }) {
   const fallback = productFallbackForPath(localPath);
   const souvenir = kind === "souvenir";
   const longCake = ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(fallback?.category || "").trim());
+  const birthdayCake = kind === "cake" && (
+    CAKE_PRODUCT_CATEGORY_LABELS.get(localPath) === "所有蛋糕, 生日蛋糕"
+    || String(fallback?.category || "").trim() === "生日蛋糕"
+  );
   const topHouse = kind === "top-house";
   const topHouseHeroClass = topHouse ? ` top-house-hero-${topHouseHeroVariantForPath(localPath)}` : "";
   const pageClass = souvenir
     ? "product-detail-template bean-tart-product-page souvenir-product-page"
-    : `product-detail-template cake-product-page${longCake ? " long-cake-product-page" : ""}${topHouse ? ` top-house-product-page${topHouseHeroClass}` : ""}`;
+    : `product-detail-template cake-product-page${birthdayCake ? " birthday-cake-product-page" : ""}${longCake ? " long-cake-product-page" : ""}${topHouse ? ` top-house-product-page${topHouseHeroClass}` : ""}`;
   const initialTitle = fallback?.title || productDetailTitleForPath(localPath);
   const initialImage = fallback?.image || "";
   const initialImages = Array.isArray(fallback?.images) && fallback.images.length
@@ -4372,6 +4380,10 @@ function syncProductDetailSnapshot() {
       const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
       const fallbackProduct = productFallbackForPath(localPath);
       const isLongCakePage = ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(fallbackProduct?.category || "").trim());
+      const isBirthdayCakePage = kind === "cake" && (
+        CAKE_PRODUCT_CATEGORY_LABELS.get(localPath) === "所有蛋糕, 生日蛋糕"
+        || String(fallbackProduct?.category || "").trim() === "生日蛋糕"
+      );
       if (productId) {
         updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
       }
@@ -4381,8 +4393,11 @@ function syncProductDetailSnapshot() {
           updated = updated.replace(/(<section class="emerald-product-page[^>]*>)/, `$1\n    <div class="souvenir-detail-icon" aria-hidden="true"><img src="/images/icon-cupcake.webp" alt=""></div>`);
         }
       } else {
-        const productTitle = isLongCakePage ? "長條蛋糕" : escapeHtml(productDetailTitleForPath(localPath));
-        const categoryMarkup = isLongCakePage ? "" : "<p data-product-hero-category>產品介紹</p>";
+        if (isBirthdayCakePage && !updated.includes("birthday-cake-product-hero")) {
+          updated = updated.replace('<section class="page-hero product-detail-hero"', '<section class="page-hero product-detail-hero birthday-cake-product-hero"');
+        }
+        const productTitle = isBirthdayCakePage ? "生日蛋糕" : isLongCakePage ? "長條蛋糕" : escapeHtml(productDetailTitleForPath(localPath));
+        const categoryMarkup = isBirthdayCakePage || isLongCakePage ? "" : "<p data-product-hero-category>產品介紹</p>";
         updated = updated.replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1>(?:<p[^>]*>[\s\S]*?<\/p>)?(?:<img[^>]*class="souvenir-hero-icon"[^>]*>)?<\/div>/, (_, prefix) => `${prefix} data-product-hero-title>${productTitle}</h1>${categoryMarkup}</div>`);
       }
     }
