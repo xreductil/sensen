@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>紅利點數規則｜森森點心坊</title>
+  <link rel="apple-touch-icon" href="/assets/images/sensen-favicon.jpg">
+  <link rel="icon" type="image/jpeg" href="/assets/images/sensen-favicon.jpg">
+  <link rel="manifest" href="./assets/site.webmanifest">
+  <script type="module" src="./assets/js/main-CnSylLUz.js?v=sensen-20260814"></script>
+  <link rel="stylesheet" href="./assets/css/main-CM9hUMvt.css">
+  <link rel="stylesheet" href="./store-management.css">
+</head>
+
+<body>
+  <div id="overlay" class="overlay"></div>
+  <nav id="topbar" class="navbar bg-white border-bottom fixed-top topbar px-3"></nav>
+  <aside id="sidebar" class="sidebar"></aside>
+
+  <main id="content" class="content py-10" data-admin-page="loyalty-points">
+    <div class="container-fluid management-content">
+      <div class="management-header d-flex justify-content-between align-items-end gap-3 flex-wrap">
+        <div>
+          <p class="management-eyebrow text-primary mb-2">SENSEN BAKERY · ADMIN</p>
+          <h1 class="fs-3 mb-1">紅利點數規則</h1>
+          <p class="text-secondary mb-0">設定會員訂單完成後的累點方式與點數兌換說明。</p>
+        </div>
+        <a class="btn btn-outline-secondary" href="index.html"><i class="ti ti-arrow-left me-1"></i>返回後台首頁</a>
+      </div>
+
+      <p id="points-message" class="small mb-3" role="status"></p>
+
+      <div class="row g-4 mb-4">
+        <div class="col-md-4"><div class="management-card h-100 p-4"><p class="text-secondary small mb-2">會員總點數餘額</p><strong class="fs-2 text-primary" data-points-summary="points">0</strong><p class="text-secondary small mb-0 mt-2">所有會員目前的點數淨額</p></div></div>
+        <div class="col-md-4"><div class="management-card h-100 p-4"><p class="text-secondary small mb-2">有點數紀錄的會員</p><strong class="fs-2 text-primary" data-points-summary="members">0</strong><p class="text-secondary small mb-0 mt-2">已產生點數異動的會員數</p></div></div>
+        <div class="col-md-4"><div class="management-card h-100 p-4"><p class="text-secondary small mb-2">點數異動筆數</p><strong class="fs-2 text-primary" data-points-summary="transactions">0</strong><p class="text-secondary small mb-0 mt-2">包含訂單完成回饋</p></div></div>
+      </div>
+
+      <section class="management-card mb-4">
+        <div class="management-card-head d-flex align-items-center gap-2"><i class="ti ti-star text-primary fs-4"></i><div><h2 class="h5 mb-1">累點與兌換規則</h2><span class="text-secondary small">啟用後，員工將訂單狀態改為「已完成」時，系統會依下方規則發放點數。</span></div></div>
+        <div class="p-4">
+          <form id="points-rule-form">
+            <div class="form-check form-switch mb-4"><input class="form-check-input" id="points-enabled" name="enabled" type="checkbox"><label class="form-check-label fw-semibold" for="points-enabled">啟用紅利點數累積</label></div>
+            <div class="row g-3">
+              <div class="col-md-4"><label class="form-label" for="spend-amount">每消費金額（NT$）</label><input class="form-control" id="spend-amount" name="spendAmount" type="number" min="1" step="1" required><div class="form-text">例如 100 代表每消費 100 元計算一次。</div></div>
+              <div class="col-md-4"><label class="form-label" for="earn-points">可累積點數</label><input class="form-control" id="earn-points" name="earnPoints" type="number" min="0" step="1" required><div class="form-text">搭配左側金額使用。</div></div>
+              <div class="col-md-4"><label class="form-label" for="minimum-order-amount">最低訂單金額（NT$）</label><input class="form-control" id="minimum-order-amount" name="minimumOrderAmount" type="number" min="0" step="1" required><div class="form-text">未達門檻的訂單不發放點數。</div></div>
+              <div class="col-md-4"><label class="form-label" for="redeem-points">兌換所需點數</label><input class="form-control" id="redeem-points" name="redeemPoints" type="number" min="1" step="1" required></div>
+              <div class="col-md-4"><label class="form-label" for="redeem-amount">可折抵金額（NT$）</label><input class="form-control" id="redeem-amount" name="redeemAmount" type="number" min="0" step="1" required></div>
+              <div class="col-12"><label class="form-label" for="points-description">會員端顯示說明</label><textarea class="form-control" id="points-description" name="description" rows="3" maxlength="500" placeholder="例如：訂單完成後，每消費 100 元可獲得 1 點。"></textarea></div>
+            </div>
+            <div class="d-flex align-items-center gap-3 mt-4"><button class="btn btn-primary" type="submit"><i class="ti ti-device-floppy me-1"></i>儲存規則</button><span id="points-form-status" class="small text-secondary" role="status"></span></div>
+          </form>
+        </div>
+      </section>
+
+      <section class="management-card">
+        <div class="management-card-head d-flex align-items-center gap-2"><i class="ti ti-list-details text-primary fs-4"></i><div><h2 class="h5 mb-1">最近點數明細</h2><span class="text-secondary small">顯示最近 100 筆會員點數異動。</span></div></div>
+        <div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead class="table-light"><tr><th>會員</th><th>Email</th><th>點數</th><th>說明</th><th>日期</th></tr></thead><tbody id="points-table"><tr><td colspan="5" class="text-secondary py-4">載入中…</td></tr></tbody></table></div>
+      </section>
+    </div>
+  </main>
+
+  <script src="./loyalty-points-management.js"></script>
+  <script src="./admin-navigation.js?v=20261001-loyalty-points"></script>
+  <script src="./assets/zh-admin.js"></script>
+</body>
+
+</html>

@@ -171,6 +171,57 @@ type UserRow = {
   password_hash: string | null;
 };
 
+type MemberPointRuleRow = {
+  id: number;
+  enabled: number;
+  spend_amount: number;
+  earn_points: number;
+  minimum_order_amount: number;
+  redeem_points: number;
+  redeem_amount: number;
+  description: string;
+  updated_at: string;
+};
+
+const publicMemberPointRule = (row: MemberPointRuleRow | null | undefined) => {
+  const number = (value: unknown, fallback: number) => value === null || value === undefined ? fallback : Number(value);
+  return {
+    enabled: number(row?.enabled, 0) === 1,
+    spendAmount: number(row?.spend_amount, 100),
+    earnPoints: number(row?.earn_points, 1),
+    minimumOrderAmount: number(row?.minimum_order_amount, 0),
+    redeemPoints: number(row?.redeem_points, 1),
+    redeemAmount: number(row?.redeem_amount, 1),
+    description: String(row?.description || "訂單完成後依規則發放紅利點數。"),
+    updatedAt: utcDateString(row?.updated_at),
+  };
+};
+
+const readMemberPointRule = async (env: Env) => env.DB.prepare(`
+  SELECT id, enabled, spend_amount, earn_points, minimum_order_amount,
+         redeem_points, redeem_amount, description, updated_at
+  FROM member_point_rules
+  WHERE id = 1
+  LIMIT 1
+`).first<MemberPointRuleRow>();
+
+const awardCompletedOrderPoints = async (env: Env, order: Record<string, unknown>) => {
+  const userId = Number(order.user_id || 0);
+  const orderNumber = String(order.order_number || "").trim();
+  const totalAmount = Number(order.total_amount || 0);
+  if (!userId || !orderNumber || totalAmount <= 0) return null;
+  const rule = await readMemberPointRule(env);
+  if (!rule || Number(rule.enabled) !== 1 || Number(rule.spend_amount) <= 0 || Number(rule.earn_points) <= 0 || totalAmount < Number(rule.minimum_order_amount || 0)) return null;
+  const points = Math.floor(totalAmount / Number(rule.spend_amount)) * Number(rule.earn_points);
+  if (points <= 0) return null;
+  const result = await env.DB.prepare(`
+    INSERT OR IGNORE INTO member_point_transactions
+      (user_id, points, description, source_type, source_id)
+    VALUES (?1, ?2, ?3, 'order', ?4)
+  `).bind(userId, points, `訂單 ${orderNumber} 完成回饋`, orderNumber).run();
+  return result.meta.changes ? { points, orderNumber } : null;
+};
+
 const getGuestId = (request: Request) => {
   const cookie = request.headers.get("Cookie") || "";
   const match = cookie.match(/(?:^|;\s*)sensen_guest=([^;]+)/);
@@ -1125,6 +1176,70 @@ export default {
           return json(request, { error: "需要管理員權限。" }, 403);
         }
 
+        if (url.pathname === "/api/admin/points/rules" && request.method === "GET") {
+          const rule = await readMemberPointRule(env);
+          const totals = await env.DB.prepare(`
+            SELECT COALESCE(SUM(points), 0) AS points,
+                   COUNT(*) AS transactionCount,
+                   COUNT(DISTINCT user_id) AS memberCount
+            FROM member_point_transactions
+          `).first<{ points: number; transactionCount: number; memberCount: number }>();
+          const transactions = await env.DB.prepare(`
+            SELECT t.id, t.points, t.description, t.source_type AS sourceType,
+                   t.source_id AS sourceId, t.created_at AS createdAt,
+                   u.name AS memberName, u.email AS memberEmail
+            FROM member_point_transactions t
+            INNER JOIN users u ON u.id = t.user_id
+            ORDER BY t.created_at DESC, t.id DESC
+            LIMIT 100
+          `).all<Record<string, unknown>>();
+          return json(request, {
+            rule: publicMemberPointRule(rule),
+            summary: {
+              points: Number(totals?.points || 0),
+              transactionCount: Number(totals?.transactionCount || 0),
+              memberCount: Number(totals?.memberCount || 0),
+            },
+            transactions: transactions.results.map(transaction => ({
+              ...transaction,
+              points: Number(transaction.points || 0),
+              createdAt: utcDateString(transaction.createdAt),
+            })),
+          });
+        }
+
+        if (url.pathname === "/api/admin/points/rules" && request.method === "PUT") {
+          const body = await parseBody(request);
+          const integer = (value: unknown, fallback: number, minimum: number) => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? Math.max(minimum, Math.min(1000000, Math.round(parsed))) : fallback;
+          };
+          const enabled = body.enabled === true ? 1 : 0;
+          const spendAmount = integer(body.spendAmount, 100, 1);
+          const earnPoints = integer(body.earnPoints, 1, 0);
+          const minimumOrderAmount = integer(body.minimumOrderAmount, 0, 0);
+          const redeemPoints = integer(body.redeemPoints, 1, 1);
+          const redeemAmount = integer(body.redeemAmount, 1, 0);
+          const description = String(body.description || "訂單完成後依規則發放紅利點數。").trim().slice(0, 500) || "訂單完成後依規則發放紅利點數。";
+          await env.DB.prepare(`
+            INSERT INTO member_point_rules
+              (id, enabled, spend_amount, earn_points, minimum_order_amount,
+               redeem_points, redeem_amount, description, updated_at)
+            VALUES (1, ?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP)
+            ON CONFLICT(id) DO UPDATE SET
+              enabled = excluded.enabled,
+              spend_amount = excluded.spend_amount,
+              earn_points = excluded.earn_points,
+              minimum_order_amount = excluded.minimum_order_amount,
+              redeem_points = excluded.redeem_points,
+              redeem_amount = excluded.redeem_amount,
+              description = excluded.description,
+              updated_at = CURRENT_TIMESTAMP
+          `).bind(enabled, spendAmount, earnPoints, minimumOrderAmount, redeemPoints, redeemAmount, description).run();
+          const rule = await readMemberPointRule(env);
+          return json(request, { rule: publicMemberPointRule(rule) });
+        }
+
         if (url.pathname === "/api/admin/images" && request.method === "POST") {
           const form = await request.formData();
           const files = form.getAll("image").filter((value): value is File => value instanceof File && value.size > 0);
@@ -1396,6 +1511,7 @@ export default {
             LEFT JOIN categories c ON c.id = p.category_id
             WHERE oi.order_id = ?1 ORDER BY oi.id ASC
           `).bind(existing.id).all<Record<string, unknown>>();
+          const pointReward = status === "completed" && row ? await awardCompletedOrderPoints(env, row) : null;
           const completionNotification = status === "completed" && String(existing.status || "").toLowerCase() !== "completed"
             ? await sendOrderCompletionEmail(row || {}, items.results.map(adminOrderItemFromRow))
             : { status: "not_requested", recipient: row?.customer_email || row?.user_email || "" };
@@ -1403,6 +1519,7 @@ export default {
             order: row ? {
               ...orderFromRow(row, items.results.map(adminOrderItemFromRow)),
               completionNotification,
+              pointReward,
               shippingNotification: body.notify ? { status: "pending", recipient: row.customer_email || row.user_email || "" } : { status: "not_requested" },
             } : null,
           });
@@ -1674,6 +1791,33 @@ export default {
           ORDER BY created_at DESC
         `).bind(user.id).all<Record<string, unknown>>();
         return json(request, { orders: result.results.map(order => ({ ...order, createdAt: utcDateString(order.createdAt) })) });
+      }
+
+      if (url.pathname === "/api/points" && request.method === "GET") {
+        const user = await getSessionUser(env, request);
+        if (!user) return json(request, { error: "請先登入。" }, 401);
+        const rule = await readMemberPointRule(env);
+        const balance = await env.DB.prepare(`
+          SELECT COALESCE(SUM(points), 0) AS points
+          FROM member_point_transactions
+          WHERE user_id = ?1
+        `).bind(user.id).first<{ points: number }>();
+        const transactions = await env.DB.prepare(`
+          SELECT id, points, description, source_type AS sourceType, source_id AS sourceId, created_at AS createdAt
+          FROM member_point_transactions
+          WHERE user_id = ?1
+          ORDER BY created_at DESC, id DESC
+          LIMIT 100
+        `).bind(user.id).all<Record<string, unknown>>();
+        return json(request, {
+          rule: publicMemberPointRule(rule),
+          points: Number(balance?.points || 0),
+          transactions: transactions.results.map(transaction => ({
+            ...transaction,
+            points: Number(transaction.points || 0),
+            createdAt: utcDateString(transaction.createdAt),
+          })),
+        });
       }
 
       if (url.pathname === "/api/checkout" && request.method === "POST") {

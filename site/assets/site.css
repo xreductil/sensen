@@ -198,6 +198,27 @@ body:has(.account-shell) #message { padding: 18px 22px; border: 1px solid #e8edf
 .boston-flavor-purchases > div { display: grid; gap: 2px; }
 .boston-flavor-purchases > div > span { color: var(--brown-2); font-weight: 700; }
 
+.account-points-balance { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; padding: 26px 28px; border: 1px solid #ead7b8; border-radius: 12px; background: linear-gradient(135deg, #fff7e8, #f5e6cf); }
+.account-points-balance > div { display: flex; align-items: baseline; gap: 9px; }
+.account-points-balance span { color: #8a5d47; font-size: .9rem; font-weight: 700; }
+.account-points-balance strong { color: #8d563d; font-size: clamp(2.25rem, 5vw, 3.5rem); line-height: 1; }
+.account-points-balance small { color: #8a5d47; font-size: 1rem; font-weight: 700; }
+.account-points-balance p { max-width: 310px; margin: 0; color: #6b5145; font-size: .88rem; line-height: 1.7; }
+.account-points-history { padding-top: 4px; }
+.account-points-history h3 { margin: 0; color: #3a1f14; font-family: Georgia, "Times New Roman", var(--font-main); font-size: 1.2rem; }
+.point-row { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 16px 4px; border-bottom: 1px solid #ead7b8; }
+.point-row:last-child { border-bottom: 0; }
+.point-row strong, .point-row small { display: block; }
+.point-row strong { color: #3a1f14; }
+.point-row small { margin-top: 3px; color: #8a5d47; font-size: .8rem; }
+.point-row > b { color: #8d563d; white-space: nowrap; }
+.point-row > b.is-negative { color: #a3463d; }
+
+@media (max-width: 760px) {
+  .account-points-balance { align-items: flex-start; flex-direction: column; gap: 14px; padding: 22px 18px; }
+  .account-points-balance p { max-width: none; }
+}
+
 @media (max-width: 760px) {
   body:has(.account-shell) .account-shell { width: calc(100% - 24px); padding: 24px 0 42px; }
   body:has(.account-shell) .account-layout { display: block; min-height: 0; }

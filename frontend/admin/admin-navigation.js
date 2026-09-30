@@ -34,6 +34,7 @@
     ['create-product.html', 'ti-plus', '新增商品'],
     ['reports.html', 'ti-receipt', '報表分析'],
     ['discount-codes.html', 'ti-discount-2', '優惠碼'],
+    ['loyalty-points.html', 'ti-star', '紅利點數'],
     ['news-editor.html', 'ti-news', '最新消息'],
     ['404-error.html', 'ti-alert-circle', '404 Error'],
     ['docs.html', 'ti-file-text', '使用說明']

@@ -31,6 +31,11 @@ describe("sensen-api Worker", () => {
         publish_at TEXT, is_published INTEGER DEFAULT 0, layout_json TEXT,
         created_at TEXT DEFAULT CURRENT_TIMESTAMP, updated_at TEXT DEFAULT CURRENT_TIMESTAMP
       )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS member_point_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, points INTEGER NOT NULL,
+        description TEXT NOT NULL, source_type TEXT NOT NULL DEFAULT 'manual', source_id TEXT,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+      )`).run();
   });
 
   it("returns an API 404 for an unknown route", async () => {
@@ -47,6 +52,12 @@ describe("sensen-api Worker", () => {
     const response = await SELF.fetch("https://example.com/health");
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({ ok: true, database: "connected" });
+  });
+
+  it("protects member reward points behind a session", async () => {
+    const response = await SELF.fetch("https://example.com/api/points");
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: "請先登入。" });
   });
 
   it("rejects a legacy news image proxy request for another host", async () => {
