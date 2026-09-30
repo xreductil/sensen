@@ -23,7 +23,7 @@ const WORDPRESS_EXPORT_FILES = [
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20260929-product-gallery-carousel-1";
-const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20260918-thumbnail-mobile-sync-1";
+const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261001-product-sort-1";
 const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20260929-product-gallery-carousel-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
@@ -3089,6 +3089,28 @@ function staticCatalogProductPath(product) {
   return map[product.id] || map[staticCatalogTitle(product.title)] || String(product.url || "").replace(/\/$/, "") || `/product-item/${encodeURIComponent(product.id)}`;
 }
 
+function staticCatalogProductDate(product) {
+  const value = product.createdAt || product.updatedAt || product.publishedAt || product.releaseDate;
+  const timestamp = value ? new Date(value).getTime() : 0;
+  return Number.isFinite(timestamp) ? timestamp : 0;
+}
+
+function sortStaticCatalogProducts(products, mode = "newest") {
+  return products
+    .map((product, index) => ({ product, index }))
+    .sort((a, b) => {
+      const dateA = staticCatalogProductDate(a.product);
+      const dateB = staticCatalogProductDate(b.product);
+      const priceA = Number(a.product.priceValue || 0);
+      const priceB = Number(b.product.priceValue || 0);
+      if (mode === "oldest") return dateA - dateB || a.index - b.index;
+      if (mode === "price-desc") return priceB - priceA || dateB - dateA || a.index - b.index;
+      if (mode === "price-asc") return priceA - priceB || dateB - dateA || a.index - b.index;
+      return dateB - dateA || a.index - b.index;
+    })
+    .map(({ product }) => product);
+}
+
 function staticCatalogCard(product) {
   const title = String(product.title || "商品");
   const href = staticCatalogProductPath(product);
@@ -3107,7 +3129,10 @@ function staticCatalogSection(title, products, className = "cake-category") {
 }
 
 function staticCatalogMarkup(view) {
-  const products = readStaticCatalogProducts().filter((product) => !String(product.cat).startsWith("頂家彌月"));
+  const products = sortStaticCatalogProducts(
+    readStaticCatalogProducts().filter((product) => !String(product.cat).startsWith("頂家彌月")),
+    "newest",
+  );
   if (view === "long-cakes") return staticCatalogSection("長條蛋糕", products.filter((product) => ["長條蛋糕", "長條蛋糕(冷凍)"].includes(product.cat)));
   if (view === "souvenir") return staticCatalogSection("伴手禮", products.filter((product) => product.cat === "伴手禮"), "souvenir-products");
   if (view === "cakes") {
@@ -3120,7 +3145,9 @@ function staticCatalogMarkup(view) {
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" || view === "long-cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}"><p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
+  const sortId = `storefront-sort-${view}`;
+  const sortBar = `<div class="storefront-sort-bar" data-storefront-sort-bar><label for="${sortId}">商品排序</label><select id="${sortId}" data-storefront-sort aria-label="商品排序"><option value="newest" selected>上架時間: 由新到舊</option><option value="oldest">上架時間: 由舊到新</option><option value="price-desc">價格: 由高至低</option><option value="price-asc">價格: 由低至高</option></select></div>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}">${sortBar}<p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {

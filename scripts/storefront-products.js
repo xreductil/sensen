@@ -4,7 +4,9 @@
 
   const content = root.querySelector('[data-storefront-catalog-content]');
   const status = root.querySelector('[data-storefront-catalog-status]');
+  const sortSelect = root.querySelector('[data-storefront-sort]');
   const view = root.dataset.storefrontView || 'overview';
+  let sortMode = sortSelect?.value || 'newest';
   const productUpdateSignalKey = 'sensen-products-updated';
   const productUpdateChannelName = 'sensen-products-updated';
   const categoryRoutes = {
@@ -90,20 +92,23 @@
     'new-souvenir-image-08',
     'new-souvenir-image-11'
   ]);
-  const birthdayProductOrder = [
-    'emerald-lysk', 'strawberry-lysk', 'caramel-party', 'gulava',
-    'passion-pear', 'colorful-world', 'mocha', 'hazelnut-crunch',
-    'black-forest', 'souffle', 'macaron-forest', 'strawberry-shudo',
-    'rose-bouquet', 'bodhi-cake', 'puff-kingdom', 'uji-hayakaze',
-    'blueberry-lysk', 'angel-cake'
-  ];
+  const productDate = product => {
+    const value = product.createdAt || product.updatedAt || product.publishedAt || product.releaseDate;
+    const timestamp = value ? new Date(value).getTime() : 0;
+    return Number.isFinite(timestamp) ? timestamp : 0;
+  };
+  const productPrice = product => Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
   const orderProducts = products => products
     .map((product, index) => ({ product, index }))
     .sort((a, b) => {
-      if (a.product.cat !== '生日蛋糕' || b.product.cat !== '生日蛋糕') return a.index - b.index;
-      const aRank = birthdayProductOrder.indexOf(a.product.id);
-      const bRank = birthdayProductOrder.indexOf(b.product.id);
-      return (aRank < 0 ? Number.MAX_SAFE_INTEGER : aRank) - (bRank < 0 ? Number.MAX_SAFE_INTEGER : bRank) || a.index - b.index;
+      const dateA = productDate(a.product);
+      const dateB = productDate(b.product);
+      const priceA = productPrice(a.product);
+      const priceB = productPrice(b.product);
+      if (sortMode === 'oldest') return dateA - dateB || a.index - b.index;
+      if (sortMode === 'price-desc') return priceB - priceA || dateB - dateA || a.index - b.index;
+      if (sortMode === 'price-asc') return priceA - priceB || dateB - dateA || a.index - b.index;
+      return dateB - dateA || a.index - b.index;
     })
     .map(({ product }) => product);
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
@@ -269,7 +274,7 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
       const products = orderProducts((Array.isArray(data.products) ? data.products : []).filter(product => product.published !== false));
-      const productSignature = JSON.stringify(products.map(product => [product.id, product.title, product.cat, product.img, product.priceValue, product.quantity, product.newArrival, product.salesCount, product.thumbnail]));
+      const productSignature = JSON.stringify([sortMode, ...products.map(product => [product.id, product.title, product.cat, product.img, product.priceValue, product.quantity, product.newArrival, product.salesCount, product.thumbnail])]);
       if (!force && productSignature === lastProductSignature) return;
       lastProductSignature = productSignature;
       const storefrontProducts = products.filter(product => !birthdayCakeCategories.has(product.cat));
@@ -306,6 +311,12 @@
       status.className = 'storefront-catalog-error';
     }
   };
+
+  sortSelect?.addEventListener('change', () => {
+    sortMode = sortSelect.value || 'newest';
+    lastProductSignature = '';
+    load(true);
+  });
 
   let refreshTimer = null;
   const requestRefresh = () => {

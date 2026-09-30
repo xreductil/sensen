@@ -4729,6 +4729,29 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 .storefront-catalog-empty { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 72px 0; color: #8c8178; font-size: clamp(16px, 1.25vw, 22px); text-align: center; }
 .storefront-catalog-error { color: #a65d42; }
 .storefront-catalog-page [data-storefront-catalog-content] { min-height: 120px; }
+.storefront-sort-bar {
+  display: flex;
+  width: min(1440px, calc(100% - 64px));
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin: 0 auto;
+  padding: 30px 0 0;
+  color: #4a3d35;
+}
+.storefront-sort-bar label { font-size: 16px; font-weight: 700; white-space: nowrap; }
+.storefront-sort-bar select {
+  min-width: 220px;
+  min-height: 42px;
+  padding: 0 38px 0 14px;
+  border: 1px solid #ddcfbf;
+  border-radius: 4px;
+  color: #4a3d35;
+  background: #fff;
+  font: inherit;
+  cursor: pointer;
+}
+.storefront-sort-bar select:focus-visible { outline: 2px solid #b66f2d; outline-offset: 2px; }
 body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2); border-bottom: 4px solid var(--brown-2); }
 .product-intro-section { width: min(1540px, calc(100% - 96px)); margin: 0 auto; padding: 76px 0 84px; }
 .product-intro-section + .product-intro-section { border-top: 1px solid #eee; }
@@ -4769,6 +4792,9 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .product-intro-load-more { display: flex; width: fit-content; min-height: 52px; align-items: center; justify-content: center; margin: 32px auto 0; padding: 0 28px; color: #74491f; background: #e9c995; font-size: clamp(16px, 1.1vw, 20px); text-decoration: none; transition: background .2s ease, transform .2s ease; }
 .product-intro-load-more:hover, .product-intro-load-more:focus-visible { background: #dfb978; transform: translateY(-2px); }
 @media (max-width: 700px) {
+  .storefront-sort-bar { width: calc(100% - 28px); justify-content: space-between; gap: 8px; padding-top: 24px; }
+  .storefront-sort-bar label { font-size: 14px; }
+  .storefront-sort-bar select { min-width: 0; flex: 1; font-size: 14px; }
   .product-intro-section { width: calc(100% - 28px); padding: 58px 0 64px; }
   .product-intro-featured-section { margin-top: 14px; padding-top: 46px; }
   .product-intro-section-heading { align-items: start; margin-bottom: 24px; }
