@@ -1779,6 +1779,75 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     ? '<script src="/assets/top-house-purchase.js"></script>'
     : '';
   const purchaseScripts = [productPurchaseScript, topHousePurchaseScript].filter(Boolean).join('\n  ');
+  const productSearchMarkup = `<div class="site-search-overlay" data-site-search hidden><div class="site-search-panel" role="dialog" aria-modal="true" aria-labelledby="site-search-title"><button class="site-search-close" type="button" data-site-search-close aria-label="關閉找商品">×</button><form class="site-search-form" data-site-search-form><label id="site-search-title" for="site-search-input">找商品</label><div class="site-search-input-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="site-search-input" data-site-search-input type="search" placeholder="輸入商品名稱" autocomplete="off"></div></form><p class="site-search-hint">輸入商品名稱，快速找到想要的商品。</p><div class="site-search-results" data-site-search-results><p class="site-search-empty">輸入商品名稱開始搜尋。</p></div></div></div>`;
+  const productSearchScript = `<script>
+  (() => {
+    const overlay = document.querySelector('[data-site-search]');
+    const input = overlay?.querySelector('[data-site-search-input]');
+    const form = overlay?.querySelector('[data-site-search-form]');
+    const results = overlay?.querySelector('[data-site-search-results]');
+    const closeButton = overlay?.querySelector('[data-site-search-close]');
+    const triggers = document.querySelectorAll('[data-site-search-open]');
+    if (!overlay || !input || !form || !results || !triggers.length) return;
+    let products = [];
+    let loaded = false;
+    const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+    const imagePath = value => {
+      const image = String(value || '/images/icon-cake.png');
+      return image.startsWith('/assets/images/') ? '/images/' + image.slice('/assets/images/'.length) : image;
+    };
+    const productPrice = product => {
+      const amount = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
+      return amount > 0 ? 'NT$' + amount.toLocaleString('zh-TW') : '價格洽詢';
+    };
+    const render = () => {
+      const query = input.value.trim().toLocaleLowerCase();
+      if (!query) {
+        results.innerHTML = '<p class="site-search-empty">輸入商品名稱開始搜尋。</p>';
+        return;
+      }
+      const matches = products.filter(product => (String(product.title || '') + ' ' + String(product.cat || '')).toLocaleLowerCase().includes(query)).slice(0, 12);
+      if (!matches.length) {
+        results.innerHTML = '<p class="site-search-empty">找不到符合的商品，請換個關鍵字。</p>';
+        return;
+      }
+      results.innerHTML = matches.map(product => {
+        const title = escapeHtml(product.title || '商品');
+        const href = escapeHtml(product.url || '/product-item/' + encodeURIComponent(product.id || '') + '/');
+        return '<a class="site-search-result" href="' + href + '"><img src="' + escapeHtml(imagePath(product.img || product.image)) + '" alt="' + title + '" loading="lazy"><span><strong>' + title + '</strong><small>' + escapeHtml(productPrice(product)) + '</small></span></a>';
+      }).join('');
+    };
+    const loadProducts = async () => {
+      if (loaded) return;
+      try {
+        const response = await fetch('/api/products', { cache: 'no-store', headers: { Accept: 'application/json' } });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
+        products = Array.isArray(data.products) ? data.products.filter(product => product.published !== false) : [];
+        loaded = true;
+      } catch (error) {
+        results.innerHTML = '<p class="site-search-empty">' + escapeHtml(error.message || '商品資料暫時無法載入。') + '</p>';
+      }
+    };
+    const close = () => {
+      overlay.hidden = true;
+      document.body.classList.remove('site-search-open');
+    };
+    const open = async () => {
+      overlay.hidden = false;
+      document.body.classList.add('site-search-open');
+      input.focus();
+      await loadProducts();
+      render();
+    };
+    triggers.forEach(trigger => trigger.addEventListener('click', open));
+    closeButton.addEventListener('click', close);
+    form.addEventListener('submit', event => { event.preventDefault(); render(); });
+    input.addEventListener('input', render);
+    overlay.addEventListener('click', event => { if (event.target === overlay) close(); });
+    document.addEventListener('keydown', event => { if (event.key === 'Escape' && !overlay.hidden) close(); });
+  })();
+  </script>`;
   const nav = NAV_ITEMS.map(([label, href]) => {
     const children = NAV_CHILDREN.get(label) || [];
     const childMenu = children.length
@@ -1917,15 +1986,19 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     <nav class="nav" aria-label="主選單">
       <a class="brand" href="/" aria-label="森森點心坊首頁"><img class="brand-logo" src="/images/logo.png" alt="森森點心坊 SenSen Bakery"></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="開啟主選單"><span></span><span></span><span></span></button>
-      <div class="menu" id="site-menu">${nav}<div class="mobile-nav-actions" aria-label="森森後台功能">
+      <div class="menu" id="site-menu">${nav}<div class="mobile-nav-actions" aria-label="森森功能">
+        <button class="mobile-nav-action" type="button" data-site-search-open aria-label="找商品"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><span>找商品</span></button>
         <a class="mobile-nav-action" href="/customer/admin/" aria-label="客戶後台"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"></path></svg><span>客戶後台</span></a>
         <a class="mobile-nav-action" href="/admin/" aria-label="員工後台"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h3"></path></svg><span>員工後台</span></a>
       </div><a class="mobile-menu-social" href="https://www.facebook.com/sensenbakery/" target="_blank" rel="noreferrer" aria-label="Facebook">f</a></div>
       <div class="nav-actions" aria-label="森森會員功能">
+        <button class="nav-action" type="button" data-site-search-open aria-label="找商品"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg></button>
         <a class="nav-action" href="/customer/admin/" aria-label="客戶後台"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"></circle><path d="M5 20c.8-3.3 3.1-5 7-5s6.2 1.7 7 5"></path></svg></a>
         <button class="nav-action cart-trigger" type="button" aria-controls="sensen-cart-drawer" aria-expanded="false" aria-label="購物車"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 4h2l2.1 10.2a2 2 0 0 0 2 1.6h7.7a2 2 0 0 0 1.9-1.4L20 8H6"></path><circle cx="10" cy="20" r="1"></circle><circle cx="17" cy="20" r="1"></circle></svg><span class="cart-count" aria-live="polite">0</span></button>
         <a class="nav-action" href="/admin/" aria-label="員工後台"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="2"></rect><path d="M8 9h8M8 13h5M8 17h3"></path></svg></a>
       </div>
+      ${productSearchMarkup}
+      ${productSearchScript}
     </nav>
   </header>
   <main class="${isHome ? "home-main" : `page-main${isAbout ? " about-page" : ""}`}">
@@ -4169,7 +4242,7 @@ function rewriteStaticSnapshotNavigation() {
   for (const filePath of htmlFiles) {
     const html = fs.readFileSync(filePath, "utf8");
     const updated = homeNavigation
-      ? html.replace(/<header class="site-header">[\s\S]*?<\/header>/, homeNavigation)
+      ? html.replace(/<header class="site-header">[\s\S]*?<\/header>/, () => homeNavigation)
       : html
         .replace(onlineMenuPattern, `$1${onlineLongCakeLink}`)
         .replace(onlineTeaPartyPattern, `$1${onlineTeaPartyLink}`);
