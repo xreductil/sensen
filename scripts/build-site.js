@@ -69,6 +69,7 @@ Sitemap: ${SOURCE_ORIGIN}/sitemap.xml
 `;
 const RETIRED_CONTENT_PATHS = new Set([
   "/cart",
+  "/精緻外燴-355",
   "/product-item/123",
   "/author/admin",
   "/森森咖啡",
@@ -286,7 +287,6 @@ const HOME_SLIDES = [
 ];
 
 const BIRTHDAY_CAKE_PATH = "/產品介紹/生日蛋糕-下方有dm供下載-264";
-const CATERING_PATH = "/精緻外燴-355";
 const TEA_PARTY_PATH = "/茶會點心-tea-party";
 const ONLINE_TEA_PARTY_PATH = "/產品介紹/點心餐盒";
 const BOSTON_PIE_PATH = "/頂家彌月/波士頓派系列";
@@ -583,7 +583,6 @@ const EMERALD_LYSK_PATH = "/product-item/綠寶石萊思克季節限定-1870";
 const BEAN_TART_PATH = "/product-item/豆塔禮盒";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
-const CATERING_MENU_URL = "https://docs.google.com/spreadsheets/d/1KrLWkMaNHhZr7AmkgCZ4WQcbLzb99YAB/edit?gid=703529566#gid=703529566";
 const TEA_PARTY_MENU_URL = "https://docs.google.com/spreadsheets/d/1VC55JlLWInSVZedy83H81pEhQEspFYr0/edit?gid=1715716833#gid=1715716833";
 const STORE_INFO_HERO_SOURCE = "/images/headtitle-bg6.jpg";
 const BIRTHDAY_CAKE_PAGE_TITLE = "蛋糕 (下方有DM供下載)";
@@ -886,7 +885,7 @@ const NAV_ITEMS = [
   ["關於森森", "/%e9%97%9c%e6%96%bc%e6%a3%ae%e6%a3%ae/"],
   ["最新消息", "/%e6%9c%80%e6%96%b0%e6%b6%88%e6%81%af/"],
   ["線上商城", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/"],
-  ["酒會/茶會", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
+  ["酒會/茶會", `${encodeURI(TEA_PARTY_PATH)}/`],
   ["頂家彌月專區", "/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/"],
   ["常見問題", "/%e5%b8%b8%e8%a6%8b%e5%95%8f%e9%a1%8c/"],
   ["門市資訊", "/%e9%96%80%e5%b8%82%e8%b3%87%e8%a8%8a/"],
@@ -900,7 +899,6 @@ const BRANDED_HERO_PATHS = new Set([
   ONLINE_LONG_CAKE_PATH,
   ONLINE_TEA_PARTY_PATH,
   FROZEN_BREAD_PATH,
-  "/精緻外燴-355",
   "/頂家彌月",
   "/頂家彌月/波士頓派系列",
   "/常見問題",
@@ -917,7 +915,6 @@ const NAV_CHILDREN = new Map([
     ["歐式麵包(冷凍)", `${encodeURI(FROZEN_BREAD_PATH)}/`],
   ]],
   ["酒會/茶會", [
-    ["精緻外燴", "/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/"],
     ["茶會點心", `${encodeURI(TEA_PARTY_PATH)}/`],
   ]],
   ["頂家彌月專區", [
@@ -1550,7 +1547,7 @@ function createIndex(pages) {
 }
 
 function seoDescription(title, pathLabel, isHome) {
-  if (isHome) return "森森點心坊提供生日蛋糕、彌月禮盒、伴手禮、冷凍麵包、飲品與精緻外燴服務，分享新鮮、健康、美味的幸福滋味。";
+  if (isHome) return "森森點心坊提供生日蛋糕、彌月禮盒、伴手禮、冷凍麵包與飲品，分享新鮮、健康、美味的幸福滋味。";
   const cleanTitle = String(title || "森森點心坊").replace(/\s+[–|-]\s+森森點心坊$/, "").trim();
   if (pathLabel === "/最新消息") return "掌握森森點心坊最新消息、季節限定商品、新品上市與門市活動資訊。";
   if (pathLabel === "/產品介紹") return "瀏覽森森點心坊線上商城，選購生日蛋糕、彌月禮盒、伴手禮、冷凍麵包與點心。";
@@ -1561,7 +1558,7 @@ function seoDescription(title, pathLabel, isHome) {
   if (/^\/new-arrival\//.test(pathLabel)) return `認識森森點心坊新品「${cleanTitle}」，查看產品特色與訂購資訊。`;
   if (/^\/sensen-coffee\//.test(pathLabel)) return `查看森森點心坊飲品「${cleanTitle}」的產品資訊與門市服務。`;
   if (/產品介紹|蛋糕|禮盒|麵包|伴手禮|咖啡|飲品|product-item|頂家彌月/.test(pathLabel)) return `探索森森點心坊的${cleanTitle}，查看商品特色、規格與訂購資訊。`;
-  if (/聯絡我們|contact/.test(pathLabel)) return "聯絡森森點心坊，洽詢商品訂購、門市服務、彌月禮盒與精緻外燴需求。";
+  if (/聯絡我們|contact/.test(pathLabel)) return "聯絡森森點心坊，洽詢商品訂購、門市服務、彌月禮盒與茶會點心需求。";
   return `${cleanTitle}｜森森點心坊提供新鮮、健康、美味的烘焙點心與貼心服務。`;
 }
 
@@ -2159,14 +2156,13 @@ function homeContent() {
     <div class="quick-links">
       <a aria-label="生日蛋糕" href="/最新消息/?category=sensen-coffee">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E9%A6%96%E9%A0%81%E5%9C%96%E7%89%87-1.jpg", label: "Birthday Cake" })}<span>Birthday Cake</span><strong>生日蛋糕</strong><span class="card-arrow" aria-hidden="true">→</span></a>
       <a aria-label="彌月禮盒" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/%e6%b3%a2%e5%a3%ab%e9%a0%93%e6%b4%be%e7%b3%bb%e5%88%97/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2024/11/%E6%A3%ae%E6%A3%ae%E9%A6%96%e9%A0%81-2.jpg", label: "Baby Gift Box" })}<span>Baby Gift Box</span><strong>彌月禮盒</strong><span class="card-arrow" aria-hidden="true">→</span></a>
-      <a aria-label="酒會茶會" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "https://www.sensen.com.tw/wp-content/uploads/2018/11/home-service-3.jpg", label: "Catering" })}<span>Catering</span><strong>酒會/茶會</strong><span class="card-arrow" aria-hidden="true">→</span></a>
     </div>
   </section>
   <section class="home-taste"><div class="image-slot"><span>彌月試吃圖片預留位</span></div><div><h2>彌月試吃申請</h2><p class="eyebrow">TOP HOUSE &amp; SENSEN BAKERY</p><p>無論您是懷孕中的媽咪或是寶寶剛誕生，都感謝您給予機會選<br class="home-taste-mobile-break">擇森森彌月蛋糕，讓我們與您一同分享這份幸福的喜悅！(產<br class="home-taste-mobile-break">前產後均可申請。產前建議懷孕35週以上的媽咪唷!)</p><a class="button" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/">線上申請</a></div></section>
   <section class="home-section" data-home-news-section${readStaticPublishedNews().length ? "" : " hidden"}><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6% הוד%a9/">更多訊息</a></div><div class="home-news-grid" data-home-news-list>${staticNewsCards(readStaticPublishedNews().slice(0, 3), "home-news")}</div></section><script src="${HOME_NEWS_SCRIPT_URL}"></script>
   <section class="gift-section"><div class="gift-copy"><img class="gift-icon" src="/images/home-icon-giftbox.png" alt="" aria-hidden="true"><h2>精選伴手禮</h2><p>各式經典組合<br>多樣化的選擇<br>吃進嘴裡都是幸福的味道</p><a class="button" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/">更多伴手禮</a></div><div class="gift-mosaic">${giftTiles}</div></section>
   <section class="home-catering"><div class="catering-copy"><div class="catering-panel"><div class="catering-title-row"><img class="catering-icon" src="/images/home-icon-cutlery.png" alt="" aria-hidden="true"><div><h2>酒會/外燴服務</h2><p>嚴選食材。精心烹調。味覺饗宴</p></div></div><span class="catering-wave" aria-hidden="true"></span><a class="button" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">了解更多 <span aria-hidden="true">›</span></a></div></div><div class="catering-images"><a class="catering-card buffet" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "/images/home-buffet.jpg", label: "Buffet" })}<div class="catering-card-copy"><span>Buffet</span><strong>精緻外燴</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a><a class="catering-card tea-party" href="/%e8%8c%b6%e6%9c%83%e9%bb%9e%e5%bf%83-tea-party/">${imageSlotHtml({ source: "/images/home-catering.jpg", label: "Tea Party" })}<div class="catering-card-copy"><span>Tea Party</span><strong>茶會點心</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a></div></section>
-  <section class="catering-stores"><div class="catering-stores-panel">${storeDirectoryMarkup("catering")}</div></section>`;
+  `.replace(/<section class="home-catering">[\s\S]*?<\/section>/, "");
 }
 
 function aboutContent() {
@@ -2331,20 +2327,6 @@ function legacyBirthdayCakeContent() {
   ${birthdayCakeLoadMoreScript()}`;
 }
 
-const CATERING_SECTIONS = [
-  ["MAIN COURSE", "主食及肉類", [
-    "buffet-main-meal-8.jpg", "buffet-main-meal-11.jpg", "buffet-main-meal-12.jpg",
-    "buffet-main-meal-3.jpg", "buffet-main-meal-4.jpg", "buffet-main-meal-13.jpg",
-    "buffet-main-meal-6.jpg", "buffet-main-meal-5.jpg", "buffet-main-meal-12-2.jpg",
-  ]],
-  ["SEAFOOD", "海鮮類", [
-    "buffet-seafood-9.jpg", "buffet-seafood-10.jpg", "buffet-seafood-1.jpg",
-    "buffet-seafood-2.jpg", "buffet-seafood-3.jpg", "yellow-sea-fresh.jpg", "sea.png",
-  ]],
-  ["VEGETARIAN FOOD", "素食類", ["rice.jpg"]],
-  ["FRIED FOOD & OTHER", "炸物小點類", ["buffet-snacks-3.jpg", "buffet-snacks-1.jpg", "buffet-snacks-2.jpg"]],
-];
-
 function inquirySection({ id, title, subject }) {
   return `<section class="catering-inquiry" id="${escapeAttr(id)}" aria-labelledby="${escapeAttr(id)}-title">
     <div class="catering-inquiry-heading">
@@ -2459,35 +2441,6 @@ function inquiryScript() {
     });
   })();
   </script>`;
-}
-
-function cateringContent() {
-  const sections = CATERING_SECTIONS.map(([eyebrow, title, images]) => `
-    <section class="catering-category">
-      <div class="catering-category-heading"><p>${escapeHtml(eyebrow)}</p><h2>${escapeHtml(title)}</h2></div>
-      <div class="catering-product-grid">${images.map((image) => `<div class="catering-product"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}餐點"></div>`).join("")}</div>
-    </section>`).join("");
-  return `<section class="catering-page">
-    <section class="catering-intro">
-      <img class="catering-intro-icon" src="/images/icon-cutlery.png" alt="" aria-hidden="true">
-      <p class="catering-intro-eyebrow">Catering Service</p>
-      <h1>嚴選食材。精心烹調。味覺饗宴</h1>
-      <p class="catering-intro-copy">節慶與親友同事公司聚餐、商務會議與媒體公關活動<br>用心帶給您新鮮與美味的餐點，實惠的價格，美味可口的精緻菜色，森森是你最佳的選擇</p>
-      <div class="catering-hero-actions">
-        <a class="catering-menu-download" href="${CATERING_MENU_URL}" target="_blank" rel="noreferrer"><span class="catering-menu-book" aria-hidden="true"></span><span>外燴菜單下載</span></a>
-        <a class="catering-inquiry-link" href="#catering-inquiry">外燴詢價</a>
-      </div>
-    </section>
-    ${sections}
-    <section class="catering-note"><span class="catering-note-icon" aria-hidden="true"></span><p>※ <strong>完整菜單請下載最上方檔案連結</strong>，圖片為參考圖，產品請以實物為主。<strong>菜色照片會陸續更新。</strong></p></section>
-    ${inquirySection({ id: "catering-inquiry", title: "外燴詢價專區", subject: "外燴詢價" })}
-    <section class="catering-stores">
-      <div class="catering-stores-panel">
-        ${storeDirectoryMarkup("catering")}
-      </div>
-    </section>
-    ${inquiryScript()}
-  </section>`;
 }
 
 const BOSTON_GIFTS = [
@@ -3540,9 +3493,6 @@ function pageContent(page) {
   if (localPath === "/產品介紹/伴手禮") {
     return storefrontCatalogContent("souvenir");
   }
-  if (localPath === CATERING_PATH) {
-    return cateringContent();
-  }
   if (localPath === TEA_PARTY_PATH) {
     return teaPartyContent();
   }
@@ -3763,9 +3713,13 @@ function copyHomeFallback() {
     const fallback = fs.readFileSync(indexFile, "utf8");
     const description = seoDescription("森森點心坊", "/", true);
     const seoHead = `<meta name="description" content="${escapeAttr(description)}">\n  <meta name="robots" content="noindex, follow">`;
-    const optimizedFallback = fallback
+    let optimizedFallback = fallback
       .replace(/(<meta name="viewport"[^>]*>)/i, `$1\n  ${seoHead}`)
       .replace(/<title>[\s\S]*?<\/title>/i, "<title>備用首頁 – 森森點心坊</title>");
+    optimizedFallback = optimizedFallback
+      .replace(/\s*<a class="service-card" href="https:\/\/www\.sensen\.com\.tw\/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355\/[\s\S]*?<\/a>/i, "")
+      .replace(/\s*<section class="catering"[\s\S]*?<\/section>/i, "");
+    optimizedFallback = optimizedFallback.replaceAll("/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/", `${encodeURI(TEA_PARTY_PATH)}/`);
     fs.writeFileSync(path.join(OUT_DIR, "standalone-home.html"), optimizedFallback);
   }
 }
@@ -4143,7 +4097,6 @@ function syncStaticSnapshotContent() {
     { localPath: "/最新消息", sectionClass: "latest-news-page", content: latestNewsContent({}) },
     { localPath: BIRTHDAY_CAKE_PATH, sectionClass: "cake-page", content: birthdayCakeContent() },
     { localPath: "/產品介紹/伴手禮", sectionClass: "souvenir-page", content: storefrontCatalogContent("souvenir") },
-    { localPath: CATERING_PATH, sectionClass: "catering-page", content: cateringContent() },
     { localPath: TEA_PARTY_PATH, sectionClass: "tea-party-page", content: teaPartyContent() },
     { localPath: BOSTON_PIE_PATH, sectionClass: "boston-page", content: bostonPieContent() },
     { localPath: BIG_BEAR_PATH, sectionClass: "big-bear-page", content: bigBearContent() },
@@ -4453,6 +4406,7 @@ function main() {
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
     syncHomeSnapshotContent();
+    copyHomeFallback();
     rewriteHomeNewsLink();
     syncNewProductImageGalleries();
     rewriteStaticSnapshotNavigation();
@@ -4554,8 +4508,8 @@ function main() {
       isBeanTartProduct: localPath === BEAN_TART_PATH,
       isSouvenirProduct: SOUVENIR_PRODUCT_PATHS.has(localPath),
       heroCategoryLabel: SOUVENIR_PRODUCT_PATHS.has(localPath) ? "伴手禮" : CAKE_PRODUCT_CATEGORY_LABELS.get(localPath),
-      hasBrandedHero: BRANDED_HERO_PATHS.has(localPath) && localPath !== CATERING_PATH,
-      showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== CATERING_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/register" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
+      hasBrandedHero: BRANDED_HERO_PATHS.has(localPath),
+      showHero: localPath !== "/404-error" && localPath !== BIG_BEAR_PATH && localPath !== COUNTRY_CHEESE_PATH && localPath !== ROUND_PIE_PATH && localPath !== LONG_CAKE_PATH && localPath !== PAIRING_PATH && localPath !== THANK_YOU_CARD_PATH && localPath !== TEA_PARTY_PATH && localPath !== TASTE_APPLY_PATH && localPath !== "/聯絡我們" && localPath !== "/contact" && localPath !== "/checkout" && localPath !== "/customer" && localPath !== "/customer/admin" && localPath !== "/customer/admin/register" && localPath !== "/customer/admin/backup" && localPath !== "/cart" && localPath !== "/orders",
       heroSource: localPath === EMERALD_LYSK_PATH ? "/images/headtitle-bg3.jpg" : localPath === BIRTHDAY_CAKE_PATH ? "/images/headtitle-bg3.jpg" : localPath === BOSTON_PIE_PATH ? "/images/headtitle-bg8.jpg" : localPath === ONLINE_LONG_CAKE_PATH ? "/images/headtitle-bg2.jpg" : localPath === "/門市資訊" ? STORE_INFO_HERO_SOURCE : "/images/headtitle-bg2.jpg",
     }));
   }
