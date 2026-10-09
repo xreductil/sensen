@@ -734,7 +734,7 @@ const adminProductFromRow = (row: ProductRow) => {
   return {
     ...product,
     sku: String(metadata.sku || product.id),
-    spec: String(metadata.spec || product.size || ""),
+    spec: normalizeProductSpec(metadata.spec || product.size || ""),
     day: String(metadata.day || 5),
     img: String(metadata.img || product.img),
   };
@@ -744,6 +744,11 @@ const normalizeDietary = (value: unknown) => {
   if (value === true) return "蛋奶素";
   const normalized = String(value ?? "").trim();
   return ["蛋奶素", "奶蛋素"].includes(normalized) ? "蛋奶素" : "";
+};
+
+const normalizeProductSpec = (value: unknown) => {
+  const normalized = String(value ?? "").trim();
+  return ["原價", "特價", "不指定", "售價"].includes(normalized) ? "" : normalized;
 };
 
 const orderFromRow = (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
@@ -833,8 +838,8 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     img: images[0] || "",
     images,
     desc: description,
-    spec: String(metadata.spec || metadata.productSpec || ""),
-    size: String(metadata.size || metadata.productSize || ""),
+    spec: normalizeProductSpec(metadata.spec || metadata.productSpec || ""),
+    size: normalizeProductSpec(metadata.size || metadata.productSize || ""),
     storage: String(metadata.storage || metadata.storageMethod || ""),
     other: String(metadata.other || metadata.otherNotes || ""),
     emphasis: String(metadata.emphasis || ""),
