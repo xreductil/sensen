@@ -85,6 +85,7 @@
     const sizeOptions = {};
     const priceTypes = {};
     let defaultSize = '';
+    let defaultPriceType = '';
     for (const row of ensurePriceOptionsEditor()?.children || []) {
       const spec = row.querySelector('[data-create-price-spec]').value.trim();
       const priceType = row.querySelector('[data-create-price-type]').value.trim();
@@ -96,11 +97,14 @@
       if (spec) sizeOptions[spec] = normalizedValue;
       else if (priceType) priceTypes[priceType] = normalizedValue;
       else priceTypes['不指定'] = normalizedValue;
-      if (row.querySelector('[data-create-price-default]')?.checked) defaultSize = spec || priceType || '不指定';
+      if (row.querySelector('[data-create-price-default]')?.checked) {
+        if (spec) defaultSize = spec;
+        else defaultPriceType = priceType || '不指定';
+      }
     }
     if (!Object.keys(sizeOptions).length && !Object.keys(priceTypes).length) throw new Error('請至少新增一組規格售價。');
-    if (defaultSize === '' && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
-    return { sizeOptions, priceTypes, defaultSize };
+    if (!defaultSize && !defaultPriceType && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
+    return { sizeOptions, priceTypes, defaultSize, defaultPriceType };
   };
 
   ensurePriceOptionsEditor();
@@ -119,9 +123,13 @@
 
     try {
       if (!files.length) throw new Error('請至少選擇一張商品圖片。');
-      const { sizeOptions, priceTypes, defaultSize } = collectPriceOptions();
-      const defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : Object.keys(priceTypes)[0] || '';
-      document.getElementById('productPrice').value = priceTypes['特價'] ?? sizeOptions[defaultSize] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0];
+      const { sizeOptions, priceTypes, defaultSize, defaultPriceType } = collectPriceOptions();
+      const selectedDefaultPrice = defaultSize
+        ? sizeOptions[defaultSize]
+        : defaultPriceType
+          ? priceTypes[defaultPriceType]
+          : undefined;
+      document.getElementById('productPrice').value = selectedDefaultPrice ?? priceTypes['特價'] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0];
       document.getElementById('productSize').value = Object.keys(sizeOptions).join('、');
       status.textContent = `正在上傳 ${files.length} 張圖片…`;
       const imagePaths = [];

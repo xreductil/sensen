@@ -139,11 +139,13 @@
       rows.push([normalizedLabel, normalizedValue]);
     });
     if (!rows.length && !isTiered && salePrice > 0) rows.push(['不指定', salePrice]);
+    const configuredDefault = String(product?.variants?.defaultSize || product?.variants?.defaultPriceType || '').trim();
     return {
       originalPrice: isTiered ? originalPrice : Number(rows[0]?.[1] || salePrice || originalPrice || 0),
       salePrice: isTiered ? salePrice : Number(rows[0]?.[1] || salePrice || originalPrice || 0),
       isTiered,
       options: rows,
+      defaultOption: rows.find(([label]) => label === configuredDefault)?.[0] || rows[0]?.[0] || '',
     };
   }
 
@@ -208,6 +210,7 @@
     const priceTypes = {};
     const rows = [...(container?.querySelectorAll('.inventory-price-option') || [])];
     let defaultSize = '';
+    let defaultPriceType = '';
     for (const row of rows) {
       const spec = row.querySelector('[data-price-option-spec]').value.trim();
       const priceType = row.querySelector('[data-price-option-type]').value.trim();
@@ -218,11 +221,14 @@
       if (spec) sizeOptions[spec] = normalizedValue;
       else if (priceType) priceTypes[priceType] = normalizedValue;
       else priceTypes['不指定'] = normalizedValue;
-      if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = spec || priceType || '不指定';
+      if (row.querySelector('[data-price-option-default]')?.checked) {
+        if (spec) defaultSize = spec;
+        else defaultPriceType = priceType || '不指定';
+      }
     }
     if (!Object.keys(sizeOptions).length && !Object.keys(priceTypes).length) throw new Error('請至少新增一組規格售價。');
-    if (defaultSize === '' && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
-    return { sizeOptions, priceTypes, defaultSize };
+    if (!defaultSize && !defaultPriceType && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
+    return { sizeOptions, priceTypes, defaultSize, defaultPriceType };
   }
 
   function thumbnailSettings(product) {
@@ -394,7 +400,7 @@
     currentPage = Math.min(Math.max(1, currentPage), totalPages);
     const start = (currentPage - 1) * pageSize;
     const visible = filtered.slice(start, start + pageSize);
-    $('[data-sensen-table="inventory"]').innerHTML = visible.length ? visible.map(item => { const summary = productPriceSummary(item); const priceMarkup = summary.isTiered ? `<div><span class="text-secondary">原價</span> ${money(summary.originalPrice)}</div><div><span class="text-danger">特價</span> ${money(summary.salePrice)} <small class="text-secondary">預設</small></div>${summary.options.filter(([label]) => !['原價', '特價'].includes(label)).map(([label, value]) => `<small class="d-block text-secondary">${escapeHtml(label)}：${money(value)}</small>`).join('')}` : summary.options.map(([label, value]) => `<div><span class="text-secondary">${escapeHtml(label)}</span> ${money(value)}</div>`).join(''); return `<tr class="align-middle"><td><div class="d-flex align-items-center gap-3"><img src="${escapeHtml(item.img || '/images/admin/product-1.webp')}" alt="${escapeHtml(item.title)}" class="avatar avatar-md rounded object-fit-cover" style="width:48px;height:48px;" onerror="this.onerror=null;this.src='/images/admin/product-1.webp';"><div><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">${escapeHtml(item.day || '')} 天製作</small></div></div></td><td>${escapeHtml(item.sku || item.id)}</td><td>${escapeHtml(item.cat || '')}</td><td>${escapeHtml(displaySpec(item.spec) || '—')}</td><td>${priceMarkup}</td><td class="${Number(item.quantity || 0) < 10 ? 'text-danger fw-bold' : ''}">${Number(item.quantity || 0)}</td><td><span class="badge ${item.published === false ? 'text-bg-secondary' : 'text-bg-success'}">${item.published === false ? '下架' : '上架'}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary me-1" data-inventory-edit="${escapeHtml(item.id)}">編輯</button><button type="button" class="btn btn-sm btn-outline-secondary me-1" data-inventory-toggle="${escapeHtml(item.id)}">${item.published === false ? '上架' : '下架'}</button><button type="button" class="btn btn-sm btn-outline-danger" data-inventory-delete="${escapeHtml(item.id)}">刪除</button></td></tr>`; }).join('') : '<tr><td colspan="8" class="text-secondary py-4">沒有符合條件的商品。</td></tr>';
+    $('[data-sensen-table="inventory"]').innerHTML = visible.length ? visible.map(item => { const summary = productPriceSummary(item); const markDefault = label => label === summary.defaultOption ? ' <small class="text-secondary">預設</small>' : ''; const priceMarkup = summary.isTiered ? `<div><span class="text-secondary">原價</span> ${money(summary.originalPrice)}${markDefault('原價')}</div><div><span class="text-danger">特價</span> ${money(summary.salePrice)}${markDefault('特價')}</div>${summary.options.filter(([label]) => !['原價', '特價'].includes(label)).map(([label, value]) => `<small class="d-block text-secondary">${escapeHtml(label)}：${money(value)}${markDefault(label)}</small>`).join('')}` : summary.options.map(([label, value]) => `<div><span class="text-secondary">${escapeHtml(label)}</span> ${money(value)}${markDefault(label)}</div>`).join(''); return `<tr class="align-middle"><td><div class="d-flex align-items-center gap-3"><img src="${escapeHtml(item.img || '/images/admin/product-1.webp')}" alt="${escapeHtml(item.title)}" class="avatar avatar-md rounded object-fit-cover" style="width:48px;height:48px;" onerror="this.onerror=null;this.src='/images/admin/product-1.webp';"><div><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">${escapeHtml(item.day || '')} 天製作</small></div></div></td><td>${escapeHtml(item.sku || item.id)}</td><td>${escapeHtml(item.cat || '')}</td><td>${escapeHtml(displaySpec(item.spec) || '—')}</td><td>${priceMarkup}</td><td class="${Number(item.quantity || 0) < 10 ? 'text-danger fw-bold' : ''}">${Number(item.quantity || 0)}</td><td><span class="badge ${item.published === false ? 'text-bg-secondary' : 'text-bg-success'}">${item.published === false ? '下架' : '上架'}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary me-1" data-inventory-edit="${escapeHtml(item.id)}">編輯</button><button type="button" class="btn btn-sm btn-outline-secondary me-1" data-inventory-toggle="${escapeHtml(item.id)}">${item.published === false ? '上架' : '下架'}</button><button type="button" class="btn btn-sm btn-outline-danger" data-inventory-delete="${escapeHtml(item.id)}">刪除</button></td></tr>`; }).join('') : '<tr><td colspan="8" class="text-secondary py-4">沒有符合條件的商品。</td></tr>';
     const label = $('[data-inventory-page-label]');
     if (label) label.textContent = filtered.length ? `商品 ${start + 1}-${Math.min(start + pageSize, filtered.length)}／共 ${filtered.length} 項` : '商品 0-0／共 0 項';
     const pagination = $('[data-inventory-pagination]');
@@ -454,7 +460,7 @@
     form.elements.published.checked = product?.published !== false;
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
     if (dietaryInput) dietaryInput.checked = ['蛋奶素', '奶蛋素'].includes(String(product?.dietary || '').trim());
-    const defaultSize = String(product?.variants?.defaultPriceType || product?.variants?.defaultSize || '').trim() || summary.options.find(([, value]) => Number(value) === Number(summary.salePrice))?.[0] || summary.options[0]?.[0] || '';
+    const defaultSize = String(product?.variants?.defaultSize || product?.variants?.defaultPriceType || '').trim() || summary.options.find(([, value]) => Number(value) === Number(summary.salePrice))?.[0] || summary.options[0]?.[0] || '';
     const priceRows = product
       ? summary.options.length
         ? summary.options
@@ -488,12 +494,12 @@
     message.textContent = '';
     message.className = 'small';
     try {
-      const { sizeOptions, priceTypes, defaultSize } = collectPriceOptions();
+      const { sizeOptions, priceTypes, defaultSize, defaultPriceType } = collectPriceOptions();
       const flavorSettings = collectFlavorSettings();
       const variants = { ...(form._editingVariants || {}), sizes: sizeOptions, defaultSize };
       if (Object.keys(priceTypes).length) {
         variants.priceTypes = priceTypes;
-        variants.defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : Object.keys(priceTypes)[0] || '';
+        variants.defaultPriceType = defaultPriceType;
       } else {
         delete variants.priceTypes;
         delete variants.defaultPriceType;
@@ -505,7 +511,12 @@
         delete variants.flavors;
         delete variants.flavorCount;
       }
-      data.priceValue = Number(priceTypes['特價'] ?? sizeOptions[defaultSize] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0]);
+      const selectedDefaultPrice = defaultSize
+        ? sizeOptions[defaultSize]
+        : defaultPriceType
+          ? priceTypes[defaultPriceType]
+          : undefined;
+      data.priceValue = Number(selectedDefaultPrice ?? priceTypes['特價'] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0]);
       data.originalPrice = Number(priceTypes['原價'] ?? data.originalPrice ?? data.priceValue);
       data.spec = Object.keys(sizeOptions).join('、');
       data.size = data.spec;

@@ -898,8 +898,13 @@ const productVariant = (product: StoreProduct, options: Record<string, unknown> 
   const sizes = productSizeOptions(product);
   const labels = Object.keys(sizes);
   if (!labels.length) return null;
-  const size = labels.includes(String(options.size || "")) ? String(options.size) : labels[0];
   const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const configuredDefaultSize = String(variants.defaultSize || "").trim();
+  const size = labels.includes(String(options.size || ""))
+    ? String(options.size)
+    : labels.includes(configuredDefaultSize)
+      ? configuredDefaultSize
+      : labels[0];
   const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length
     ? variants.temperatures.map(value => String(value).trim()).filter(Boolean)
     : ["冷"];
