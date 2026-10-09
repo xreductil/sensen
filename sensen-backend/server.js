@@ -513,9 +513,10 @@ function productsFromData() {
     .filter(filePath => fs.existsSync(filePath))
     .flatMap(filePath => JSON.parse(fs.readFileSync(filePath, 'utf8')));
   return products.map(product => {
-    const priceValue = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
+    const priceTypes = product.variants?.priceTypes && typeof product.variants.priceTypes === 'object' ? product.variants.priceTypes : {};
+    const priceValue = Number(product.priceValue || priceTypes['特價'] || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
     const productId = product.id || slug(product.title);
-    const originalPrice = Number(product.originalPrice ?? product.priceOriginal ?? TOP_HOUSE_ORIGINAL_PRICE_BY_ID.get(productId) ?? priceValue) || 0;
+    const originalPrice = Number(product.originalPrice ?? product.priceOriginal ?? priceTypes['原價'] ?? TOP_HOUSE_ORIGINAL_PRICE_BY_ID.get(productId) ?? priceValue) || 0;
     const normalized = {
       ...product,
       img: normalizeProductImage(product.img),
@@ -616,8 +617,9 @@ function productsWithOverrides(db) {
     const merged = { ...product, ...edited, id: product.id };
     merged.url = merged.url || '/product-item/' + encodeURIComponent(merged.id) + '/';
     merged.img = normalizeProductImage(merged.img);
-    merged.priceValue = Number(merged.priceValue || String(merged.price || '').replace(/[^0-9.]/g, '')) || 0;
-    merged.originalPrice = Number(merged.originalPrice ?? merged.priceOriginal ?? merged.priceValue) || 0;
+    const priceTypes = merged.variants?.priceTypes && typeof merged.variants.priceTypes === 'object' ? merged.variants.priceTypes : {};
+    merged.priceValue = Number(merged.priceValue || priceTypes['特價'] || String(merged.price || '').replace(/[^0-9.]/g, '')) || 0;
+    merged.originalPrice = Number(merged.originalPrice ?? merged.priceOriginal ?? priceTypes['原價'] ?? merged.priceValue) || 0;
     merged.price = merged.price || ('$' + merged.priceValue.toFixed(2));
     if (merged.variants || merged.priceOptions) {
       merged.variants = normalizeProductVariants(merged.variants || { sizes: merged.priceOptions }, merged.priceValue);
