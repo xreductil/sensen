@@ -128,6 +128,47 @@ type ProductRow = {
   cart_selected_options_json?: string | null;
 };
 
+// Existing top-house products were created before original/sale prices were
+// stored in metadata. Keep their established original prices available until
+// each product is saved from the admin editor.
+const TOP_HOUSE_ORIGINAL_PRICE_BY_ID: Record<string, number> = {
+  "top-house-boston-classic": 520,
+  "top-house-pa1-boston-gift": 635,
+  "top-house-pa2-boston-gift": 690,
+  "top-house-pa3-boston-gift": 685,
+  "top-house-pa4-boston-gift": 880,
+  "top-house-c1-big-bear": 835,
+  "top-house-c2-big-bear": 670,
+  "top-house-c3-big-bear": 875,
+  "top-house-c4-big-bear": 785,
+  "top-house-b1-little-bear": 720,
+  "top-house-b2-little-bear": 530,
+  "top-house-b3-little-bear": 475,
+  "top-house-b4-little-bear": 515,
+  "top-house-l1-country-cheese": 1145,
+  "top-house-l2-country-cheese": 1355,
+  "top-house-l3-country-cheese": 1000,
+  "top-house-k1-creme-brulee": 760,
+  "top-house-k2-pistachio-marble": 760,
+  "top-house-k3-cheesecake": 760,
+  "top-house-k4-light-cheesecake": 670,
+  "top-house-k5-belgian-chocolate": 670,
+  "top-house-k6-lemon-cheesecake": 670,
+  "top-house-a1-strawberry-marble": 360,
+  "top-house-a2-honey-cake": 360,
+  "top-house-a3-blueberry-angel": 360,
+  "top-house-a4-lemon-love": 360,
+  "top-house-a5-classic-chocolate": 360,
+  "top-house-a6-left-bank-coffee-roll": 580,
+  "top-house-a7-vanilla-napoleon": 580,
+  "top-house-a7-chocolate-napoleon": 580,
+  "top-house-a8-earl-grey-roll": 580,
+  "top-house-a9-mocha-chocolate": 580,
+  "top-house-a10-violet": 580,
+  "top-house-a11-japanese-layer": 580,
+  "top-house-a12-osmanthus-oolong": 580,
+};
+
 type StoreProduct = {
   id: string;
   title: string;
@@ -135,6 +176,7 @@ type StoreProduct = {
   cat: string;
   price: string;
   priceValue: number;
+  originalPrice: number;
   priceOptions: Record<string, number>;
   quantity: number;
   day: string;
@@ -745,6 +787,16 @@ const productFromRow = (row: ProductRow): StoreProduct => {
   const variants = metadata.variants && typeof metadata.variants === "object" && !Array.isArray(metadata.variants)
     ? metadata.variants as Record<string, unknown>
     : {};
+  const priceTypes = variants.priceTypes && typeof variants.priceTypes === "object" && !Array.isArray(variants.priceTypes)
+    ? variants.priceTypes as Record<string, unknown>
+    : {};
+  const originalPrice = Number(
+    metadata.originalPrice
+      ?? metadata.priceOriginal
+      ?? priceTypes["原價"]
+      ?? TOP_HOUSE_ORIGINAL_PRICE_BY_ID[row.slug]
+      ?? priceValue,
+  ) || priceValue;
   const priceOptions = metadata.priceOptions && typeof metadata.priceOptions === "object" && !Array.isArray(metadata.priceOptions)
     ? Object.fromEntries(Object.entries(metadata.priceOptions).reduce<Array<[string, number]>>((entries, [size, value]) => {
       const amount = Number(value);
@@ -759,6 +811,7 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     cat: row.category || String(metadata.cat || "未分類"),
     price: `$${priceValue.toFixed(2)}`,
     priceValue,
+    originalPrice,
     priceOptions,
     quantity: Math.max(0, Number(row.stock || 0)),
     day: String(metadata.day || 5),
@@ -863,6 +916,27 @@ const productVariant = (product: StoreProduct, options: Record<string, unknown> 
   };
 };
 
+const productPriceForQuantity = (product: StoreProduct, quantity: number, basePrice = product.priceValue) => {
+  const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const priceTypes = variants.priceTypes && typeof variants.priceTypes === "object" && !Array.isArray(variants.priceTypes)
+    ? variants.priceTypes as Record<string, unknown>
+    : {};
+  const originalPrice = Number(priceTypes["原價"] ?? product.originalPrice ?? basePrice) || 0;
+  const salePrice = Number(priceTypes["特價"] ?? product.priceValue ?? basePrice) || 0;
+  const hasTieredPrice = originalPrice > salePrice && salePrice > 0;
+  const currentQuantity = Math.max(1, Number(quantity || 1));
+  const useSalePrice = hasTieredPrice && currentQuantity >= 30;
+  const priceValue = hasTieredPrice
+    ? (useSalePrice ? salePrice : originalPrice)
+    : Number(basePrice || salePrice || originalPrice) || 0;
+  return {
+    originalPrice: hasTieredPrice ? originalPrice : priceValue,
+    salePrice: hasTieredPrice ? salePrice : priceValue,
+    priceValue,
+    priceMode: useSalePrice ? "特價" : "原價",
+  };
+};
+
 const variantKey = (variant: ReturnType<typeof productVariant>) => variant
   ? encodeURIComponent([variant.flavor, variant.size, variant.temperature, variant.sugar].filter(Boolean).join("|"))
   : "";
@@ -955,15 +1029,20 @@ const cartSummary = async (env: Env, guestId: string) => {
     const options = parseJson<Record<string, unknown>>(row.cart_selected_options_json, {});
     const variant = productVariant(product, options);
     const key = String(row.cart_variant_key || variantKey(variant));
+    const qty = Math.max(1, Number(row.cart_quantity || 1));
+    const pricing = productPriceForQuantity(product, qty, variant?.priceValue ?? product.priceValue);
     return {
       ...product,
       id: key ? `${product.id}::${key}` : product.id,
       productId: product.id,
       title: variantTitle(product.title, variant),
-      price: variant ? `$${variant.priceValue.toFixed(2)}` : product.price,
-      priceValue: variant?.priceValue ?? product.priceValue,
+      price: `$${pricing.priceValue.toFixed(2)}`,
+      priceValue: pricing.priceValue,
+      originalPrice: pricing.originalPrice,
+      salePrice: pricing.salePrice,
+      priceMode: pricing.priceMode,
       selectedOptions: variant ? { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
-      qty: Math.max(1, Number(row.cart_quantity || 1)),
+      qty,
     };
   });
   const subtotal = items.reduce((sum, item) => sum + item.priceValue * item.qty, 0);
@@ -1297,9 +1376,31 @@ export default {
             : null;
           if (request.method === "PATCH" && !existing) return json(request, { error: "找不到商品。" }, 404);
           const existingMetadata = parseJson<Record<string, unknown>>(existing?.metadata_json, {});
+          const existingVariants = existingMetadata.variants && typeof existingMetadata.variants === "object" && !Array.isArray(existingMetadata.variants)
+            ? existingMetadata.variants as Record<string, unknown>
+            : {};
+          const submittedVariants = body.variants && typeof body.variants === "object" && !Array.isArray(body.variants)
+            ? body.variants as Record<string, unknown>
+            : {};
+          const existingPriceTypes = existingVariants.priceTypes && typeof existingVariants.priceTypes === "object" && !Array.isArray(existingVariants.priceTypes)
+            ? existingVariants.priceTypes as Record<string, unknown>
+            : {};
+          const submittedPriceTypes = submittedVariants.priceTypes && typeof submittedVariants.priceTypes === "object" && !Array.isArray(submittedVariants.priceTypes)
+            ? submittedVariants.priceTypes as Record<string, unknown>
+            : {};
           const title = String(body.title ?? existing?.title ?? "").trim();
           const categoryName = String(body.cat ?? existing?.category ?? "未分類").trim();
-          const price = Math.max(0, Math.round(Number(body.priceValue ?? body.price ?? existing?.price ?? 0)));
+          const price = Math.max(0, Math.round(Number(body.priceValue ?? body.price ?? submittedPriceTypes["特價"] ?? existing?.price ?? 0)));
+          const originalPrice = Math.max(0, Math.round(Number(
+            body.originalPrice
+              ?? body.priceOriginal
+              ?? submittedPriceTypes["原價"]
+              ?? existingMetadata.originalPrice
+              ?? existingMetadata.priceOriginal
+              ?? existingPriceTypes["原價"]
+              ?? (existing?.slug ? TOP_HOUSE_ORIGINAL_PRICE_BY_ID[existing.slug] : undefined)
+              ?? price,
+          )));
           const stock = Math.max(0, Math.round(Number(body.quantity ?? existing?.stock ?? 0)));
           const published = body.published !== undefined
             ? body.published !== false
@@ -1314,7 +1415,7 @@ export default {
             ? normalizeDietary(existingMetadata.dietary ?? existingMetadata.dietaryLabel)
             : normalizeDietary(body.dietary);
           if (!title) return json(request, { error: "商品名稱不可為空白。" }, 400);
-          if (!Number.isFinite(price) || !Number.isFinite(stock)) return json(request, { error: "售價或庫存格式錯誤。" }, 400);
+          if (!Number.isFinite(price) || !Number.isFinite(originalPrice) || !Number.isFinite(stock)) return json(request, { error: "售價或庫存格式錯誤。" }, 400);
 
           let category = await env.DB.prepare("SELECT id FROM categories WHERE name = ?1 OR slug = ?1 LIMIT 1").bind(categoryName).first<{ id: number }>();
           if (!category) {
@@ -1339,6 +1440,8 @@ export default {
             dietary,
             day: String(body.day ?? existingMetadata.day ?? "5").trim(),
             img: imageValue,
+            priceValue: price,
+            originalPrice,
             thumbnail: normalizeThumbnailSettings(body.thumbnail ?? existingMetadata.thumbnail),
             ...(body.variants !== undefined ? { variants: body.variants } : {}),
           });
