@@ -555,12 +555,18 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
   const flavors = Array.isArray(variants.flavors) && variants.flavors.length
     ? variants.flavors.map(item => String(item).trim()).filter(Boolean)
     : [];
+  const normalizedSizes = Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 };
+  const requestedDefaultSize = String(variants.defaultSize || '').trim();
+  const defaultSize = Object.prototype.hasOwnProperty.call(normalizedSizes, requestedDefaultSize)
+    ? requestedDefaultSize
+    : Object.keys(normalizedSizes)[0];
   return {
     flavors: [...new Set(flavors)],
     flavorCount: Math.max(0, Number(variants.flavorCount || 0)),
     temperatures: temperatures.length ? [...new Set(temperatures)] : ['冷'],
     sugars: sugars.length ? [...new Set(sugars)] : ['正常甜'],
-    sizes: Object.keys(sizes).length ? sizes : { '單杯': Number(fallbackPrice) || 0 },
+    sizes: normalizedSizes,
+    defaultSize,
     ...(variants.flavorImages && typeof variants.flavorImages === 'object' && !Array.isArray(variants.flavorImages)
       ? { flavorImages: Object.fromEntries(Object.entries(variants.flavorImages).map(([flavor, image]) => [String(flavor).trim(), Array.isArray(image) ? image.map(item => String(item).trim()).filter(Boolean) : String(image || '').trim()]).filter(([flavor, image]) => flavor && (Array.isArray(image) ? image.length : image))) }
       : {})
@@ -650,7 +656,8 @@ function productVariant(product, options = {}) {
   if (!product.variants) return null;
   const variants = normalizeProductVariants(product.variants, product.priceValue);
   const sizeLabels = Object.keys(variants.sizes);
-  const size = sizeLabels.includes(String(options.size || '')) ? String(options.size) : sizeLabels[0];
+  const requestedSize = String(options.size || '').trim();
+  const size = sizeLabels.includes(requestedSize) ? requestedSize : variants.defaultSize;
   const requestedFlavors = Array.isArray(options.flavors)
     ? options.flavors.map(item => String(item).trim()).filter(item => variants.flavors.includes(item))
     : variants.flavors.includes(String(options.flavor || '')) ? [String(options.flavor)] : [];

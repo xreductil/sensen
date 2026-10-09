@@ -122,36 +122,50 @@
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'col-12';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580；請勾選一組作為預設價格。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
     (categoryColumn || priceColumn).insertAdjacentElement('afterend', field);
     field.querySelector('[data-inventory-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-inventory-price-options]');
   }
 
-  function addPriceOptionRow(option = {}) {
+  function ensureDefaultPriceOption() {
+    const container = ensurePriceOptionsEditor();
+    const rows = [...(container?.querySelectorAll('.inventory-price-option') || [])];
+    if (rows.length && !rows.some(row => row.querySelector('[data-price-option-default]')?.checked)) {
+      rows[0].querySelector('[data-price-option-default]').checked = true;
+    }
+  }
+
+  function addPriceOptionRow(option = {}, isDefault = false) {
     const container = ensurePriceOptionsEditor();
     if (!container) return;
     const row = document.createElement('div');
     row.className = 'row g-2 align-items-end mb-2 inventory-price-option';
-    row.innerHTML = `<div class="col-sm-5"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-label placeholder="例如：6 吋"></label></div><div class="col-sm-5"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
+    row.innerHTML = `<div class="col-sm-2"><label class="form-label small mb-1 d-block">預設<input class="form-check-input ms-2" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-label placeholder="例如：6 吋"></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
     row.querySelector('[data-price-option-label]').value = option[0] || '';
     row.querySelector('[data-price-option-value]').value = option[1] ?? '';
-    row.querySelector('[data-remove-price-option]').addEventListener('click', () => row.remove());
+    row.querySelector('[data-price-option-default]').checked = isDefault;
+    row.querySelector('[data-remove-price-option]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
     container.append(row);
+    ensureDefaultPriceOption();
   }
 
   function collectPriceOptions() {
     const container = ensurePriceOptionsEditor();
     const sizes = {};
-    for (const row of container?.querySelectorAll('.inventory-price-option') || []) {
+    const rows = [...(container?.querySelectorAll('.inventory-price-option') || [])];
+    let defaultSize = '';
+    for (const row of rows) {
       const label = row.querySelector('[data-price-option-label]').value.trim();
       const value = Number(row.querySelector('[data-price-option-value]').value);
       if (!label && !row.querySelector('[data-price-option-value]').value) continue;
       if (!label || !Number.isFinite(value) || value <= 0) throw new Error('每組規格售價都需要填寫名稱與有效價格。');
       if (sizes[label]) throw new Error(`規格「${label}」不可重複。`);
       sizes[label] = Number(value.toFixed(2));
+      if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = label;
     }
-    return sizes;
+    if (Object.keys(sizes).length && !defaultSize) throw new Error('請勾選一組預設價格。');
+    return { sizes, defaultSize };
   }
 
   function thumbnailSettings(product) {
@@ -374,7 +388,8 @@
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
     if (dietaryInput) dietaryInput.checked = ['蛋奶素', '奶蛋素'].includes(String(product?.dietary || '').trim());
     const options = productPriceOptions(product);
-    (options.length ? options : product ? [[product.spec || product.size || '預設', product.priceValue]] : [[]]).forEach(option => addPriceOptionRow(option));
+    const defaultSize = String(product?.variants?.defaultSize || '').trim() || options.find(([, value]) => Number(value) === Number(product?.priceValue))?.[0] || options[0]?.[0] || '';
+    (options.length ? options : product ? [[product.spec || product.size || '預設', product.priceValue]] : [[]]).forEach(option => addPriceOptionRow(option, option[0] === defaultSize));
     $('#inventory-product-message').textContent = '';
     dialog.showModal();
   }
@@ -399,10 +414,10 @@
     message.textContent = '';
     message.className = 'small';
     try {
-      const sizes = collectPriceOptions();
+      const { sizes, defaultSize } = collectPriceOptions();
       if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
       const flavorSettings = collectFlavorSettings();
-      const variants = { ...(form._editingVariants || {}), sizes };
+      const variants = { ...(form._editingVariants || {}), sizes, defaultSize };
       if (flavorSettings.flavors.length) {
         variants.flavors = flavorSettings.flavors;
         variants.flavorCount = flavorSettings.flavorCount;
@@ -410,7 +425,7 @@
         delete variants.flavors;
         delete variants.flavorCount;
       }
-      data.priceValue = Number(Object.values(sizes)[0]);
+      data.priceValue = Number(sizes[defaultSize] ?? Object.values(sizes)[0]);
       data.originalPrice = Number(data.originalPrice || data.priceValue);
       data.spec = Object.keys(sizes).join('、');
       data.size = data.spec;

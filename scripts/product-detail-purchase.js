@@ -389,7 +389,8 @@
     const imageOptions = flavorImages(product);
     const flavorCount = Number(product.variants?.flavorCount || 0);
     let flavorHasBeenChanged = false;
-    let selectedSize = options[0]?.[0] || '';
+    const configuredDefaultSize = String(product.variants?.defaultSize || '').trim();
+    let selectedSize = options.some(([size]) => size === configuredDefaultSize) ? configuredDefaultSize : (options[0]?.[0] || '');
     let selectedFlavors = flavorCount > 1 ? [] : (flavors[0] ? [flavors[0]] : []);
     const selectedFlavor = () => selectedFlavors.join('、');
     const flavorPrices = product.variants?.flavorPrices && typeof product.variants.flavorPrices === 'object' && !Array.isArray(product.variants.flavorPrices)
@@ -421,7 +422,7 @@
     section.className = 'product-detail-purchase';
     section.setAttribute('aria-label', hasDirectCart ? '商品購買' : '訂購資訊');
     const sizeMarkup = options.length > 1
-      ? `<div class="product-detail-size-options"><span class="product-detail-size-options-label">商品尺寸</span><div class="product-detail-size-options-list" role="group" aria-label="選擇商品尺寸">${options.map(([size, value], index) => `<button class="product-detail-size-option${index === 0 ? ' is-selected' : ''}" type="button" data-product-size="${escapeHtml(size)}" aria-pressed="${index === 0 ? 'true' : 'false'}">${escapeHtml(size)}<span>${money(value)}</span></button>`).join('')}</div></div>`
+      ? `<div class="product-detail-size-options"><span class="product-detail-size-options-label">商品尺寸</span><div class="product-detail-size-options-list" role="group" aria-label="選擇商品尺寸">${options.map(([size, value]) => { const selected = size === selectedSize; return `<button class="product-detail-size-option${selected ? ' is-selected' : ''}" type="button" data-product-size="${escapeHtml(size)}" aria-pressed="${selected ? 'true' : 'false'}">${escapeHtml(size)}<span>${money(value)}</span></button>`; }).join('')}</div></div>`
       : '';
     const flavorMarkup = flavors.length
       ? `<fieldset class="product-detail-flavor-options"><legend>${flavorCount > 1 ? `口味選擇（任選${flavorCount}種）` : '口味選擇'}</legend><div class="product-detail-flavor-list" role="group" aria-label="選擇商品口味">${flavors.map(flavor => `<button class="product-detail-flavor-option${selectedFlavors.includes(flavor) ? ' is-selected' : ''}" type="button" data-product-flavor="${escapeHtml(flavor)}" aria-pressed="${selectedFlavors.includes(flavor) ? 'true' : 'false'}">${escapeHtml(flavor)}</button>`).join('')}</div></fieldset>`

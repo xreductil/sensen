@@ -399,8 +399,7 @@ function topHouseProductCardMarkup([title, image, price, id], className = "", de
   const displayTitle = details.title || title;
   const displayDescription = details.description || description;
   const originalPrice = Number(details.originalPrice || price);
-  const priceLabel = details.originalPrice && originalPrice > Number(price) ? "原價 " : "";
-  const priceMarkup = `<span class="cake-product-price">${escapeHtml(`${priceLabel}${formatProductPrice(originalPrice)}`)}</span>`;
+  const priceMarkup = `<span class="cake-product-price">${escapeHtml(formatProductPrice(originalPrice))}</span>`;
   const descriptionMarkup = displayDescription ? `<span class="cake-product-description">${escapeHtml(displayDescription)}</span>` : "";
   const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id) : "";
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">

@@ -48,26 +48,36 @@
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'mb-3';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580；請勾選一組作為預設價格。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
     (categoryBlock || priceRow).insertAdjacentElement('afterend', field);
     field.querySelector('[data-create-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-create-price-options]');
   };
 
-  const addPriceOptionRow = (option = {}) => {
+  const ensureDefaultPriceOption = () => {
+    const rows = [...(ensurePriceOptionsEditor()?.children || [])];
+    if (rows.length && !rows.some(row => row.querySelector('[data-create-price-default]')?.checked)) {
+      rows[0].querySelector('[data-create-price-default]').checked = true;
+    }
+  };
+
+  const addPriceOptionRow = (option = {}, isDefault = false) => {
     const container = ensurePriceOptionsEditor();
     if (!container) return;
     const row = document.createElement('div');
     row.className = 'row g-2 align-items-end mb-2';
-    row.innerHTML = '<div class="col-sm-5"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-create-price-label placeholder="例如：6 吋"></label></div><div class="col-sm-5"><label class="form-label small mb-1">售價<input class="form-control" data-create-price-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-create-remove-price>移除</button></div>';
+    row.innerHTML = '<div class="col-sm-2"><label class="form-label small mb-1 d-block">預設<input class="form-check-input ms-2" data-create-price-default type="radio" name="createDefaultPrice" aria-label="設為預設價格"></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-create-price-label placeholder="例如：6 吋"></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-create-price-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-create-remove-price>移除</button></div>';
     row.querySelector('[data-create-price-label]').value = option[0] || '';
     row.querySelector('[data-create-price-value]').value = option[1] ?? '';
-    row.querySelector('[data-create-remove-price]').addEventListener('click', () => row.remove());
+    row.querySelector('[data-create-price-default]').checked = isDefault;
+    row.querySelector('[data-create-remove-price]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
     container.append(row);
+    ensureDefaultPriceOption();
   };
 
   const collectPriceOptions = () => {
     const sizes = {};
+    let defaultSize = '';
     for (const row of ensurePriceOptionsEditor()?.children || []) {
       const label = row.querySelector('[data-create-price-label]').value.trim();
       const rawValue = row.querySelector('[data-create-price-value]').value;
@@ -76,8 +86,10 @@
       if (!label || !Number.isFinite(price) || price <= 0) throw new Error('每組規格售價都需要填寫名稱與有效價格。');
       if (sizes[label]) throw new Error(`規格「${label}」不可重複。`);
       sizes[label] = Number(price.toFixed(2));
+      if (row.querySelector('[data-create-price-default]')?.checked) defaultSize = label;
     }
-    return sizes;
+    if (Object.keys(sizes).length && !defaultSize) throw new Error('請勾選一組預設價格。');
+    return { sizes, defaultSize };
   };
 
   ensurePriceOptionsEditor();
@@ -96,9 +108,9 @@
 
     try {
       if (!files.length) throw new Error('請至少選擇一張商品圖片。');
-      const sizes = collectPriceOptions();
+      const { sizes, defaultSize } = collectPriceOptions();
       if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
-      document.getElementById('productPrice').value = Object.values(sizes)[0];
+      document.getElementById('productPrice').value = sizes[defaultSize] ?? Object.values(sizes)[0];
       document.getElementById('productSize').value = Object.keys(sizes).join('、');
       status.textContent = `正在上傳 ${files.length} 張圖片…`;
       const imagePaths = [];
@@ -124,7 +136,7 @@
           storage: value('productStorage'),
           other: value('productOther'),
           published: true,
-          variants: Object.keys(sizes).length ? { sizes } : null,
+          variants: Object.keys(sizes).length ? { sizes, defaultSize } : null,
         }),
       });
       const data = await response.json().catch(() => ({}));
