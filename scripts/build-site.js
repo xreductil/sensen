@@ -24,7 +24,7 @@ const WORDPRESS_EXPORT_FILES = [
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20261009-announcement-1";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261009-price-sync-1";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-top-house-price-toggle-2";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-top-house-price-toggle-3";
 const CART_DRAWER_SCRIPT_URL = "/assets/cart-drawer.js?v=20261009-tiered-price-1";
 const CHECKOUT_SCRIPT_URL = "/assets/checkout-page.js?v=20261009-tiered-price-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
@@ -586,7 +586,7 @@ const EMERALD_LYSK_PATH = "/product-item/綠寶石萊思克季節限定-1870";
 const BEAN_TART_PATH = "/product-item/豆塔禮盒";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
-const TEA_PARTY_MENU_URL = "https://docs.google.com/spreadsheets/d/1VC55JlLWInSVZedy83H81pEhQEspFYr0/edit?gid=1715716833#gid=1715716833";
+const TEA_PARTY_MENU_URL = "https://drive.google.com/file/d/1jnpC9z_6F_sbyKZ2E7fHbJtQWwcqwIUS/view?usp=sharing";
 const STORE_INFO_HERO_SOURCE = "/images/headtitle-bg6.jpg";
 const BIRTHDAY_CAKE_PAGE_TITLE = "蛋糕 (下方有DM供下載)";
 

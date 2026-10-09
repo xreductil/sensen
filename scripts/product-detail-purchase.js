@@ -123,7 +123,7 @@
     if (original > amount && amount > 0) {
       return showSale
         ? `<span class="product-detail-original-price">原價 ${money(original)}</span><strong class="product-detail-sale-price">特價 ${money(amount)}</strong>`
-        : `<strong class="product-detail-current-price">原價 ${money(original)}</strong>`;
+        : `<strong class="product-detail-current-price">原價 ${money(original)}</strong><span class="product-detail-sale-price is-inactive">特價 ${money(amount)}</span>`;
     }
     return money(amount);
   };

@@ -2020,6 +2020,13 @@ body.site-search-open { overflow: hidden; }
   font: inherit;
 }
 
+.product-detail-sale-price.is-inactive {
+  color: #a28e7a;
+  font-size: .62em;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
 .product-detail-current-price {
   color: inherit;
   font: inherit;
