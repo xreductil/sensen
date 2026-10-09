@@ -1,6 +1,64 @@
 (() => {
+  const legacyCards = [...document.querySelectorAll('.top-house-product-card')];
+  const formatPrice = value => {
+    const amount = Number(value || 0);
+    return amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
+  };
+  const legacyProductId = card => {
+    const href = card.querySelector('a[href*="/商品/"]')?.getAttribute('href') || '';
+    const parts = href.split('/').filter(Boolean);
+    return parts[parts.length - 1] || '';
+  };
+  const syncLegacyPrices = async () => {
+    if (!legacyCards.length) return;
+    try {
+      const response = await fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || '商品價格暫時無法載入。');
+      const products = new Map((Array.isArray(data.products) ? data.products : []).map(product => [product.id, product]));
+      legacyCards.forEach(card => {
+        const id = legacyProductId(card);
+        const product = products.get(id);
+        if (!product) return;
+        // 頂家彌月分類卡片維持顯示原價；詳細頁與購物車會依數量套用特價。
+        const value = id.startsWith('top-house-') ? (product.originalPrice || product.priceValue) : product.priceValue;
+        const price = card.querySelector('.cake-product-price');
+        if (price) price.textContent = formatPrice(value);
+      });
+    } catch (error) {
+      console.warn(error);
+    }
+  };
+
   const root = document.querySelector('[data-storefront-catalog]');
-  if (!root) return;
+  if (!root) {
+    if (!legacyCards.length) return;
+    let refreshTimer = null;
+    const requestLegacyRefresh = () => {
+      if (refreshTimer) window.clearTimeout(refreshTimer);
+      refreshTimer = window.setTimeout(() => {
+        refreshTimer = null;
+        syncLegacyPrices();
+      }, 80);
+    };
+    window.addEventListener('storage', event => {
+      if (event.key === 'sensen-products-updated') requestLegacyRefresh();
+    });
+    if (typeof BroadcastChannel !== 'undefined') {
+      const productUpdateChannel = new BroadcastChannel('sensen-products-updated');
+      productUpdateChannel.addEventListener('message', requestLegacyRefresh);
+    }
+    window.addEventListener('focus', requestLegacyRefresh);
+    window.addEventListener('pageshow', requestLegacyRefresh);
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') requestLegacyRefresh();
+    });
+    window.setInterval(() => {
+      if (document.visibilityState === 'visible') syncLegacyPrices();
+    }, 3000);
+    syncLegacyPrices();
+    return;
+  }
 
   const content = root.querySelector('[data-storefront-catalog-content]');
   const status = root.querySelector('[data-storefront-catalog-status]');

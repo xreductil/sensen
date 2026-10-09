@@ -23,8 +23,8 @@ const WORDPRESS_EXPORT_FILES = [
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20261009-announcement-1";
-const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261001-product-sort-1";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-top-house-price-toggle-1";
+const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261009-price-sync-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-top-house-price-toggle-2";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -1780,7 +1780,10 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   const topHousePurchaseScript = TOP_HOUSE_PAGE_PATHS.has(pathLabel)
     ? '<script src="/assets/top-house-purchase.js"></script>'
     : '';
-  const purchaseScripts = [productPurchaseScript, topHousePurchaseScript].filter(Boolean).join('\n  ');
+  const topHousePriceSyncScript = TOP_HOUSE_PAGE_PATHS.has(pathLabel)
+    ? `<script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`
+    : '';
+  const purchaseScripts = [productPurchaseScript, topHousePurchaseScript, topHousePriceSyncScript].filter(Boolean).join('\n  ');
   const productSearchPathMap = storefrontProductPathMap({ includeTopHouseProducts: true });
   const productSearchMarkup = `<div class="site-search-overlay" data-site-search data-site-search-paths="${escapeAttr(JSON.stringify(productSearchPathMap))}" hidden><div class="site-search-panel" role="dialog" aria-modal="true" aria-labelledby="site-search-title"><button class="site-search-close" type="button" data-site-search-close aria-label="關閉找商品">×</button><form class="site-search-form" data-site-search-form><label id="site-search-title" for="site-search-input">找商品</label><div class="site-search-input-row"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"></circle><path d="m16 16 5 5"></path></svg><input id="site-search-input" data-site-search-input type="search" placeholder="輸入商品名稱" autocomplete="off"></div></form><p class="site-search-hint">輸入商品名稱，快速找到想要的商品。</p><div class="site-search-results" data-site-search-results><p class="site-search-empty">輸入商品名稱開始搜尋。</p></div></div></div>`;
   const productSearchScript = `<script>
@@ -4151,6 +4154,9 @@ function syncStaticSnapshotContent() {
       }
     }
     updated = updated.replace(/\/assets\/storefront-products\.js(?:\?[^"']*)?/g, STOREFRONT_PRODUCTS_SCRIPT_URL);
+    if (TOP_HOUSE_PAGE_PATHS.has(page.localPath) && !updated.includes('/assets/storefront-products.js')) {
+      updated = updated.replace('</body>', `  <script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>\n</body>`);
+    }
     if (TOP_HOUSE_PAGE_PATHS.has(page.localPath) && !updated.includes('/assets/top-house-purchase.js')) {
       updated = updated.replace('</body>', '  <script src="/assets/top-house-purchase.js"></script>\n</body>');
     }
