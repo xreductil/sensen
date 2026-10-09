@@ -429,7 +429,7 @@
       : '';
     const purchaseLabel = inStock() ? '加入購物車' : (flavorCount > 1 ? `請選擇${flavorCount}種口味` : '暫停供應');
     const saleToggleMarkup = hasSalePrice()
-      ? '<button class="product-detail-sale-toggle" type="button" data-product-sale-toggle aria-pressed="false" aria-label="顯示30盒以上優惠價">顯示特價</button>'
+      ? '<button class="product-detail-sale-toggle" type="button" data-product-sale-toggle aria-pressed="false" aria-label="訂購滿30盒以上享有特價優惠">訂購滿30盒以上享有特價優惠</button>'
       : '';
     const purchaseMarkup = isCakeDetail && !hasDirectCart
       ? '<div class="cake-product-purchase"><button class="product-order-info-button cake-add-cart" type="button" data-product-order-info>訂購資訊</button></div>'
@@ -446,7 +446,8 @@
       if (saleToggle) {
         saleToggle.hidden = !hasSalePrice();
         saleToggle.setAttribute('aria-pressed', String(showSale));
-        saleToggle.textContent = showSale ? '顯示原價' : '顯示特價';
+        saleToggle.textContent = '訂購滿30盒以上享有特價優惠';
+        saleToggle.setAttribute('aria-label', showSale ? '返回原價' : '訂購滿30盒以上享有特價優惠');
       }
       section.querySelectorAll('[data-product-size]').forEach(button => {
         const isSelected = button.dataset.productSize === selectedSize;
@@ -491,6 +492,10 @@
 
     section.querySelector('[data-product-sale-toggle]')?.addEventListener('click', () => {
       showSale = !showSale;
+      if (showSale) {
+        const quantityOutput = section.querySelector('[data-cake-quantity]');
+        if (quantityOutput) quantityOutput.textContent = String(Math.max(30, Number(quantityOutput.textContent || 1)));
+      }
       updateVariant();
     });
 

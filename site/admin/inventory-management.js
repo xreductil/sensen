@@ -100,8 +100,9 @@
   }
 
   function productPriceOptions(product) {
+    const priceTypes = product?.variants?.priceTypes || {};
     const variantSizes = product?.variants?.sizes || {};
-    const sizes = Object.keys(variantSizes).length ? variantSizes : product?.priceOptions || {};
+    const sizes = Object.keys(priceTypes).length ? priceTypes : Object.keys(variantSizes).length ? variantSizes : product?.priceOptions || {};
     return Object.entries(sizes).filter(([label, value]) => String(label).trim() && Number.isFinite(Number(value)) && Number(value) > 0);
   }
 
@@ -110,6 +111,8 @@
     if (!form || form.querySelector('[data-inventory-price-options]')) return form?.querySelector('[data-inventory-price-options]');
     const priceInput = form.elements.priceValue;
     const priceColumn = priceInput?.closest('.col-md-4');
+    const originalPriceInput = form.elements.originalPrice;
+    const originalPriceColumn = originalPriceInput?.closest('.col-md-4');
     const specColumn = form.elements.spec?.closest('.col-md-6');
     const sizeColumn = form.elements.size?.closest('.col-md-6');
     const categoryColumn = form.elements.cat?.closest('.col-md-6');
@@ -118,11 +121,13 @@
     // The visible price is collected from the multi-price rows below. The
     // hidden legacy input must not block the form's native submit event.
     priceInput.required = false;
+    if (originalPriceColumn) originalPriceColumn.hidden = true;
+    if (originalPriceInput) originalPriceInput.required = false;
     if (specColumn) specColumn.hidden = true;
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'col-12';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580；請勾選一組作為預設價格。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請從下拉選單選擇價格名稱，再填寫對應金額；預設價格請勾選「預設」。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
     (categoryColumn || priceColumn).insertAdjacentElement('afterend', field);
     field.querySelector('[data-inventory-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-inventory-price-options]');
@@ -136,13 +141,14 @@
     }
   }
 
-  function addPriceOptionRow(option = {}, isDefault = false) {
+  function addPriceOptionRow(option = {}, isDefault = false, optionLabels = []) {
     const container = ensurePriceOptionsEditor();
     if (!container) return;
     const row = document.createElement('div');
     row.className = 'row g-2 align-items-end mb-2 inventory-price-option';
-    row.innerHTML = `<div class="col-sm-2"><label class="form-label small mb-1 d-block">預設<input class="form-check-input ms-2" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-label placeholder="例如：6 吋"></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
-    row.querySelector('[data-price-option-label]').value = option[0] || '';
+    const labels = [...new Set(['原價', '特價', ...optionLabels, option[0]].map(value => String(value || '').trim()).filter(Boolean))];
+    row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<select class="form-select" data-price-option-label>${labels.map(label => `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`).join('')}</select></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
+    row.querySelector('[data-price-option-label]').value = option[0] || labels[0] || '';
     row.querySelector('[data-price-option-value]').value = option[1] ?? '';
     row.querySelector('[data-price-option-default]').checked = isDefault;
     row.querySelector('[data-remove-price-option]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
@@ -361,7 +367,7 @@
     form.elements.size.value = product?.size || product?.spec || '';
     form.elements.storage.value = product?.storage || '';
     form.elements.other.value = product?.other || '';
-    form.elements.originalPrice.value = product?.originalPrice ?? product?.priceValue ?? '';
+    if (form.elements.originalPrice) form.elements.originalPrice.value = product?.originalPrice ?? product?.priceValue ?? '';
     form.elements.priceValue.value = product?.priceValue ?? '';
     form.elements.quantity.value = product?.quantity ?? 0;
     form.elements.day.value = product?.day || 5;
@@ -388,8 +394,14 @@
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
     if (dietaryInput) dietaryInput.checked = ['蛋奶素', '奶蛋素'].includes(String(product?.dietary || '').trim());
     const options = productPriceOptions(product);
-    const defaultSize = String(product?.variants?.defaultSize || '').trim() || options.find(([, value]) => Number(value) === Number(product?.priceValue))?.[0] || options[0]?.[0] || '';
-    (options.length ? options : product ? [[product.spec || product.size || '預設', product.priceValue]] : [[]]).forEach(option => addPriceOptionRow(option, option[0] === defaultSize));
+    const defaultSize = String(product?.variants?.defaultPriceType || product?.variants?.defaultSize || '').trim() || options.find(([, value]) => Number(value) === Number(product?.priceValue))?.[0] || options[0]?.[0] || '';
+    const priceRows = options.length > 1
+      ? options
+      : product
+        ? [['原價', product.originalPrice ?? product.priceValue], ['特價', product.priceValue]]
+        : [['原價', ''], ['特價', '']];
+    const optionLabels = [...new Set([...options.map(([label]) => label), '原價', '特價'])];
+    priceRows.forEach(option => addPriceOptionRow(option, option[0] === defaultSize || (!defaultSize && option[0] === '原價'), optionLabels));
     $('#inventory-product-message').textContent = '';
     dialog.showModal();
   }
@@ -417,7 +429,16 @@
       const { sizes, defaultSize } = collectPriceOptions();
       if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
       const flavorSettings = collectFlavorSettings();
-      const variants = { ...(form._editingVariants || {}), sizes, defaultSize };
+      const priceTypes = Object.fromEntries(Object.entries(sizes).filter(([label]) => ['原價', '特價'].includes(label)));
+      const sizeOptions = Object.fromEntries(Object.entries(sizes).filter(([label]) => !['原價', '特價'].includes(label)));
+      const variants = { ...(form._editingVariants || {}), sizes: sizeOptions, defaultSize };
+      if (Object.keys(priceTypes).length) {
+        variants.priceTypes = priceTypes;
+        variants.defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : '原價';
+      } else {
+        delete variants.priceTypes;
+        delete variants.defaultPriceType;
+      }
       if (flavorSettings.flavors.length) {
         variants.flavors = flavorSettings.flavors;
         variants.flavorCount = flavorSettings.flavorCount;
@@ -425,8 +446,8 @@
         delete variants.flavors;
         delete variants.flavorCount;
       }
-      data.priceValue = Number(sizes[defaultSize] ?? Object.values(sizes)[0]);
-      data.originalPrice = Number(data.originalPrice || data.priceValue);
+      data.priceValue = Number(sizes['特價'] ?? sizes[defaultSize] ?? Object.values(sizes)[0]);
+      data.originalPrice = Number(sizes['原價'] ?? data.originalPrice ?? data.priceValue);
       data.spec = Object.keys(sizes).join('、');
       data.size = data.spec;
       let images = [...new Set((form._editingImages || []).map(normalizeImagePath).filter(Boolean))];

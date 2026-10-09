@@ -4,6 +4,7 @@
   if (!form || !status) return;
 
   const value = id => document.getElementById(id)?.value.trim() || '';
+  const escapeHtml = input => String(input ?? '').replace(/[&<>"']/g, character => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[character]));
   const imageInput = document.getElementById('productImage');
   const imagePreview = form.querySelector('[data-product-image-preview]');
   let imagePreviewUrls = [];
@@ -48,7 +49,7 @@
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'mb-3';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">以規格／名稱搭配售價設定，例如：6 吋 $1080、8 吋 $1580；請勾選一組作為預設價格。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請從下拉選單選擇價格名稱，再填寫對應金額；預設價格請勾選「預設」。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
     (categoryBlock || priceRow).insertAdjacentElement('afterend', field);
     field.querySelector('[data-create-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-create-price-options]');
@@ -61,13 +62,14 @@
     }
   };
 
-  const addPriceOptionRow = (option = {}, isDefault = false) => {
+  const addPriceOptionRow = (option = {}, isDefault = false, optionLabels = []) => {
     const container = ensurePriceOptionsEditor();
     if (!container) return;
     const row = document.createElement('div');
     row.className = 'row g-2 align-items-end mb-2';
-    row.innerHTML = '<div class="col-sm-2"><label class="form-label small mb-1 d-block">預設<input class="form-check-input ms-2" data-create-price-default type="radio" name="createDefaultPrice" aria-label="設為預設價格"></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-create-price-label placeholder="例如：6 吋"></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-create-price-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-create-remove-price>移除</button></div>';
-    row.querySelector('[data-create-price-label]').value = option[0] || '';
+    const labels = [...new Set(['原價', '特價', ...optionLabels, option[0]].map(value => String(value || '').trim()).filter(Boolean))];
+    row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-create-price-default type="radio" name="createDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<select class="form-select" data-create-price-label>${labels.map(label => `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`).join('')}</select></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-create-price-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-create-remove-price>移除</button></div>`;
+    row.querySelector('[data-create-price-label]').value = option[0] || labels[0] || '';
     row.querySelector('[data-create-price-value]').value = option[1] ?? '';
     row.querySelector('[data-create-price-default]').checked = isDefault;
     row.querySelector('[data-create-remove-price]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
@@ -93,7 +95,8 @@
   };
 
   ensurePriceOptionsEditor();
-  addPriceOptionRow();
+  addPriceOptionRow(['原價', '']);
+  addPriceOptionRow(['特價', '']);
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -110,8 +113,11 @@
       if (!files.length) throw new Error('請至少選擇一張商品圖片。');
       const { sizes, defaultSize } = collectPriceOptions();
       if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
-      document.getElementById('productPrice').value = sizes[defaultSize] ?? Object.values(sizes)[0];
-      document.getElementById('productSize').value = Object.keys(sizes).join('、');
+      const priceTypes = Object.fromEntries(Object.entries(sizes).filter(([label]) => ['原價', '特價'].includes(label)));
+      const sizeOptions = Object.fromEntries(Object.entries(sizes).filter(([label]) => !['原價', '特價'].includes(label)));
+      const defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : '原價';
+      document.getElementById('productPrice').value = sizes['特價'] ?? sizes[defaultSize] ?? Object.values(sizes)[0];
+      document.getElementById('productSize').value = Object.keys(sizeOptions).join('、');
       status.textContent = `正在上傳 ${files.length} 張圖片…`;
       const imagePaths = [];
       for (const [index, file] of files.entries()) {
@@ -127,6 +133,7 @@
           title,
           sku: value('productSKU'),
           priceValue: Number(value('productPrice')),
+          originalPrice: Number(sizes['原價'] ?? value('productPrice')),
           quantity: Number(value('productStock')),
           cat: value('productCategory'),
           img: imagePaths[0],
@@ -136,7 +143,7 @@
           storage: value('productStorage'),
           other: value('productOther'),
           published: true,
-          variants: Object.keys(sizes).length ? { sizes, defaultSize } : null,
+          variants: Object.keys(sizes).length ? { sizes: sizeOptions, priceTypes, defaultSize, defaultPriceType } : null,
         }),
       });
       const data = await response.json().catch(() => ({}));
@@ -149,7 +156,8 @@
       if (imagePreview) imagePreview.replaceChildren();
       const priceOptions = form.querySelector('[data-create-price-options]');
       if (priceOptions) priceOptions.innerHTML = '';
-      addPriceOptionRow();
+      addPriceOptionRow(['原價', '']);
+      addPriceOptionRow(['特價', '']);
       status.className = 'small mt-3 mb-0 text-success';
       status.replaceChildren(
         document.createTextNode(`${data.product?.title || title} 已加入前台菜單與 Inventory，商品詳細頁已建立：`),

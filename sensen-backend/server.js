@@ -543,9 +543,18 @@ function productsFromData() {
 
 function normalizeProductVariants(value, fallbackPrice = 0) {
   const variants = value && typeof value === 'object' ? value : {};
-  const sizes = Object.fromEntries(Object.entries(variants.sizes || {})
+  const rawSizes = Object.fromEntries(Object.entries(variants.sizes || {})
     .map(([label, price]) => [String(label).trim(), Number(price)])
     .filter(([label, price]) => label && Number.isFinite(price) && price >= 0));
+  const priceTypeNames = new Set(['原價', '特價']);
+  const explicitPriceTypes = Object.fromEntries(Object.entries(variants.priceTypes || {})
+    .map(([label, price]) => [String(label).trim(), Number(price)])
+    .filter(([label, price]) => priceTypeNames.has(label) && Number.isFinite(price) && price >= 0));
+  const legacyPriceTypes = Object.keys(rawSizes).length && Object.keys(rawSizes).every(label => priceTypeNames.has(label))
+    ? rawSizes
+    : {};
+  const priceTypes = Object.keys(explicitPriceTypes).length ? explicitPriceTypes : legacyPriceTypes;
+  const sizes = Object.fromEntries(Object.entries(rawSizes).filter(([label]) => !priceTypeNames.has(label)));
   const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length
     ? variants.temperatures.map(item => String(item).trim()).filter(Boolean)
     : ['冷'];
@@ -560,6 +569,10 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
   const defaultSize = Object.prototype.hasOwnProperty.call(normalizedSizes, requestedDefaultSize)
     ? requestedDefaultSize
     : Object.keys(normalizedSizes)[0];
+  const requestedDefaultPriceType = String(variants.defaultPriceType || '').trim();
+  const defaultPriceType = Object.prototype.hasOwnProperty.call(priceTypes, requestedDefaultPriceType)
+    ? requestedDefaultPriceType
+    : Object.keys(priceTypes)[0] || '';
   return {
     flavors: [...new Set(flavors)],
     flavorCount: Math.max(0, Number(variants.flavorCount || 0)),
@@ -567,6 +580,8 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
     sugars: sugars.length ? [...new Set(sugars)] : ['正常甜'],
     sizes: normalizedSizes,
     defaultSize,
+    ...(Object.keys(priceTypes).length ? { priceTypes } : {}),
+    ...(defaultPriceType ? { defaultPriceType } : {}),
     ...(variants.flavorImages && typeof variants.flavorImages === 'object' && !Array.isArray(variants.flavorImages)
       ? { flavorImages: Object.fromEntries(Object.entries(variants.flavorImages).map(([flavor, image]) => [String(flavor).trim(), Array.isArray(image) ? image.map(item => String(item).trim()).filter(Boolean) : String(image || '').trim()]).filter(([flavor, image]) => flavor && (Array.isArray(image) ? image.length : image))) }
       : {})
