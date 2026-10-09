@@ -691,6 +691,23 @@ function productVariant(product, options = {}) {
   return { size, flavor, flavors: selectedFlavors, flavorCount: variants.flavorCount, temperature, sugar, priceValue: Number(variants.sizes[size] || 0) };
 }
 
+function productPriceForQuantity(product, quantity, basePrice = product.priceValue) {
+  const variants = product.variants ? normalizeProductVariants(product.variants, product.priceValue) : {};
+  const priceTypes = variants.priceTypes && typeof variants.priceTypes === 'object' ? variants.priceTypes : {};
+  const originalPrice = Number(priceTypes['原價'] ?? product.originalPrice ?? basePrice) || 0;
+  const salePrice = Number(priceTypes['特價'] ?? product.priceValue ?? basePrice) || 0;
+  const hasTieredPrice = originalPrice > salePrice && salePrice > 0;
+  const currentQuantity = Math.max(1, Number(quantity || 1));
+  const useSalePrice = hasTieredPrice && currentQuantity >= 30;
+  const priceValue = hasTieredPrice ? (useSalePrice ? salePrice : originalPrice) : Number(basePrice || salePrice || originalPrice) || 0;
+  return {
+    originalPrice: hasTieredPrice ? originalPrice : priceValue,
+    salePrice: hasTieredPrice ? salePrice : priceValue,
+    priceValue,
+    priceMode: useSalePrice ? '特價' : '原價'
+  };
+}
+
 function variantCartId(product, variant) {
   if (!variant) return product.id;
   return product.id + '::' + encodeURIComponent([variant.flavor, variant.size, variant.temperature, variant.sugar].filter(Boolean).join('|'));
@@ -705,13 +722,17 @@ function variantTitle(title, variant) {
 function cartItemForProduct(product, qty, options = {}) {
   const variant = productVariant(product, options);
   if (!variant) return { ...product, qty };
+  const pricing = productPriceForQuantity(product, qty, variant.priceValue);
   return {
     ...product,
     id: variantCartId(product, variant),
     productId: product.id,
     title: variantTitle(product.title, variant),
-    price: '$' + variant.priceValue.toFixed(2),
-    priceValue: variant.priceValue,
+    price: '$' + pricing.priceValue.toFixed(2),
+    priceValue: pricing.priceValue,
+    originalPrice: pricing.originalPrice,
+    salePrice: pricing.salePrice,
+    priceMode: pricing.priceMode,
     selectedOptions: {
       ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})),
       size: variant.size,
@@ -737,12 +758,24 @@ function currentCartItems(cart, products = []) {
   return cart.map(item => {
     const current = catalog.get(item.productId || item.id);
     if (!current) return item;
-    const refreshed = { ...item, ...current, id: item.id, productId: current.id, qty: item.qty };
-    if (item.selectedOptions && current.variants) {
-      const variant = productVariant(current, item.selectedOptions);
+    const variant = item.selectedOptions && current.variants
+      ? productVariant(current, item.selectedOptions)
+      : null;
+    const pricing = productPriceForQuantity(current, item.qty, variant?.priceValue ?? current.priceValue);
+    const refreshed = {
+      ...item,
+      ...current,
+      id: item.id,
+      productId: current.id,
+      qty: item.qty,
+      price: '$' + pricing.priceValue.toFixed(2),
+      priceValue: pricing.priceValue,
+      originalPrice: pricing.originalPrice,
+      salePrice: pricing.salePrice,
+      priceMode: pricing.priceMode
+    };
+    if (variant) {
       refreshed.title = variantTitle(current.title, variant);
-      refreshed.price = '$' + variant.priceValue.toFixed(2);
-      refreshed.priceValue = variant.priceValue;
       refreshed.selectedOptions = { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar };
     }
     return refreshed;
@@ -1321,6 +1354,15 @@ async function handleApi(req, res) {
       }
       const cart = getCart(db, auth, guestId);
       const item = cartItemForProduct(product, qty, body.options || {});
+      if (!item.productId) {
+        const pricing = productPriceForQuantity(product, qty, product.priceValue);
+        item.productId = product.id;
+        item.price = '$' + pricing.priceValue.toFixed(2);
+        item.priceValue = pricing.priceValue;
+        item.originalPrice = pricing.originalPrice;
+        item.salePrice = pricing.salePrice;
+        item.priceMode = pricing.priceMode;
+      }
       const existing = cart.find(cartItem => cartItem.id === item.id);
       if (existing) existing.qty += qty;
       else cart.push(item);

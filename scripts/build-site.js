@@ -25,6 +25,8 @@ const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20261009-announcement-1";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261009-price-sync-1";
 const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-top-house-price-toggle-2";
+const CART_DRAWER_SCRIPT_URL = "/assets/cart-drawer.js?v=20261009-tiered-price-1";
+const CHECKOUT_SCRIPT_URL = "/assets/checkout-page.js?v=20261009-tiered-price-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -2091,7 +2093,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
   <div class="sensen-cart-overlay" id="sensen-cart-overlay" hidden></div>
   <aside class="sensen-cart-drawer" id="sensen-cart-drawer" aria-label="購物車" aria-hidden="true"><div class="sensen-cart-head"><h2>購物車</h2><button class="sensen-cart-close" type="button" aria-label="關閉購物車">×</button></div><div class="sensen-cart-body"><p data-cart-message>載入中…</p><div data-cart-items></div><div class="sensen-cart-fields" data-cart-options hidden><label>優惠碼<div class="sensen-cart-coupon-row"><input data-cart-coupon type="text" placeholder="輸入優惠碼" autocomplete="off"><button class="sensen-cart-coupon-apply" type="button" data-cart-apply-coupon>套用</button></div></label><label>Pickup date（取貨日期）<input data-cart-pickup type="date"></label><small data-cart-date-hint></small><p class="sensen-cart-quote-message" data-cart-quote-message role="status"></p></div></div><div class="sensen-cart-foot"><div class="sensen-cart-price-lines" data-cart-price-lines hidden><div><span>小計</span><strong data-cart-subtotal>$0.00</strong></div><div data-cart-discount-row hidden><span>折扣</span><strong data-cart-discount>-$0.00</strong></div><div class="is-total"><span>合計</span><strong data-cart-total>$0.00</strong></div></div><a class="button" href="/checkout/">結帳</a><a class="sensen-cart-secondary" href="/customer/admin/">前往會員中心</a></div></aside>
 ${purchaseScripts ? `\n  ${purchaseScripts}` : "\n  "}
-  <script src="/assets/cart-drawer.js"></script>
+  <script src="${CART_DRAWER_SCRIPT_URL}"></script>
 </body>
 </html>`;
 }
@@ -2902,7 +2904,7 @@ function accountScript() {
 }
 
 function checkoutPageScript() {
-  return '<script src="/assets/checkout-page.js"></script>';
+  return `<script src="${CHECKOUT_SCRIPT_URL}"></script>`;
 }
 
 function ordersPageScript() {
@@ -4403,6 +4405,22 @@ function rewriteHomeNewsLink() {
   if (updated !== html) fs.writeFileSync(homeFile, updated);
 }
 
+function syncCartScriptUrls() {
+  if (!fs.existsSync(OUT_DIR)) return;
+  const walk = directory => fs.readdirSync(directory, { withFileTypes: true }).flatMap(entry => {
+    const filePath = path.join(directory, entry.name);
+    return entry.isDirectory() ? walk(filePath) : [filePath];
+  });
+  for (const filePath of walk(OUT_DIR)) {
+    if (path.extname(filePath).toLowerCase() !== '.html') continue;
+    const html = fs.readFileSync(filePath, 'utf8');
+    const updated = html
+      .replace(/\/assets\/cart-drawer\.js(?:\?[^"']*)?/g, CART_DRAWER_SCRIPT_URL)
+      .replace(/\/assets\/checkout-page\.js(?:\?[^"']*)?/g, CHECKOUT_SCRIPT_URL);
+    if (updated !== html) fs.writeFileSync(filePath, updated);
+  }
+}
+
 function main() {
   // The crawler/API exports are intentionally not part of the deployable repo.
   // Keep the committed static snapshot when those optional source files are absent;
@@ -4433,6 +4451,7 @@ function main() {
     syncWebpImageAssets();
     rewriteEmptyCatalogPages();
     syncStaticSnapshotContent();
+    syncCartScriptUrls();
     syncHomeSnapshotContent();
     copyHomeFallback();
     rewriteHomeNewsLink();

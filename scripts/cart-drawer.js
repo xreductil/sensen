@@ -93,7 +93,7 @@
       pickupInput.value = savedPickup >= pickupInput.min ? savedPickup : pickupInput.min;
       dateHintEl.textContent = products.length ? `最早可取貨日期：${pickupInput.min}（依購物車內最長製作時間計算）` : '';
       saveFields();
-      itemsEl.innerHTML = products.map((item) => `<article class="sensen-cart-item"><img src="${escapeHtml(item.img || '')}" alt=""><div><h3>${escapeHtml(item.title || '商品')}</h3><small>${escapeHtml(item.cat || '')} · ${money(item.priceValue)} · 製作時間 ${Number(item.day || 5)} 天</small><div class="sensen-cart-qty"><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) - 1}">−</button><b>${Number(item.qty)}</b><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) + 1}">＋</button></div></div><strong>${money(Number(item.priceValue || 0) * Number(item.qty || 0))}</strong></article>`).join('');
+      itemsEl.innerHTML = products.map((item) => `<article class="sensen-cart-item"><img src="${escapeHtml(item.img || '')}" alt=""><div><h3>${escapeHtml(item.title || '商品')}</h3><small>${escapeHtml(item.cat || '')} · ${escapeHtml(item.priceMode || '原價')} ${money(item.priceValue)} · 製作時間 ${Number(item.day || 5)} 天</small><div class="sensen-cart-qty"><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) - 1}">−</button><b>${Number(item.qty)}</b><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) + 1}">＋</button></div></div><strong>${money(Number(item.priceValue || 0) * Number(item.qty || 0))}</strong></article>`).join('');
       if (products.length && couponInput.value.trim()) await applyQuote(cart);
     } catch (error) {
       messageEl.hidden = false;
