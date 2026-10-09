@@ -91,7 +91,7 @@
       const rawValue = row.querySelector('[data-create-price-value]').value;
       const price = Number(rawValue);
       if (!spec && !priceType && !rawValue) continue;
-      if ((!spec && !priceType) || !Number.isFinite(price) || price <= 0) throw new Error('每組售價都需要填寫規格或價格類型，並填寫有效價格。');
+      if (!Number.isFinite(price) || price <= 0) throw new Error('每組售價都需要填寫有效價格；沒有規格時請維持價格類型「不指定」。');
       const normalizedValue = Number(price.toFixed(2));
       if (spec) sizeOptions[spec] = normalizedValue;
       else if (priceType) priceTypes[priceType] = normalizedValue;
