@@ -129,7 +129,10 @@
         : defaultPriceType
           ? priceTypes[defaultPriceType]
           : undefined;
-      document.getElementById('productPrice').value = selectedDefaultPrice ?? priceTypes['特價'] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0];
+      const hasTieredPriceTypes = priceTypes['原價'] != null && priceTypes['特價'] != null;
+      document.getElementById('productPrice').value = hasTieredPriceTypes
+        ? priceTypes['特價']
+        : selectedDefaultPrice ?? priceTypes['特價'] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0];
       document.getElementById('productSize').value = Object.keys(sizeOptions).join('、');
       status.textContent = `正在上傳 ${files.length} 張圖片…`;
       const imagePaths = [];

@@ -4,6 +4,18 @@
     const amount = Number(value || 0);
     return amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
   };
+  const productDefaultPrice = product => {
+    const variants = product?.variants && typeof product.variants === 'object' ? product.variants : {};
+    const sizes = variants.sizes && typeof variants.sizes === 'object' && !Array.isArray(variants.sizes) ? variants.sizes : {};
+    const priceTypes = variants.priceTypes && typeof variants.priceTypes === 'object' && !Array.isArray(variants.priceTypes) ? variants.priceTypes : {};
+    const defaultSize = String(variants.defaultSize || '').trim();
+    const defaultPriceType = String(variants.defaultPriceType || '').trim();
+    const sizePrice = Number(sizes[defaultSize]);
+    if (defaultSize && Number.isFinite(sizePrice) && sizePrice > 0) return sizePrice;
+    const typePrice = Number(priceTypes[defaultPriceType || defaultSize]);
+    if ((defaultPriceType || defaultSize) && Number.isFinite(typePrice) && typePrice > 0) return typePrice;
+    return Number(product?.priceValue || String(product?.price || '').replace(/[^0-9.]/g, '')) || 0;
+  };
   const legacyProductId = card => {
     const href = card.querySelector('a[href*="/商品/"]')?.getAttribute('href') || '';
     const parts = href.split('/').filter(Boolean);
@@ -21,7 +33,7 @@
         const product = products.get(id);
         if (!product) return;
         // 頂家彌月分類卡片維持顯示原價；詳細頁與購物車會依數量套用特價。
-        const value = id.startsWith('top-house-') ? (product.originalPrice || product.priceValue) : product.priceValue;
+        const value = id.startsWith('top-house-') ? (product.originalPrice || productDefaultPrice(product)) : productDefaultPrice(product);
         const price = card.querySelector('.cake-product-price');
         if (price) price.textContent = formatPrice(value);
       });
@@ -155,7 +167,7 @@
     const timestamp = value ? new Date(value).getTime() : 0;
     return Number.isFinite(timestamp) ? timestamp : 0;
   };
-  const productPrice = product => Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
+  const productPrice = product => productDefaultPrice(product);
   const orderProducts = products => products
     .map((product, index) => ({ product, index }))
     .sort((a, b) => {
@@ -211,7 +223,7 @@
   const storefrontProductCard = (product, { articleClass, badge = '' } = {}) => {
     const name = String(product.title || '商品');
     const title = escapeHtml(name).replace(/[（(]季節限定[）)]/, '<br>（季節限定）');
-    const amount = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
+    const amount = productDefaultPrice(product);
     const price = amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
     const thumbnail = thumbnailSettings(product);
     const legacyOffset = thumbnailLegacyOffset(product, thumbnail);
@@ -335,7 +347,7 @@
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || '商品資料暫時無法載入。');
       const products = orderProducts((Array.isArray(data.products) ? data.products : []).filter(product => product.published !== false));
-      const productSignature = JSON.stringify([sortMode, ...products.map(product => [product.id, product.title, product.cat, product.img, product.priceValue, product.quantity, product.newArrival, product.salesCount, product.thumbnail])]);
+      const productSignature = JSON.stringify([sortMode, ...products.map(product => [product.id, product.title, product.cat, product.img, product.priceValue, productDefaultPrice(product), product.quantity, product.newArrival, product.salesCount, product.thumbnail, product.variants?.defaultSize, product.variants?.defaultPriceType])]);
       if (!force && productSignature === lastProductSignature) return;
       lastProductSignature = productSignature;
       const storefrontProducts = products.filter(product => !birthdayCakeCategories.has(product.cat));
