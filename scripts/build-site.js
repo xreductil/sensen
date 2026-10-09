@@ -22,9 +22,9 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const SITE_CSS_URL = "/assets/site.css?v=20261001-category-hero-1";
+const SITE_CSS_URL = "/assets/site.css?v=20261009-announcement-1";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261001-product-sort-1";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261001-category-hero-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-top-house-price-toggle-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
 const EXTRA_MARKDOWN_PAGES = [
   ["https://www.sensen.com.tw/latest-news/森森吐司/", "latest-detail-1.md"],
@@ -398,7 +398,9 @@ function topHouseProductCardMarkup([title, image, price, id], className = "", de
   const details = TOP_HOUSE_CARD_DETAILS.get(id) || {};
   const displayTitle = details.title || title;
   const displayDescription = details.description || description;
-  const priceMarkup = `<span class="cake-product-price">${escapeHtml(formatProductPrice(price))}</span>`;
+  const originalPrice = Number(details.originalPrice || price);
+  const priceLabel = details.originalPrice && originalPrice > Number(price) ? "原價 " : "";
+  const priceMarkup = `<span class="cake-product-price">${escapeHtml(`${priceLabel}${formatProductPrice(originalPrice)}`)}</span>`;
   const descriptionMarkup = displayDescription ? `<span class="cake-product-description">${escapeHtml(displayDescription)}</span>` : "";
   const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id) : "";
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">
@@ -1997,6 +1999,9 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
 </head>
 <body>
   <header class="site-header">
+    <div class="site-announcement" data-site-announcement aria-label="購物公告" aria-live="polite">
+      <span data-site-announcement-message>所有產品運費另計</span>
+    </div>
     <nav class="nav" aria-label="主選單">
       <a class="brand" href="/" aria-label="森森點心坊首頁"><img class="brand-logo" src="/images/logo.png" alt="森森點心坊 SenSen Bakery"></a>
       <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="site-menu" aria-label="開啟主選單"><span></span><span></span><span></span></button>
@@ -2061,6 +2066,23 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
         toggle.focus();
       }
     });
+  })();
+  </script>
+  <script>
+  (() => {
+    const announcement = document.querySelector("[data-site-announcement]");
+    const message = announcement?.querySelector("[data-site-announcement-message]");
+    if (!announcement || !message) return;
+    const messages = ["所有產品運費另計", "訂購滿30盒以上享有特價優惠"];
+    let index = 0;
+    window.setInterval(() => {
+      message.classList.add("is-changing");
+      window.setTimeout(() => {
+        index = (index + 1) % messages.length;
+        message.textContent = messages[index];
+        message.classList.remove("is-changing");
+      }, 220);
+    }, 4000);
   })();
   </script>
   <footer class="footer"><span class="footer-item">© 2018 - 2026 森森點心坊. All Rights Reserved.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item">Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item"><a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%A2%9d%e6%ac%be/">隱私權政策</a></span></footer>
@@ -3004,6 +3026,7 @@ faqContent = () => originalFaqContent()
   .replace("請洽詢專人服務", "請洽詢<br>專人服務")
   .replace("發票日期為領取蛋糕當日。", "發票日期為領取蛋糕當<br>日。")
   .replace("盡量當日食用完畢", "盡量當日食用<br>完畢")
+  .replace("訂購滿30盒以上享有特價優惠", "30盒以上才享有特價優惠")
   .replace(
     /(<article class="faq-item"><button type="button" aria-expanded="false" aria-controls="faq-1-7">[\s\S]*?<\/article>)(\n      <\/div>\n    <\/section>)/,
     '$1\n        <article class="faq-item"><button type="button" aria-expanded="false" aria-controls="faq-1-8"><span class="faq-number">8</span><span class="faq-question-title">頂家彌月外送規則</span><span class="faq-plus" aria-hidden="true">＋</span></button><div id="faq-1-8" class="faq-answer" hidden>高雄市區以及屏東市滿10000元外送；外縣市依冷藏／常溫及包裹外箱尺寸計算。（目前未提供離島宅配）</div></article>$2'

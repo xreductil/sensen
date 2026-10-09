@@ -545,6 +545,36 @@ a { color: inherit; text-decoration: none; }
   backdrop-filter: blur(10px);
 }
 
+.site-announcement {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 6px 16px;
+  overflow: hidden;
+  color: #fff;
+  background: var(--brown-2);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.site-announcement span {
+  display: block;
+  transition: opacity .22s ease, transform .22s ease;
+}
+
+.site-announcement span.is-changing {
+  opacity: 0;
+  transform: translateY(-4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .site-announcement span { transition: none; }
+}
+
 .nav {
   display: flex;
   align-items: center;
@@ -1988,6 +2018,38 @@ body.site-search-open { overflow: hidden; }
 .product-detail-sale-price {
   color: inherit;
   font: inherit;
+}
+
+.product-detail-current-price {
+  color: inherit;
+  font: inherit;
+}
+
+.product-detail-sale-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 18px;
+  padding: 8px 15px;
+  border: 1px solid #b66f2d;
+  border-radius: 999px;
+  color: #9d5c23;
+  background: #fff7ef;
+  cursor: pointer;
+  font: 700 14px/1.3 var(--font-main);
+  transition: color .2s ease, background .2s ease, transform .2s ease;
+}
+
+.product-detail-sale-toggle:hover,
+.product-detail-sale-toggle:focus-visible,
+.product-detail-sale-toggle[aria-pressed="true"] {
+  color: #fff;
+  background: #b66f2d;
+}
+
+.product-detail-sale-toggle:hover,
+.product-detail-sale-toggle:focus-visible {
+  transform: translateY(-1px);
 }
 
 .product-detail-purchase .cake-add-cart {

@@ -71,6 +71,43 @@ const TOP_HOUSE_CATEGORY_BY_ID = new Map([
   ['top-house-a11-japanese-layer', '頂家彌月｜彌月長條蛋糕'],
   ['top-house-a12-osmanthus-oolong', '頂家彌月｜彌月長條蛋糕'],
 ]);
+const TOP_HOUSE_ORIGINAL_PRICE_BY_ID = new Map([
+  ['top-house-boston-classic', 520],
+  ['top-house-pa1-boston-gift', 635],
+  ['top-house-pa2-boston-gift', 690],
+  ['top-house-pa3-boston-gift', 685],
+  ['top-house-pa4-boston-gift', 880],
+  ['top-house-c1-big-bear', 835],
+  ['top-house-c2-big-bear', 670],
+  ['top-house-c3-big-bear', 875],
+  ['top-house-c4-big-bear', 785],
+  ['top-house-b1-little-bear', 720],
+  ['top-house-b2-little-bear', 530],
+  ['top-house-b3-little-bear', 475],
+  ['top-house-b4-little-bear', 515],
+  ['top-house-l1-country-cheese', 1145],
+  ['top-house-l2-country-cheese', 1355],
+  ['top-house-l3-country-cheese', 1000],
+  ['top-house-k1-creme-brulee', 760],
+  ['top-house-k2-pistachio-marble', 760],
+  ['top-house-k3-cheesecake', 760],
+  ['top-house-k4-light-cheesecake', 670],
+  ['top-house-k5-belgian-chocolate', 670],
+  ['top-house-k6-lemon-cheesecake', 670],
+  ['top-house-a1-strawberry-marble', 360],
+  ['top-house-a2-honey-cake', 360],
+  ['top-house-a3-blueberry-angel', 360],
+  ['top-house-a4-lemon-love', 360],
+  ['top-house-a5-classic-chocolate', 360],
+  ['top-house-a6-left-bank-coffee-roll', 580],
+  ['top-house-a7-vanilla-napoleon', 580],
+  ['top-house-a7-chocolate-napoleon', 580],
+  ['top-house-a8-earl-grey-roll', 580],
+  ['top-house-a9-mocha-chocolate', 580],
+  ['top-house-a10-violet', 580],
+  ['top-house-a11-japanese-layer', 580],
+  ['top-house-a12-osmanthus-oolong', 580],
+]);
 const DRINK_PRODUCTS_PATH = path.join(DATA_DIR, 'sensen-drink-products.json');
 const HOST = process.env.HOST || '127.0.0.1';
 const PORT = Number(process.env.PORT || 8081);
@@ -478,6 +515,7 @@ function productsFromData() {
   return products.map(product => {
     const priceValue = Number(product.priceValue || String(product.price || '').replace(/[^0-9.]/g, '')) || 0;
     const productId = product.id || slug(product.title);
+    const originalPrice = Number(product.originalPrice ?? product.priceOriginal ?? TOP_HOUSE_ORIGINAL_PRICE_BY_ID.get(productId) ?? priceValue) || 0;
     const normalized = {
       ...product,
       img: normalizeProductImage(product.img),
@@ -490,6 +528,7 @@ function productsFromData() {
         || (productId.startsWith('top-house-pairing-') ? '頂家彌月｜搭配單品' : null)
         || product.cat || 'NOODLES',
       priceValue,
+      originalPrice,
       price: product.price || ('$' + priceValue.toFixed(2)),
       quantity: Math.max(0, Number(product.quantity ?? 25)),
       day: String(product.day || '5')
@@ -557,6 +596,7 @@ function productsWithOverrides(db) {
     merged.url = merged.url || '/product-item/' + encodeURIComponent(merged.id) + '/';
     merged.img = normalizeProductImage(merged.img);
     merged.priceValue = Number(merged.priceValue || String(merged.price || '').replace(/[^0-9.]/g, '')) || 0;
+    merged.originalPrice = Number(merged.originalPrice ?? merged.priceOriginal ?? merged.priceValue) || 0;
     merged.price = merged.price || ('$' + merged.priceValue.toFixed(2));
     if (merged.variants || merged.priceOptions) {
       merged.variants = normalizeProductVariants(merged.variants || { sizes: merged.priceOptions }, merged.priceValue);
@@ -1049,11 +1089,13 @@ async function handleApi(req, res) {
       const published = body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || '').replace(/[^0-9.]/g, ''));
+      const originalPrice = Number(body.originalPrice ?? body.priceOriginal ?? priceValue);
       const variants = body.variants ? normalizeProductVariants(body.variants, priceValue) : undefined;
       const newArrival = body.newArrival == null ? true : body.newArrival === true;
       const thumbnail = normalizeThumbnailSettings(body.thumbnail);
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
+      if (!Number.isFinite(originalPrice) || originalPrice < 0) return send(res, 400, { error: 'Product original price is invalid.' });
       if (!Number.isFinite(quantity)) return send(res, 400, { error: 'Product quantity is invalid.' });
 
       const product = {
@@ -1065,6 +1107,7 @@ async function handleApi(req, res) {
         spec,
         cat,
         priceValue: Number(priceValue.toFixed(2)),
+        originalPrice: Number(originalPrice.toFixed(2)),
         price: '$' + Number(priceValue).toFixed(2),
         quantity,
         published,
@@ -1102,11 +1145,13 @@ async function handleApi(req, res) {
       const published = body.published == null ? product.published !== false : body.published !== false;
       const quantity = Math.max(0, Number(body.quantity ?? product.quantity ?? 0));
       const priceValue = Number(body.priceValue || String(body.price || product.price).replace(/[^0-9.]/g, ''));
+      const originalPrice = Number(body.originalPrice ?? body.priceOriginal ?? product.originalPrice ?? priceValue);
       const variants = body.variants === null ? null : body.variants === undefined ? product.variants : normalizeProductVariants(body.variants, priceValue);
       const newArrival = body.newArrival == null ? product.newArrival === true : body.newArrival === true;
       const thumbnail = normalizeThumbnailSettings(body.thumbnail === undefined ? product.thumbnail : body.thumbnail);
       if (!title) return send(res, 400, { error: 'Product title is required.' });
       if (!Number.isFinite(priceValue) || priceValue < 0) return send(res, 400, { error: 'Product price is invalid.' });
+      if (!Number.isFinite(originalPrice) || originalPrice < 0) return send(res, 400, { error: 'Product original price is invalid.' });
       if (!Number.isFinite(quantity)) return send(res, 400, { error: 'Product quantity is invalid.' });
 
       db.productOverrides ||= {};
@@ -1124,6 +1169,7 @@ async function handleApi(req, res) {
         newArrival,
         thumbnail,
         priceValue: Number(priceValue.toFixed(2)),
+        originalPrice: Number(originalPrice.toFixed(2)),
         price: '$' + Number(priceValue).toFixed(2),
         variants,
         updatedAt: new Date().toISOString()
