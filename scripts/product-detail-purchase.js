@@ -281,6 +281,8 @@
     setText(item?.querySelector('dd'), value, '—');
   };
 
+  const productSizeText = product => String(product?.size || '').trim();
+
   const syncProductDetails = product => {
     const apiTitle = String(product.title || '商品');
     isCakeDetail = cakeCategories.has(String(product.cat || '').trim());
@@ -304,7 +306,7 @@
     setText(heroTitleElement, productPage.classList.contains('souvenir-product-page') ? '伴手禮' : isBirthdayCakeDetail ? '生日蛋糕' : isLongCakeDetail ? '長條蛋糕' : isTopHouseDetail ? topHouseHeroTitle : apiTitle, '商品');
     if (!isLongCakeDetail && !isBirthdayCakeDetail) setText(productPage.querySelector('[data-product-hero-category]'), String(product.cat || '').trim() || '產品介紹');
     setText(productPage.querySelector('[data-product-description-value]'), product.desc, '尚未提供商品說明。');
-    updateSpec(['商品尺寸', '蛋糕吋數', '規格'], product.size);
+    updateSpec(['商品尺寸', '蛋糕吋數', '規格'], productSizeText(product));
     updateSpec(['保存方式'], product.storage);
     updateSpec(['其他'], product.other);
 

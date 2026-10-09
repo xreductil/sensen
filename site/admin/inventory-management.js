@@ -155,7 +155,7 @@
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'col-12';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請從下拉選單選擇價格名稱，再填寫對應金額；預設價格請勾選「預設」。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請分別選擇規格／名稱與價格類型（原價或特價），再填寫對應金額；預設價格請勾選「預設」。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
     (categoryColumn || priceColumn).insertAdjacentElement('afterend', field);
     field.querySelector('[data-inventory-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-inventory-price-options]');
@@ -174,9 +174,15 @@
     if (!container) return;
     const row = document.createElement('div');
     row.className = 'row g-2 align-items-end mb-2 inventory-price-option';
-    const labels = [...new Set([...(optionLabels.length ? optionLabels : ['原價', '特價']), option[0]].map(value => String(value || '').trim()).filter(Boolean))];
-    row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<select class="form-select" data-price-option-label>${labels.map(label => `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`).join('')}</select></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
-    row.querySelector('[data-price-option-label]').value = option[0] || labels[0] || '';
+    const optionLabel = String(option[0] || '').trim();
+    const priceType = ['原價', '特價'].includes(optionLabel) ? optionLabel : '';
+    const specLabel = priceType ? '' : optionLabel;
+    const specLabels = [...new Set((optionLabels.length ? optionLabels : []).filter(label => !['原價', '特價'].includes(String(label).trim())).concat(specLabel).map(value => String(value || '').trim()).filter(Boolean))];
+    row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<select class="form-select" data-price-option-spec><option value="">一般售價</option>${specLabels.map(label => `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`).join('')}</select></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-price-option-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
+    row.querySelector('[data-price-option-spec]').value = specLabel;
+    row.querySelector('[data-price-option-type]').value = priceType;
+    row.querySelector('[data-price-option-spec]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-price-option-type]').value = ''; });
+    row.querySelector('[data-price-option-type]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-price-option-spec]').value = ''; });
     row.querySelector('[data-price-option-value]').value = option[1] ?? '';
     row.querySelector('[data-price-option-default]').checked = isDefault;
     row.querySelector('[data-remove-price-option]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
@@ -190,10 +196,12 @@
     const rows = [...(container?.querySelectorAll('.inventory-price-option') || [])];
     let defaultSize = '';
     for (const row of rows) {
-      const label = row.querySelector('[data-price-option-label]').value.trim();
+      const spec = row.querySelector('[data-price-option-spec]').value.trim();
+      const priceType = row.querySelector('[data-price-option-type]').value.trim();
+      const label = priceType || spec;
       const value = Number(row.querySelector('[data-price-option-value]').value);
       if (!label && !row.querySelector('[data-price-option-value]').value) continue;
-      if (!label || !Number.isFinite(value) || value <= 0) throw new Error('每組規格售價都需要填寫名稱與有效價格。');
+      if (!label || !Number.isFinite(value) || value <= 0) throw new Error('每組售價都需要選擇規格或價格類型，並填寫有效價格。');
       if (sizes[label]) throw new Error(`規格「${label}」不可重複。`);
       sizes[label] = Number(value.toFixed(2));
       if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = label;

@@ -183,6 +183,7 @@ type StoreProduct = {
   img: string;
   images: string[];
   desc: string;
+  spec: string;
   size: string;
   storage: string;
   other: string;
@@ -818,7 +819,8 @@ const productFromRow = (row: ProductRow): StoreProduct => {
     img: images[0] || "",
     images,
     desc: description,
-    size: String(metadata.size || metadata.productSize || metadata.spec || ""),
+    spec: String(metadata.spec || metadata.productSpec || ""),
+    size: String(metadata.size || metadata.productSize || ""),
     storage: String(metadata.storage || metadata.storageMethod || ""),
     other: String(metadata.other || metadata.otherNotes || ""),
     emphasis: String(metadata.emphasis || ""),
