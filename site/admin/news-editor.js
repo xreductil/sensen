@@ -52,7 +52,7 @@
     try {
       const source = new URL(image, window.location.origin);
       if (source.hostname === 'www.sensen.com.tw' && source.pathname.startsWith('/wp-content/uploads/')) {
-        return '/images/legacy-news?url=' + encodeURIComponent(source.href);
+        return '';
       }
     } catch {}
     if (/^(https?:|data:|\/)/i.test(image)) return image;

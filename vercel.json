@@ -15,6 +15,106 @@
       "permanent": true
     },
     {
+      "source": "/product-item/rose-salt-assorted-egg-yolk-gift",
+      "destination": "/product-item/玫瑰鹽綜合蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/rose-salt-assorted-egg-yolk-gift/",
+      "destination": "/product-item/玫瑰鹽綜合蛋黃酥禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-05",
+      "destination": "/product-item/太陽餅禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/伴手禮新品圖片-05/",
+      "destination": "/product-item/太陽餅禮盒/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-05",
+      "destination": "/product-item/%E5%A4%AA%E9%99%BD%E9%A4%85%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-05/",
+      "destination": "/product-item/%E5%A4%AA%E9%99%BD%E9%A4%85%E7%A6%AE%E7%9B%92/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/souvenir-palmier",
+      "destination": "/product-item/souvenir-palmier-10/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/souvenir-palmier/",
+      "destination": "/product-item/souvenir-palmier-10/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/法式蝴蝶酥-1657",
+      "destination": "/product-item/souvenir-palmier-10/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/法式蝴蝶酥-1657/",
+      "destination": "/product-item/souvenir-palmier-10/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E6%B3%95%E5%BC%8F%E8%9D%B4%E8%9D%B6%E9%85%A5-1657",
+      "destination": "/product-item/souvenir-palmier-10/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E6%B3%95%E5%BC%8F%E8%9D%B4%E8%9D%B6%E9%85%A5-1657/",
+      "destination": "/product-item/souvenir-palmier-10/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/綜合綠豆椪禮盒",
+      "destination": "/product-item/伴手禮新品圖片-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/綜合綠豆椪禮盒/",
+      "destination": "/product-item/伴手禮新品圖片-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/蛋黃綠豆椪禮盒-mu5bhpph",
+      "destination": "/product-item/伴手禮新品圖片-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/蛋黃綠豆椪禮盒-mu5bhpph/",
+      "destination": "/product-item/伴手禮新品圖片-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E7%B6%9C%E5%90%88%E7%B6%A0%E8%B1%86%E6%A4%AA%E7%A6%AE%E7%9B%92",
+      "destination": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E7%B6%9C%E5%90%88%E7%B6%A0%E8%B1%86%E6%A4%AA%E7%A6%AE%E7%9B%92/",
+      "destination": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E8%9B%8B%E9%BB%83%E7%B6%A0%E8%B1%86%E6%A4%AA%E7%A6%AE%E7%9B%92-mu5bhpph",
+      "destination": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-08/",
+      "permanent": true
+    },
+    {
+      "source": "/product-item/%E8%9B%8B%E9%BB%83%E7%B6%A0%E8%B1%86%E6%A4%AA%E7%A6%AE%E7%9B%92-mu5bhpph/",
+      "destination": "/product-item/%E4%BC%B4%E6%89%8B%E7%A6%AE%E6%96%B0%E5%93%81%E5%9C%96%E7%89%87-08/",
+      "permanent": true
+    },
+    {
       "source": "/product-item/rose-salt-red-bean-egg-yolk-gift",
       "destination": "/product-item/玫瑰鹽蛋黃酥禮盒/",
       "permanent": true

@@ -4,10 +4,7 @@
 
   const list = page.querySelector('[data-news-list]');
   const buttons = [...page.querySelectorAll('[data-news-filter]')];
-  let articles = (() => {
-    try { return JSON.parse(list.dataset.newsSnapshot || '[]'); } catch { return []; }
-  })();
-  const staticArticles = articles.slice();
+  let articles = [];
   const requestedFilter = new URLSearchParams(window.location.search).get('category');
   let activeFilter = buttons.some(button => button.dataset.newsFilter === requestedFilter) ? requestedFilter : 'all';
   const categoryAliases = { '森森飲品': 'sensen-coffee', '生日蛋糕': 'sensen-coffee' };
@@ -91,12 +88,11 @@
       return response.json();
     })
     .then(data => {
-      const incoming = Array.isArray(data.news) ? data.news : [];
-      articles = incoming.length ? incoming : staticArticles;
+      articles = Array.isArray(data.news) ? data.news : [];
       render();
     })
     .catch(() => {
-      articles = staticArticles;
+      articles = [];
       render();
     });
 })();

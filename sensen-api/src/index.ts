@@ -504,11 +504,20 @@ const archivedNewsImages: Record<string, string> = {
 const publicNewsImageUrl = (value: unknown) => {
   const image = String(value || "").trim();
   if (!image) return "";
+  if (/^\/?images\/legacy-news(?:\?|$)/i.test(image)) {
+    try {
+      const source = new URL(image, SITE_ORIGIN).searchParams.get("url") || "";
+      const pathname = new URL(source).pathname;
+      return archivedNewsImages[pathname] || "";
+    } catch {
+      return "";
+    }
+  }
   try {
     const source = new URL(image);
     if (source.hostname === "www.sensen.com.tw" && source.pathname.startsWith("/wp-content/uploads/")) {
       if (archivedNewsImages[source.pathname]) return archivedNewsImages[source.pathname];
-      return `/images/legacy-news?url=${encodeURIComponent(source.href)}`;
+      return "";
     }
   } catch {
     // Relative image paths are normalized below.
@@ -867,7 +876,7 @@ const renderProductDetailTemplate = (template: string, product: StoreProduct) =>
   const image = product.img
     ? (/^https?:\/\//i.test(product.img) ? product.img : `${SITE_ORIGIN}${product.img}`)
     : "";
-  const attributes = `data-product-id="${escapeMarkup(product.id)}" data-product-fallback-title="${escapeMarkup(title)}" data-product-fallback-image="${escapeMarkup(product.img)}" data-product-fallback-category="${escapeMarkup(product.cat)}" data-product-fallback-description="${escapeMarkup(description)}"`;
+  const attributes = `data-product-id="${escapeMarkup(product.id)}"`;
   return template
     .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeMarkup(title)} – 森森點心坊</title>`)
     .replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${escapeMarkup(description)}">`)
@@ -1116,38 +1125,6 @@ const imageResponse = async (request: Request, env: Env) => {
   }
   if (!requestedKey || requestedKey.split("/").includes("..")) {
     return json(request, { error: "圖片路徑無效。" }, 400);
-  }
-
-  if (requestedKey === "legacy-news") {
-    let source: URL;
-    try {
-      source = new URL(url.searchParams.get("url") || "");
-    } catch {
-      return json(request, { error: "舊站圖片網址無效。" }, 400);
-    }
-    if (source.protocol !== "https:"
-      || source.hostname !== "www.sensen.com.tw"
-      || !source.pathname.startsWith("/wp-content/uploads/")) {
-      return json(request, { error: "不允許代理此圖片來源。" }, 403);
-    }
-
-    const archived = archivedNewsImages[source.pathname];
-    if (archived) {
-      requestedKey = archived.replace(/^\/?(?:assets\/)?images\//i, "").replace(/^\/+/, "");
-    } else {
-      const upstream = await fetch(source.href, { headers: { Accept: "image/*" } });
-      const contentType = upstream.headers.get("content-type") || "";
-      if (!upstream.ok || !contentType.startsWith("image/")) {
-        return json(request, { error: "無法載入舊站圖片。" }, 404);
-      }
-      const headers = new Headers({
-        "content-type": contentType,
-        "cache-control": "public, max-age=86400, stale-while-revalidate=604800",
-      });
-      const contentLength = upstream.headers.get("content-length");
-      if (contentLength) headers.set("content-length", contentLength);
-      return new Response(upstream.body, { headers });
-    }
   }
 
   const object = await env.BUCKET.get("images/" + requestedKey);

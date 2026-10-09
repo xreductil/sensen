@@ -2,31 +2,16 @@
   const section = document.querySelector('[data-home-news-section]');
   const list = document.querySelector('[data-home-news-list]');
   if (!section || !list) return;
-  const staticMarkup = list.innerHTML;
-
   const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, char => ({
     '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
   }[char]));
-  const archivedImageMap = {
-    '/wp-content/uploads/2025/07/1-scaled.jpg': '/images/photo-1-8.jpg',
-    '/wp-content/uploads/2025/07/2-1528x1080.jpg': '/images/photo-2-3.jpg',
-    '/wp-content/uploads/2025/07/3-1528x1080.jpg': '/images/photo-3-3.jpg',
-    '/wp-content/uploads/2025/07/4-1528x1080.jpg': '/images/photo-4-2.jpg'
-  };
   const imageUrl = value => {
     const image = String(value || '').trim();
     if (!image) return '';
-    if (/^\/images\/legacy-news(?:[?#]|$)/i.test(image)) {
-      try {
-        const legacyUrl = new URL(image, window.location.origin).searchParams.get('url');
-        const legacyPath = legacyUrl ? new URL(legacyUrl, window.location.origin).pathname : '';
-        if (archivedImageMap[legacyPath]) return archivedImageMap[legacyPath];
-      } catch {}
-    }
     const localImage = image.match(/^\/?(?:assets\/)?images\/([^?#]+)$/i);
-    if (localImage) return '/assets/images/' + localImage[1];
+    if (localImage) return '/images/' + localImage[1];
     if (/^(https?:|data:|\/)/i.test(image)) return image;
-    return '/assets/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
+    return '/images/' + image.replace(/^\.\//, '').replace(/^assets\/images\//, '');
   };
   const formatDate = value => {
     const date = new Date(value || 0);
@@ -56,12 +41,9 @@
     .then(response => response.ok ? response.json() : Promise.reject(new Error('Unable to load news.')))
     .then(data => {
       const news = Array.isArray(data.news) ? data.news : [];
-      if (news.length) render(news);
-      else if (staticMarkup) { list.innerHTML = staticMarkup; section.hidden = false; }
-      else render([]);
+      render(news);
     })
     .catch(() => {
-      if (staticMarkup) { list.innerHTML = staticMarkup; section.hidden = false; }
-      else render([]);
+      render([]);
     });
 })();

@@ -27,9 +27,7 @@
     if (!image) return '';
     try {
       const source = new URL(image, window.location.origin);
-      if (source.hostname === 'www.sensen.com.tw' && source.pathname.startsWith('/wp-content/uploads/')) {
-        return '/images/legacy-news?url=' + encodeURIComponent(source.href);
-      }
+      if (source.hostname === 'www.sensen.com.tw' && source.pathname.startsWith('/wp-content/uploads/')) return '';
     } catch {}
     const localAsset = image.match(/^\/?assets\/images\/([^?#]+)$/i);
     if (localAsset) return '/images/' + localAsset[1];
@@ -53,10 +51,6 @@
     };
   };
   const articleId = new URLSearchParams(window.location.search).get('id') || decodeURIComponent(window.location.pathname.match(/^\/latest-news\/article\/([^/]+)\/?$/)?.[1] || '');
-  let snapshotArticles = [];
-  try { snapshotArticles = JSON.parse(page.dataset.newsSnapshot || '[]'); } catch {}
-  const snapshotArticle = snapshotArticles.find(article => article.id === articleId || article.slug === articleId);
-
   const showError = message => {
     status.textContent = message;
     status.classList.add('is-error');
@@ -67,16 +61,14 @@
     return;
   }
 
-  const articleRequest = snapshotArticle
-    ? Promise.resolve({ news: [snapshotArticle] })
-    : fetch('/api/news?id=' + encodeURIComponent(articleId), {
-      credentials: 'include',
-      headers: { Accept: 'application/json' }
-    })
-      .then(response => {
-        if (!response.ok) throw new Error('目前無法載入這則最新消息。');
-        return response.json();
-      });
+  const articleRequest = fetch('/api/news?id=' + encodeURIComponent(articleId), {
+    credentials: 'include',
+    headers: { Accept: 'application/json' }
+  })
+    .then(response => {
+      if (!response.ok) throw new Error('目前無法載入這則最新消息。');
+      return response.json();
+    });
 
   articleRequest
     .then(response => {

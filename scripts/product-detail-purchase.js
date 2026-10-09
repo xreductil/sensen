@@ -398,6 +398,10 @@
     let selectedSize = options.some(([size]) => size === configuredDefaultSize) ? configuredDefaultSize : (options[0]?.[0] || '');
     let selectedFlavors = flavorCount > 1 ? [] : (flavors[0] ? [flavors[0]] : []);
     const selectedFlavor = () => selectedFlavors.join('、');
+    const priceTypes = product.variants?.priceTypes && typeof product.variants.priceTypes === 'object' && !Array.isArray(product.variants.priceTypes)
+      ? product.variants.priceTypes
+      : {};
+    const isTopHouseDetail = productPage.classList.contains('top-house-product-page') || productPage.dataset.productId?.startsWith('top-house-');
     const flavorPrices = product.variants?.flavorPrices && typeof product.variants.flavorPrices === 'object' && !Array.isArray(product.variants.flavorPrices)
       ? product.variants.flavorPrices
       : {};
@@ -406,9 +410,11 @@
       const flavorPrice = Number(flavorPrices[flavorKey] ?? (selectedFlavors.length === 1 ? flavorPrices[selectedFlavors[0]] : NaN));
       return Number.isFinite(flavorPrice) && flavorPrice > 0
         ? flavorPrice
-        : Number(options.find(([size]) => size === selectedSize)?.[1] || product.priceValue || 0);
+        : Number(options.find(([size]) => size === selectedSize)?.[1]
+          || (isTopHouseDetail ? priceTypes['特價'] : undefined)
+          || product.priceValue
+          || 0);
     };
-    const isTopHouseDetail = productPage.classList.contains('top-house-product-page') || productPage.dataset.productId?.startsWith('top-house-');
     const hasSalePrice = () => isTopHouseDetail && productOriginalPrice(product) > selectedPrice() && selectedPrice() > 0;
     let showSale = !isTopHouseDetail;
     const hasRequiredFlavors = () => flavorCount <= 1 || selectedFlavors.length === flavorCount;
@@ -546,31 +552,6 @@
     productPage.prepend(status);
   };
 
-  const fallbackProduct = () => {
-    const title = productPage.dataset.productFallbackTitle || '';
-    const image = productPage.dataset.productFallbackImage || '';
-    if (!title || !image) return null;
-    let variants = {};
-    try { variants = JSON.parse(productPage.dataset.productFallbackVariants || '{}'); } catch { variants = {}; }
-    const flavorGalleryImages = variants.flavorImages && typeof variants.flavorImages === 'object' && !Array.isArray(variants.flavorImages)
-      ? Object.values(variants.flavorImages).flatMap(imageList)
-      : [];
-    const images = [...new Set([image, ...flavorGalleryImages].filter(Boolean))];
-    return {
-      id: productId,
-      title,
-      cat: productPage.dataset.productFallbackCategory || '產品介紹',
-      desc: productPage.dataset.productFallbackDescription || '商品詳細資料整理中。',
-      img: image,
-      images,
-      published: Number(productPage.dataset.productFallbackPrice || 0) > 0,
-      quantity: Number(productPage.dataset.productFallbackPrice || 0) > 0 ? 1 : 0,
-      priceValue: Number(productPage.dataset.productFallbackPrice || 0),
-      likes: 0,
-      variants,
-    };
-  };
-
   fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } })
     .then(response => response.ok ? response.json() : Promise.reject(new Error('無法載入商品資料。')))
     .then(data => {
@@ -589,14 +570,6 @@
     })
     .catch(error => {
       console.warn(error);
-      const fallback = fallbackProduct();
-      if (!fallback) {
-        showError(error.message || '商品資料載入失敗。');
-        return;
-      }
-      syncProductDetails(fallback);
-      renderPurchase(fallback);
-      renderRelated(fallback, []);
-      productPage.dataset.productLoaded = 'true';
+      showError(error.message || '商品資料載入失敗。');
     });
 })();

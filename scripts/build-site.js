@@ -5,10 +5,6 @@ const ROOT = path.join(__dirname, "..");
 const OUT_DIR = path.join(ROOT, "site");
 const IMAGE_DATA_DIR = path.join(ROOT, "data", "images");
 const IMAGE_MAP_FILE = path.join(IMAGE_DATA_DIR, "image-map.json");
-const PRODUCT_DATA_FILES = [
-  path.join(ROOT, "sensen-backend", "data", "sensen-products.json"),
-  path.join(ROOT, "sensen-backend", "data", "db.json"),
-];
 const CRAWL_FILE = path.join(ROOT, ".firecrawl", "sensen-full-crawl.json");
 const FALLBACK_FILE = path.join(ROOT, "data", "crawl", "crawl-results.json");
 const WP_FILES = [
@@ -22,7 +18,7 @@ const WORDPRESS_EXPORT_FILES = [
   path.join(ROOT, "data", "wordpress", "WordPress.2026-08-09 (2).xml"),
 ];
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
-const SITE_CSS_URL = "/assets/site.css?v=20261009-cart-remove-icon-1";
+const SITE_CSS_URL = "/assets/site.css?v=20261010-announcement-2";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261009-thumbnail-responsive-1";
 const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-thumbnail-responsive-1";
 const CART_DRAWER_SCRIPT_URL = "/assets/cart-drawer.js?v=20261009-cart-remove-icon-1";
@@ -48,10 +44,25 @@ const SITEMAP_EXCLUDED_PATHS = new Set([
   "/product-item/123",
   "/product-item/_template",
   "/product-item/codex-excel-test",
+  "/product-item/rose-salt-assorted-egg-yolk-gift",
   "/product-item/rose-salt-red-bean-egg-yolk-gift",
   "/product-item/rose-salt-taro-egg-yolk-gift",
   "/product-item/rose-salt-matcha-egg-yolk-gift",
   "/product-item/rose-salt-date-egg-yolk-gift",
+  "/product-item/伴手禮新品圖片-05",
+  "/product-item/法式蝴蝶酥-1657",
+  "/product-item/綜合綠豆椪禮盒",
+  "/product-item/蛋黃綠豆椪禮盒-mu5bhpph",
+  "/latest-news/2022父親節蛋糕",
+  "/latest-news/2023春節伴手禮",
+  "/latest-news/2023父親節蛋糕",
+  "/latest-news/2024中秋禮盒",
+  "/latest-news/2025中秋月餅",
+  "/latest-news/2025母親節蛋糕預購開跑",
+  "/latest-news/bebuilder-2073",
+  "/latest-news/新富店專屬優惠",
+  "/latest-news/歐包系列",
+  "/latest-news/🍍鳳梨來了🍍",
   "/product-item/伴手禮新品圖片-02",
   "/product-item/伴手禮新品圖片-03",
   "/product-item/伴手禮新品圖片-04",
@@ -71,6 +82,26 @@ Sitemap: ${SOURCE_ORIGIN}/sitemap.xml
 `;
 const RETIRED_CONTENT_PATHS = new Set([
   "/cart",
+  "/product-item/codex-excel-test",
+  "/product-item/rose-salt-assorted-egg-yolk-gift",
+  "/product-item/rose-salt-red-bean-egg-yolk-gift",
+  "/product-item/rose-salt-taro-egg-yolk-gift",
+  "/product-item/rose-salt-matcha-egg-yolk-gift",
+  "/product-item/rose-salt-date-egg-yolk-gift",
+  "/product-item/伴手禮新品圖片-05",
+  "/product-item/法式蝴蝶酥-1657",
+  "/product-item/綜合綠豆椪禮盒",
+  "/product-item/蛋黃綠豆椪禮盒-mu5bhpph",
+  "/latest-news/2022父親節蛋糕",
+  "/latest-news/2023春節伴手禮",
+  "/latest-news/2023父親節蛋糕",
+  "/latest-news/2024中秋禮盒",
+  "/latest-news/2025中秋月餅",
+  "/latest-news/2025母親節蛋糕預購開跑",
+  "/latest-news/bebuilder-2073",
+  "/latest-news/新富店專屬優惠",
+  "/latest-news/歐包系列",
+  "/latest-news/🍍鳳梨來了🍍",
   "/精緻外燴-355",
   "/product-item/123",
   "/author/admin",
@@ -273,6 +304,20 @@ const RETIRED_CONTENT_PATHS = new Set([
   "/new-arrival/聖誕草莓泡芙",
   "/new-arrival/葡萄圓舞曲",
   "/new-arrival/戀戀草莓季",
+]);
+// These IDs are legacy/test records that were intentionally deleted or merged
+// in D1. Do not recreate their static detail pages from older local exports.
+const RETIRED_PRODUCT_IDS = new Set([
+  "codex-excel-test",
+  "rose-salt-assorted-egg-yolk-gift",
+  "rose-salt-date-egg-yolk-gift",
+  "rose-salt-matcha-egg-yolk-gift",
+  "rose-salt-red-bean-egg-yolk-gift",
+  "rose-salt-taro-egg-yolk-gift",
+  "new-souvenir-image-05",
+  "souvenir-palmier",
+  "綜合綠豆椪禮盒",
+  "蛋黃綠豆椪禮盒-mu5bhpph",
 ]);
 for (const index of [1, 9, 10]) {
   RETIRED_CONTENT_PATHS.add(`/product-item/伴手禮新品圖片-${String(index).padStart(2, "0")}`);
@@ -740,62 +785,16 @@ const NEW_IMAGE_PRODUCT_RECORDS = [
     category: "生日蛋糕",
   })),
 ];
-const NEW_IMAGE_PRODUCT_BY_ID = new Map(NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record]));
-const NEW_BIRTHDAY_CAKE_PRODUCT_ROWS = NEW_IMAGE_PRODUCT_RECORDS
+const ACTIVE_NEW_IMAGE_PRODUCT_RECORDS = NEW_IMAGE_PRODUCT_RECORDS.filter((record) => !RETIRED_PRODUCT_IDS.has(record.id));
+const NEW_IMAGE_PRODUCT_BY_ID = new Map(ACTIVE_NEW_IMAGE_PRODUCT_RECORDS.map((record) => [record.id, record]));
+const NEW_BIRTHDAY_CAKE_PRODUCT_ROWS = ACTIVE_NEW_IMAGE_PRODUCT_RECORDS
   .filter((record) => record.kind === "cake")
   .map((record) => [record.title, "0", record.image, record.path]);
 
 function readAutomaticProductDetailRecords() {
-  const products = [];
-  for (const filePath of PRODUCT_DATA_FILES) {
-    if (!fs.existsSync(filePath)) continue;
-    try {
-      const payload = readJson(filePath);
-      const entries = Array.isArray(payload) ? payload : payload.productAdditions;
-      if (Array.isArray(entries)) {
-        const deletedIds = new Set(Array.isArray(payload.deletedProducts) ? payload.deletedProducts.map((id) => String(id)) : []);
-        products.push(...entries.filter((product) => !deletedIds.has(String(product.id || product.slug || "").trim())));
-      }
-    } catch {
-      // An optional local product source should not prevent the static site build.
-    }
-  }
-  const records = new Map();
-  for (const product of products) {
-    const id = String(product.id || product.slug || "").trim();
-    const title = String(product.title || product.name || "").trim();
-    if (!id || !title) continue;
-    const safeId = id.replace(/^\/+|\/+$/g, "").replace(/\/+/g, "-");
-    if (!safeId) continue;
-    const category = String(product.cat || product.category || "產品介紹").trim() || "產品介紹";
-    const image = String(product.img || product.image || "").trim()
-      .replace(/^\/assets\/images\//i, "/images/")
-      .replace(/^\/data\/images\//i, "/images/");
-    const images = [...new Set([
-      image,
-      ...(Array.isArray(product.images) ? product.images : []),
-    ].map((value) => String(value || "").trim()
-      .replace(/^\/assets\/images\//i, "/images/")
-      .replace(/^\/data\/images\//i, "/images/")) .filter(Boolean))];
-    const priceValue = Number(product.priceValue || String(product.price || "").replace(/[^0-9.]/g, "")) || 0;
-    records.set(id, {
-      id,
-      title,
-      path: `/product-item/${safeId}`,
-      image,
-      kind: category.includes("伴手禮") ? "souvenir" : "cake",
-      category,
-      description: String(product.desc || product.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。"),
-      priceValue,
-      images,
-      ...(product.size ? { size: String(product.size) } : {}),
-      ...(product.storage ? { storage: String(product.storage) } : {}),
-      ...(product.dietary ? { dietary: String(product.dietary) } : {}),
-      ...(product.dietaryImage ? { dietaryImage: String(product.dietaryImage) } : {}),
-      ...(product.variants && typeof product.variants === "object" && !Array.isArray(product.variants) ? { variants: product.variants } : {}),
-    });
-  }
-  return [...records.values()];
+  // Product content belongs to D1. The build only emits reusable page shells;
+  // it must not read the old local JSON exports.
+  return [];
 }
 
 // These products were created through the online admin after the last static
@@ -844,8 +843,9 @@ const DYNAMIC_PRODUCT_DETAIL_RECORDS = [
     category: "伴手禮",
     description: "",
   },
-];
-const AUTOMATIC_PRODUCT_DETAIL_RECORDS = readAutomaticProductDetailRecords();
+].filter((record) => !RETIRED_PRODUCT_IDS.has(record.id));
+const AUTOMATIC_PRODUCT_DETAIL_RECORDS = readAutomaticProductDetailRecords()
+  .filter((record) => !RETIRED_PRODUCT_IDS.has(record.id));
 const DYNAMIC_PRODUCT_DETAIL_BY_ID = new Map(DYNAMIC_PRODUCT_DETAIL_RECORDS.map((record) => [record.id, record]));
 const AUTOMATIC_PRODUCT_DETAIL_BY_ID = new Map(AUTOMATIC_PRODUCT_DETAIL_RECORDS.map((record) => [record.id, record]));
 
@@ -880,7 +880,7 @@ CAKE_SECTIONS.forEach((section, index) => {
     CAKE_PRODUCT_CATEGORY_LABELS.set(localPathFromUrl(new URL(href, SOURCE_ORIGIN).href), cakeCategoryLabels[index]);
   });
 });
-NEW_IMAGE_PRODUCT_RECORDS
+ACTIVE_NEW_IMAGE_PRODUCT_RECORDS
   .filter((record) => record.kind === "cake")
   .forEach((record) => CAKE_PRODUCT_CATEGORY_LABELS.set(record.path, "所有蛋糕, 生日蛋糕"));
 
@@ -1688,25 +1688,8 @@ function structuredDataForPage({ title, pathLabel, canonical, description, isHom
   if (isProduct) {
     const productId = typeof productIdForDetailPath === "function" ? productIdForDetailPath(localPath) : "";
     const topHouseRecord = productId && typeof TOP_HOUSE_PRODUCT_BY_ID !== "undefined" ? TOP_HOUSE_PRODUCT_BY_ID.get(productId) : null;
-    const productName = htmlAttributeValue(content, "data-product-fallback-title") || htmlDataText(content, "data-product-title") || (topHouseRecord ? topHouseRecord[0] : pageName);
-    const productImage = htmlAttributeValue(content, "data-product-fallback-image") || (topHouseRecord ? `/images/${topHouseRecord[1]}` : "");
-    const productDescription = htmlAttributeValue(content, "data-product-fallback-description") || `${productName}，森森點心坊商品。`;
-    const product = {
-      "@type": "Product",
-      "@id": `${canonical}#product`,
-      name: productName,
-      description: productDescription,
-      url: canonical,
-      image: productImage ? [absoluteSiteUrl(productImage)] : undefined,
-      brand: { "@id": JSON_LD_ORGANIZATION_ID },
-      category: htmlAttributeValue(content, "data-product-fallback-category") || "烘焙點心",
-      mainEntityOfPage: { "@id": `${canonical}#webpage` },
-      sku: productId || undefined,
-    };
-    if (topHouseRecord && Number.isFinite(Number(topHouseRecord[2]))) {
-      product.offers = { "@type": "Offer", priceCurrency: "TWD", price: Number(topHouseRecord[2]), availability: "https://schema.org/InStock", url: canonical };
-    }
-    graph.push(product);
+    // Product fields are loaded from D1 after the shell reaches the browser.
+    // Do not publish a stale JSON-LD product snapshot from local files.
   } else if (/^\/(?:最新消息|latest-news)\//i.test(localPath)) {
     graph.push({
       "@type": "Article",
@@ -2079,14 +2062,28 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     if (!announcement || !message) return;
     const messages = ["所有產品運費另計", "彌月專區訂購滿30盒以上享有特價優惠"];
     let index = 0;
-    window.setInterval(() => {
+    let rotationTimer = 0;
+    let transitionTimer = 0;
+    const rotate = () => {
       message.classList.add("is-changing");
-      window.setTimeout(() => {
+      window.clearTimeout(transitionTimer);
+      transitionTimer = window.setTimeout(() => {
         index = (index + 1) % messages.length;
         message.textContent = messages[index];
         message.classList.remove("is-changing");
       }, 220);
-    }, 4000);
+      rotationTimer = window.setTimeout(rotate, 4000);
+    };
+    const restart = () => {
+      window.clearTimeout(rotationTimer);
+      window.clearTimeout(transitionTimer);
+      message.classList.remove("is-changing");
+      rotationTimer = window.setTimeout(rotate, document.hidden ? 4000 : 400);
+    };
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) restart();
+    });
+    restart();
   })();
   </script>
   <footer class="footer"><span class="footer-item">© 2018 - 2026 森森點心坊. All Rights Reserved.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item">Design by <a href="https://www.aq-webdesign.com/index.html" target="_blank" rel="noreferrer">A.Q.webdesign</a>.</span><span class="footer-separator" aria-hidden="true"> | </span><span class="footer-item"><a href="/%e9%9a%b1%e7%A7%81%e6%ac%8a%e6%A2%9d%e6%ac%be/">隱私權政策</a></span></footer>
@@ -2099,29 +2096,8 @@ ${purchaseScripts ? `\n  ${purchaseScripts}` : "\n  "}
 }
 
 function readStaticPublishedNews() {
-  const dbFile = path.join(ROOT, "sensen-backend", "data", "db.json");
-  if (!fs.existsSync(dbFile)) return [];
-  try {
-    const db = readJson(dbFile);
-    const now = Date.now();
-    return (Array.isArray(db.news) ? db.news : [])
-      .filter((article) => article.status === "published" && (!article.publishAt || new Date(article.publishAt).getTime() <= now))
-      .sort((left, right) => new Date(right.publishAt || right.createdAt || 0) - new Date(left.publishAt || left.createdAt || 0))
-      .map((article) => ({
-        id: String(article.id || ""),
-        slug: String(article.slug || article.id || ""),
-        title: String(article.title || "最新消息"),
-        excerpt: String(article.excerpt || ""),
-        content: String(article.content || ""),
-        image: String(article.image || ""),
-        category: String(article.category || "latest-news"),
-        publishAt: article.publishAt || article.createdAt || "",
-        createdAt: article.createdAt || "",
-        layout: Array.isArray(article.layout) ? article.layout : undefined,
-      }));
-  } catch {
-    return [];
-  }
+  // News content belongs to D1 and is fetched by the browser API modules.
+  return [];
 }
 
 function staticNewsImagePath(value) {
@@ -2185,7 +2161,7 @@ function homeContent() {
     </div>
   </section>
   <section class="home-taste"><div class="image-slot"><span>彌月試吃圖片預留位</span></div><div><h2>彌月試吃申請</h2><p class="eyebrow">TOP HOUSE &amp; SENSEN BAKERY</p><p>無論您是懷孕中的媽咪或是寶寶剛誕生，都感謝您給予機會選<br class="home-taste-mobile-break">擇森森彌月蛋糕，讓我們與您一同分享這份幸福的喜悅！(產<br class="home-taste-mobile-break">前產後均可申請。產前建議懷孕35週以上的媽咪唷!)</p><a class="button" href="/%e9%a0%82%e5%ae%b6%e5%bd%8c%e6%9c%88/taste_apply/">線上申請</a></div></section>
-  <section class="home-section" data-home-news-section${readStaticPublishedNews().length ? "" : " hidden"}><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/%e6%9c%80%e6%96%b0%e6% הוד%a9/">更多訊息</a></div><div class="home-news-grid" data-home-news-list>${staticNewsCards(readStaticPublishedNews().slice(0, 3), "home-news")}</div></section><script src="${HOME_NEWS_SCRIPT_URL}"></script>
+  <section class="home-section" data-home-news-section hidden><div class="section-heading"><div><p class="eyebrow">latest news</p><h2>最新消息</h2></div><a href="/最新消息/">更多訊息</a></div><div class="home-news-grid" data-home-news-list></div></section><script src="${HOME_NEWS_SCRIPT_URL}"></script>
   <section class="gift-section"><div class="gift-copy"><img class="gift-icon" src="/images/home-icon-giftbox.png" alt="" aria-hidden="true"><h2>精選伴手禮</h2><p>各式經典組合<br>多樣化的選擇<br>吃進嘴裡都是幸福的味道</p><a class="button" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/">更多伴手禮</a></div><div class="gift-mosaic">${giftTiles}</div></section>
   <section class="home-catering"><div class="catering-copy"><div class="catering-panel"><div class="catering-title-row"><img class="catering-icon" src="/images/home-icon-cutlery.png" alt="" aria-hidden="true"><div><h2>酒會/外燴服務</h2><p>嚴選食材。精心烹調。味覺饗宴</p></div></div><span class="catering-wave" aria-hidden="true"></span><a class="button" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">了解更多 <span aria-hidden="true">›</span></a></div></div><div class="catering-images"><a class="catering-card buffet" href="/%e7%b2%be%e7%b7%bb%e5%a4%96%e7%87%b4-355/">${imageSlotHtml({ source: "/images/home-buffet.jpg", label: "Buffet" })}<div class="catering-card-copy"><span>Buffet</span><strong>精緻外燴</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a><a class="catering-card tea-party" href="/%e8%8c%b6%e6%9c%83%e9%bb%9e%e5%bf%83-tea-party/">${imageSlotHtml({ source: "/images/home-catering.jpg", label: "Tea Party" })}<div class="catering-card-copy"><span>Tea Party</span><strong>茶會點心</strong><small>菜單下載</small><em aria-hidden="true">⌄</em></div></a></div></section>
   `.replace(/<section class="home-catering">[\s\S]*?<\/section>/, "");
@@ -2548,7 +2524,7 @@ const PRODUCT_PRICE_LABEL = "價格洽詢";
 const SOUVENIR_PRODUCTS = [
   ["豆塔禮盒", "/product-item/豆塔禮盒", "photo-2.jpg", 9],
   ["肉鬆餅禮盒", "/product-item/森森肉鬆餅", "pork-floss-pastry-4.jpg", 17],
-  ["蝴蝶酥禮盒", "/product-item/法式蝴蝶酥-1657", "palmiers-2.jpg", 8],
+  ["蝴蝶酥禮盒", "/product-item/souvenir-palmier-10", "palmiers-2.jpg", 8],
   ["杏仁千層酥", "/product-item/鈕扣牛軋餅", "almond-layer-pastry.jpg", 10],
   ["經典奶油餅禮盒", "/product-item/太陽餅禮盒", "sun-cake-thumbnail-copy.jpg", 6],
   ["手工蛋捲", "/product-item/手工蛋捲", "egg-roll-2.jpg", 4],
@@ -2591,7 +2567,7 @@ const STOREFRONT_PRODUCT_ID_PATHS = {
   "berry-melody": "/product-item/莓麗朵-245",
   "souvenir-bean-tower": "/product-item/豆塔禮盒",
   "souvenir-pork-floss": "/product-item/森森肉鬆餅",
-  "souvenir-palmier": "/product-item/法式蝴蝶酥-1657",
+  "souvenir-palmier-10": "/product-item/souvenir-palmier-10",
   "souvenir-almond-layer": "/product-item/鈕扣牛軋餅",
   "souvenir-butter-cake": "/product-item/太陽餅禮盒",
   "souvenir-egg-roll": "/product-item/手工蛋捲",
@@ -2600,7 +2576,7 @@ const STOREFRONT_PRODUCT_ID_PATHS = {
   "souvenir-pineapple-cake": "/product-item/土鳳梨酥禮盒",
   "souvenir-daifuku": "/product-item/日式大福禮盒",
   "玫瑰鹽綜合蛋黃酥禮盒": "/product-item/玫瑰鹽綜合蛋黃酥禮盒",
-  ...Object.fromEntries(NEW_IMAGE_PRODUCT_RECORDS
+  ...Object.fromEntries(ACTIVE_NEW_IMAGE_PRODUCT_RECORDS
     .filter((record) => !["new-souvenir-image-02", "new-souvenir-image-03", "new-souvenir-image-04"].includes(record.id))
     .map((record) => [record.id, record.path])),
 };
@@ -2613,9 +2589,12 @@ function productIdForDetailPath(localPath) {
   }
   const match = Object.entries(STOREFRONT_PRODUCT_ID_PATHS).find(([, productPath]) => productPath === localPath);
   if (match?.[0]) return match[0];
-  return AUTOMATIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id
+  const knownRecordId = AUTOMATIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id
     || DYNAMIC_PRODUCT_DETAIL_RECORDS.find((record) => record.path === localPath)?.id
     || "";
+  if (knownRecordId) return knownRecordId;
+  const routeSegment = decodeURIComponent(localPath.split("/").filter(Boolean).pop() || "");
+  return /^[-a-z0-9]+$/i.test(routeSegment) ? routeSegment : "";
 }
 
 function productDetailTitleForPath(localPath) {
@@ -2637,64 +2616,14 @@ function productDetailTitleForPath(localPath) {
 }
 
 function productFallbackForPath(localPath) {
-  const productId = productIdForDetailPath(localPath);
-  const automatic = NEW_IMAGE_PRODUCT_BY_ID.get(productId)
-    || AUTOMATIC_PRODUCT_DETAIL_BY_ID.get(productId)
-    || DYNAMIC_PRODUCT_DETAIL_BY_ID.get(productId);
-  if (automatic) {
-    const normalizedImage = automatic.image
-      ? (String(automatic.image).startsWith("/") ? automatic.image : `/images/${automatic.image}`)
-      : "";
-    const normalizedImages = [...new Set([
-      normalizedImage,
-      ...(Array.isArray(automatic.images) ? automatic.images : []),
-    ].map((value) => String(value || "").trim()
-      .replace(/^\/assets\/images\//i, "/images/")
-      .replace(/^\/data\/images\//i, "/images/")) .filter(Boolean))];
-    return {
-      ...automatic,
-      image: normalizedImage,
-      images: normalizedImages,
-      description: automatic.description || "商品詳細資料整理中。",
-    };
-  }
-  const topHouse = productId && TOP_HOUSE_PRODUCT_BY_ID.has(productId) ? TOP_HOUSE_PRODUCT_BY_ID.get(productId) : null;
-  if (topHouse) {
-    const details = TOP_HOUSE_CARD_DETAILS.get(productId) || {};
-    return {
-      id: productId,
-      title: details.title || topHouse[0],
-      image: `/images/${topHouse[1]}`,
-      category: "頂家彌月",
-      description: details.description || "頂家彌月商品，歡迎洽詢森森點心坊。",
-      priceValue: Number(topHouse[2]) || 0,
-    };
-  }
-  const catalog = readStaticCatalogProducts().find((product) => product.id === productId);
-  if (catalog) {
-    return {
-      id: catalog.id,
-      title: catalog.title,
-      image: catalog.img,
-      category: catalog.cat,
-      description: catalog.desc || "商品詳細資料整理中。",
-      priceValue: catalog.priceValue,
-      size: catalog.size,
-      storage: catalog.storage,
-      dietary: catalog.dietary,
-    };
-  }
+  // Product data is never embedded in the static page shell.
   return null;
 }
 
 function productDetailDataAttributes(localPath) {
   const includeTopHouseProducts = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
   const productId = productIdForDetailPath(localPath);
-  const fallback = productFallbackForPath(localPath);
-  const fallbackAttributes = fallback
-    ? ` data-product-fallback-title="${escapeAttr(fallback.title)}"${fallback.image ? ` data-product-fallback-image="${escapeAttr(fallback.image)}"` : ""} data-product-fallback-category="${escapeAttr(fallback.category || fallback.cat || "產品介紹")}" data-product-fallback-description="${escapeAttr(fallback.description || "商品詳細資料整理中，名稱、價格與規格將於確認後更新。")}"${fallback.priceValue ? ` data-product-fallback-price="${escapeAttr(fallback.priceValue)}"` : ""}${fallback.variants ? ` data-product-fallback-variants="${escapeAttr(JSON.stringify(fallback.variants))}"` : ""}`
-    : "";
-  return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"${fallbackAttributes}`;
+  return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"`;
 }
 
 function topHouseHeroVariantForPath(localPath) {
@@ -2721,27 +2650,23 @@ function topHouseHeroTitleForPath(localPath) {
 }
 
 function productDetailShell({ localPath, kind = "cake" }) {
-  const fallback = productFallbackForPath(localPath);
   const souvenir = kind === "souvenir";
-  const longCake = ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(fallback?.category || "").trim());
+  const longCake = localPath.includes("long-cake") || localPath.includes("長條蛋糕");
   const birthdayCake = kind === "cake" && (
     CAKE_PRODUCT_CATEGORY_LABELS.get(localPath) === "所有蛋糕, 生日蛋糕"
-    || String(fallback?.category || "").trim() === "生日蛋糕"
+    || localPath.includes("生日蛋糕")
   );
   const topHouse = kind === "top-house";
   const topHouseHeroClass = topHouse ? ` top-house-hero-${topHouseHeroVariantForPath(localPath)}` : "";
   const pageClass = souvenir
     ? "product-detail-template bean-tart-product-page souvenir-product-page"
     : `product-detail-template cake-product-page${birthdayCake ? " birthday-cake-product-page" : ""}${longCake ? " long-cake-product-page" : ""}${topHouse ? ` top-house-product-page${topHouseHeroClass}` : ""}`;
-  const initialTitle = fallback?.title || productDetailTitleForPath(localPath);
-  const initialImage = fallback?.image || "";
-  const initialImages = Array.isArray(fallback?.images) && fallback.images.length
-    ? fallback.images
-    : (initialImage ? [initialImage] : []);
-  const initialDescription = fallback?.description || "商品資料載入中…";
-  const initialSize = fallback?.size || "—";
-  const initialStorage = fallback?.storage || "—";
-  const initialDietary = fallback?.dietary || "—";
+  const initialTitle = "商品資料載入中…";
+  const initialImages = [];
+  const initialDescription = "商品資料載入中…";
+  const initialSize = "—";
+  const initialStorage = "—";
+  const initialDietary = "—";
   const souvenirIcon = souvenir
     ? '<div class="souvenir-detail-icon" aria-hidden="true"><img src="/images/icon-cupcake.webp" alt=""></div>'
     : "";
@@ -3089,28 +3014,8 @@ function storefrontProductPathMap({ includeTopHouseProducts = false } = {}) {
 }
 
 function syncAutomaticProductDetailSnapshots() {
-  const mappedIds = new Set(Object.keys(STOREFRONT_PRODUCT_ID_PATHS));
-  const records = [...new Map([
-    ...AUTOMATIC_PRODUCT_DETAIL_RECORDS,
-    ...DYNAMIC_PRODUCT_DETAIL_RECORDS,
-    ...NEW_IMAGE_PRODUCT_RECORDS,
-  ].map((record) => [record.id, record])).values()];
-  for (const product of records) {
-    if ((mappedIds.has(product.id) && !NEW_IMAGE_PRODUCT_BY_ID.has(product.id)) || !product.image) continue;
-    const filePath = htmlFileForLocalPath(product.path);
-    ensureDir(filePath);
-    const content = normalizeHeadingStructure(productDetailShell({ localPath: product.path, kind: product.kind }), product.path);
-    fs.writeFileSync(filePath, layout({
-      title: `${product.title} – 森森點心坊`,
-      pathLabel: product.path,
-      content,
-      isCakeProduct: product.kind === "cake",
-      isSouvenirProduct: product.kind === "souvenir",
-      isLongCakeProduct: ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(product.category || "").trim()),
-      heroCategoryLabel: product.category,
-      hasBrandedHero: true,
-    }));
-  }
+  // Product routes are kept as static shells already present in site/.
+  // Product content is loaded from D1 at request time.
 }
 
 function syncProductDetailTemplate() {
@@ -3127,36 +3032,8 @@ function syncProductDetailTemplate() {
 }
 
 function readStaticCatalogProducts() {
-  const records = new Map();
-  for (const filePath of PRODUCT_DATA_FILES) {
-    if (!fs.existsSync(filePath)) continue;
-    try {
-      const payload = readJson(filePath);
-      const entries = Array.isArray(payload) ? payload : payload.productAdditions;
-      if (!Array.isArray(entries)) continue;
-      const deletedIds = new Set(Array.isArray(payload.deletedProducts) ? payload.deletedProducts.map((id) => String(id)) : []);
-      for (const product of entries) {
-        const id = String(product.id || product.slug || "").trim();
-        const title = String(product.title || product.name || "").trim();
-        if (!id || !title || deletedIds.has(id)) continue;
-        const priceValue = Number(product.priceValue || String(product.price || "").replace(/[^0-9.]/g, "")) || 0;
-        records.set(id, {
-          ...product,
-          id,
-          title,
-          cat: String(product.cat || product.category || "產品介紹").trim(),
-          img: String(product.img || product.image || "").replace(/^\/assets\/images\//i, "/images/").replace(/^\/data\/images\//i, "/images/"),
-          priceValue,
-          published: product.published !== false,
-          salesCount: Number(product.salesCount || 0),
-          newArrivalRank: Number(product.newArrivalRank || 0),
-        });
-      }
-    } catch {
-      // Optional catalog exports should not prevent the static site build.
-    }
-  }
-  return [...records.values()].filter((product) => product.published);
+  // Catalog cards are rendered from D1 by storefront-products.js.
+  return [];
 }
 
 function staticCatalogTitle(value) {
@@ -3595,23 +3472,20 @@ function latestNewsContent(page) {
     ["生日蛋糕", "sensen-coffee"],
   ];
   const filterHtml = filters.map(([label, value, active]) => `<button class="latest-news-filter${active ? " is-active" : ""}" type="button" data-news-filter="${escapeAttr(value)}" aria-pressed="${active ? "true" : "false"}">${escapeHtml(label)}</button>`).join("");
-  const news = readStaticPublishedNews();
-  const snapshot = escapeAttr(JSON.stringify(news).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026"));
   return `<section class="latest-news-page" data-latest-news-page aria-labelledby="latest-news-heading">
     <h2 class="latest-news-sr-only" id="latest-news-heading">最新消息</h2>
     <img class="latest-news-icon" src="/images/icon-wheat.png" alt="" aria-hidden="true">
     <nav class="latest-news-filters" aria-label="最新消息分類">${filterHtml}</nav>
-    <div class="latest-news-grid" data-news-list data-news-snapshot="${snapshot}" aria-live="polite">${staticNewsCards(news, "latest-news") || `<p class="latest-news-empty">目前沒有最新消息。</p>`}</div>
+    <div class="latest-news-grid" data-news-list aria-live="polite"><p class="latest-news-empty">最新消息載入中…</p></div>
     <script src="/assets/latest-news.js"></script>
   </section>`;
 }
 
 function latestNewsArticleContent() {
-  const snapshot = escapeAttr(JSON.stringify(readStaticPublishedNews()).replace(/</g, "\\u003c").replace(/>/g, "\\u003e").replace(/&/g, "\\u0026"));
   return `<section class="page-hero about-hero">
     <div class="hero-banner"><div class="image-slot" data-image-source="/images/headtitle-bg2.jpg"><img src="/images/headtitle-bg2.jpg" alt="頁首背景圖片"></div><div class="hero-banner-title"><p>/最新消息</p><h2 class="latest-news-article-section-title">最新消息</h2></div></div>
   </section>
-  <section class="latest-news-article-page" data-latest-news-article-page data-news-snapshot="${snapshot}" aria-labelledby="latest-news-article-title">
+  <section class="latest-news-article-page" data-latest-news-article-page aria-labelledby="latest-news-article-title">
     <img class="latest-news-article-icon" src="/images/icon-wheat.png" alt="" aria-hidden="true">
     <a class="latest-news-article-back" href="/最新消息/">← 返回最新消息</a>
     <!-- NEWS_ARTICLE_SHELL_START --><div class="latest-news-article-shell">
@@ -3670,17 +3544,27 @@ function removeRetiredContentCards(markdown) {
 }
 
 function removeRetiredContentCardsFromHtml(html) {
-  const cardPattern = /<p>\s*\d{4}-\d{2}-\d{2}\s*<\/p>[\s\S]*?<p>\s*<a\s+href="([^"]+)"[^>]*>更多<\/a>\s*<\/p>/gi;
-  return String(html || "").replace(cardPattern, (card) => {
-    const linksToRetiredContent = [...card.matchAll(/(?:href|data-image-source)="([^"]+)"/gi)].some((match) => {
-      try {
-        return RETIRED_CONTENT_PATHS.has(localPathFromUrl(new URL(match[1], SOURCE_ORIGIN).href));
-      } catch {
-        return false;
-      }
-    });
-    return linksToRetiredContent ? "" : card;
+  const isRetiredReference = (value) => {
+    try {
+      return RETIRED_CONTENT_PATHS.has(localPathFromUrl(new URL(String(value || "").replaceAll("&amp;", "&"), SOURCE_ORIGIN).href));
+    } catch {
+      return false;
+    }
+  };
+  const hasRetiredReference = (content) => [
+    ...String(content || "").matchAll(/(?:href|data-image-source)=["']([^"']+)["']/gi),
+    ...String(content || "").matchAll(/https?:\/\/[^\s)"']+/gi),
+  ].some((match) => isRetiredReference(match[1] || match[0]));
+  const cardPattern = /(?:<div class="image-grid">[\s\S]*?<\/div>\s*)?<p>\s*\d{4}-\d{2}-\d{2}\s*<\/p>[\s\S]*?<p>\s*<a\s+href="([^"]+)"[^>]*>更多<\/a>\s*<\/p>/gi;
+  const withoutCards = String(html || "").replace(cardPattern, (card) => {
+    return hasRetiredReference(card) ? "" : card;
   });
+  const withoutNewsCards = withoutCards.replace(/<article class="news-card">[\s\S]*?<a\s+class="more"\s+href="([^"]+)"[^>]*>更多<\/a>[\s\S]*?<\/article>/gi, (card) => {
+    return hasRetiredReference(card) ? "" : card;
+  });
+  return withoutNewsCards.replace(/<p\b[^>]*>[\s\S]*?<\/p>/gi, (paragraph) => {
+    return hasRetiredReference(paragraph) ? "" : paragraph;
+  }).replace(/[ \t]+\n/g, "\n");
 }
 
 function decorateMonthDmContent(html) {
@@ -4248,9 +4132,10 @@ function rewriteStaticSnapshotNavigation() {
   const onlineTeaPartyPattern = /(<div class="menu-item"><a href="[^"]*"[^>]*>線上商城[\s\S]*?<div class="submenu">[\s\S]*?)(<a href="[^"]*">)點心餐盒(<\/a>)/;
   for (const filePath of htmlFiles) {
     const html = fs.readFileSync(filePath, "utf8");
+    const cleaned = removeRetiredContentCardsFromHtml(html);
     const updated = homeNavigation
-      ? html.replace(/<header class="site-header">[\s\S]*?<\/header>/, () => homeNavigation)
-      : html
+      ? cleaned.replace(/<header class="site-header">[\s\S]*?<\/header>/, () => homeNavigation)
+      : cleaned
         .replace(onlineMenuPattern, `$1${onlineLongCakeLink}`)
         .replace(onlineTeaPartyPattern, `$1${onlineTeaPartyLink}`);
     if (updated !== html) fs.writeFileSync(filePath, updated);
@@ -4361,11 +4246,11 @@ function syncProductDetailSnapshot() {
     }
     if (isProductPage) {
       const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
-      const fallbackProduct = productFallbackForPath(localPath);
-      const isLongCakePage = ["長條蛋糕", "長條蛋糕(冷凍)"].includes(String(fallbackProduct?.category || "").trim());
+      const isLongCakePage = html.includes("long-cake-product-page") || localPath.includes("long-cake") || localPath.includes("長條蛋糕");
       const isBirthdayCakePage = kind === "cake" && (
         CAKE_PRODUCT_CATEGORY_LABELS.get(localPath) === "所有蛋糕, 生日蛋糕"
-        || String(fallbackProduct?.category || "").trim() === "生日蛋糕"
+        || html.includes("birthday-cake-product-page")
+        || localPath.includes("生日蛋糕")
       );
       if (productId) {
         updated = replaceProductSection(updated, productDetailShell({ localPath, kind }));
