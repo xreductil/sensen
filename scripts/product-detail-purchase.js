@@ -439,7 +439,9 @@
 
     const updateVariant = () => {
       const available = inStock();
-      if (!hasSalePrice()) showSale = false;
+      const currentQuantity = Number(section.querySelector('[data-cake-quantity]')?.textContent || 1);
+      if (hasSalePrice()) showSale = currentQuantity >= 30;
+      else showSale = false;
       const priceElement = section.querySelector('[data-product-detail-price]');
       if (priceElement) priceElement.innerHTML = priceMarkup(product, selectedPrice(), showSale);
       const saleToggle = section.querySelector('[data-product-sale-toggle]');
@@ -491,11 +493,9 @@
     }));
 
     section.querySelector('[data-product-sale-toggle]')?.addEventListener('click', () => {
-      showSale = !showSale;
-      if (showSale) {
-        const quantityOutput = section.querySelector('[data-cake-quantity]');
-        if (quantityOutput) quantityOutput.textContent = String(Math.max(30, Number(quantityOutput.textContent || 1)));
-      }
+      const quantityOutput = section.querySelector('[data-cake-quantity]');
+      if (quantityOutput) quantityOutput.textContent = String(Math.max(30, Number(quantityOutput.textContent || 1)));
+      showSale = true;
       updateVariant();
     });
 
@@ -504,6 +504,7 @@
     section.querySelectorAll('[data-cake-quantity-change]').forEach(button => button.addEventListener('click', () => {
       const output = section.querySelector('[data-cake-quantity]');
       output.textContent = String(Math.max(1, Math.min(99, Number(output.textContent || 1) + Number(button.dataset.cakeQuantityChange || 0))));
+      if (hasSalePrice()) updateVariant();
     }));
     const orderInfoButton = section.querySelector('[data-product-order-info]');
     if (orderInfoButton) {
