@@ -3499,12 +3499,12 @@ body:has(.coffee-page) .menu-item:nth-child(3) > a {
 
 @media (max-width: 700px) {
   .cake-product-card.product-thumbnail-managed .cake-product-image img {
-    transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(var(--product-thumbnail-scale, 1));
+    transform: translate(var(--product-thumbnail-x-mobile, var(--product-thumbnail-x, 0px)), calc(var(--product-thumbnail-y-mobile, var(--product-thumbnail-y, 0px)) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(var(--product-thumbnail-scale-mobile, var(--product-thumbnail-scale, 1)));
   }
 
   .cake-product-card.product-thumbnail-managed .cake-product-card-link:hover .cake-product-image img,
   .cake-product-card.product-thumbnail-managed .cake-product-card-link:focus-visible .cake-product-image img {
-    transform: translate(var(--product-thumbnail-x, 0px), calc(var(--product-thumbnail-y, 0px) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(calc(var(--product-thumbnail-scale, 1) * 1.025));
+    transform: translate(var(--product-thumbnail-x-mobile, var(--product-thumbnail-x, 0px)), calc(var(--product-thumbnail-y-mobile, var(--product-thumbnail-y, 0px)) + var(--product-thumbnail-legacy-y-mobile, var(--product-thumbnail-legacy-y, 0px)))) scale(calc(var(--product-thumbnail-scale-mobile, var(--product-thumbnail-scale, 1)) * 1.025));
   }
 }
 
@@ -7361,7 +7361,7 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
     height: 100%;
     max-height: none;
     object-fit: contain;
-    transform: translate(var(--product-thumbnail-x, 0px), var(--product-thumbnail-y, 0px)) scale(var(--product-thumbnail-scale, 1));
+    transform: translate(var(--product-thumbnail-x-mobile, var(--product-thumbnail-x, 0px)), var(--product-thumbnail-y-mobile, var(--product-thumbnail-y, 0px))) scale(var(--product-thumbnail-scale-mobile, var(--product-thumbnail-scale, 1)));
   }
   .emerald-related-card h3 { min-height: 0; font-size: 17px; }
   .bean-tart-product-page { width: calc(100% - 28px); }

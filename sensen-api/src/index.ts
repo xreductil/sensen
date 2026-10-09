@@ -198,10 +198,15 @@ type StoreProduct = {
   thumbnail: ThumbnailSettings;
 };
 
-type ThumbnailSettings = {
+type ThumbnailAdjustment = {
   offsetX: number;
   offsetY: number;
   scale: number;
+};
+
+type ThumbnailSettings = ThumbnailAdjustment & {
+  desktop: ThumbnailAdjustment;
+  mobile: ThumbnailAdjustment;
 };
 
 type UserRow = {
@@ -460,11 +465,20 @@ const normalizeThumbnailSettings = (value: unknown): ThumbnailSettings => {
     const parsed = Number(candidate);
     return Number.isFinite(parsed) ? parsed : fallback;
   };
-  return {
-    offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
-    offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
-    scale: Math.max(25, Math.min(300, number(source.scale, 100))),
-  };
+  const normalize = (candidate: Record<string, unknown>, fallback: Record<string, unknown>) => ({
+    offsetX: Math.max(-1000, Math.min(1000, Math.round(number(candidate.offsetX, number(fallback.offsetX, 0))))),
+    offsetY: Math.max(-1000, Math.min(1000, Math.round(number(candidate.offsetY, number(fallback.offsetY, 0))))),
+    scale: Math.max(25, Math.min(300, number(candidate.scale, number(fallback.scale, 100)))),
+  });
+  const desktopSource = source.desktop && typeof source.desktop === "object" && !Array.isArray(source.desktop)
+    ? source.desktop as Record<string, unknown>
+    : source;
+  const mobileSource = source.mobile && typeof source.mobile === "object" && !Array.isArray(source.mobile)
+    ? source.mobile as Record<string, unknown>
+    : source;
+  const desktop = normalize(desktopSource, source);
+  const mobile = normalize(mobileSource, desktop);
+  return { ...desktop, desktop, mobile };
 };
 
 const slugify = (value: string) => {

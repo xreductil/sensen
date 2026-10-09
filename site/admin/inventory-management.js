@@ -177,8 +177,7 @@
     const optionLabel = String(option[0] || '').trim();
     const priceType = ['原價', '特價'].includes(optionLabel) ? optionLabel : '';
     const specLabel = priceType ? '' : optionLabel;
-    const specLabels = [...new Set((optionLabels.length ? optionLabels : []).filter(label => !['原價', '特價'].includes(String(label).trim())).concat(specLabel).map(value => String(value || '').trim()).filter(Boolean))];
-    row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<select class="form-select" data-price-option-spec><option value="">一般售價</option>${specLabels.map(label => `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`).join('')}</select></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-price-option-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
+    row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-spec type="text" placeholder="例如：6吋、8吋；或一盒數量"></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-price-option-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
     row.querySelector('[data-price-option-spec]').value = specLabel;
     row.querySelector('[data-price-option-type]').value = priceType;
     row.querySelector('[data-price-option-spec]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-price-option-type]').value = ''; });
@@ -213,11 +212,14 @@
   function thumbnailSettings(product) {
     const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
     const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-    return {
-      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
-      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
-      scale: Math.max(25, Math.min(300, number(source.scale, 100))),
-    };
+    const normalize = value => ({
+      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(value?.offsetX, number(source.offsetX, 0))))),
+      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(value?.offsetY, number(source.offsetY, 0))))),
+      scale: Math.max(25, Math.min(300, number(value?.scale, number(source.scale, 100)))),
+    });
+    const desktop = normalize(source.desktop && typeof source.desktop === 'object' ? source.desktop : source);
+    const mobile = normalize(source.mobile && typeof source.mobile === 'object' ? source.mobile : desktop);
+    return { ...desktop, desktop, mobile };
   }
 
   function thumbnailImagePath(value) {
@@ -255,23 +257,22 @@
     const field = document.createElement('div');
     field.className = 'col-12';
     field.dataset.inventoryThumbnailEditor = '';
-    field.innerHTML = '<label class="form-label mb-1">縮圖顯示區塊</label><div class="small text-secondary mb-2">可用正負像素調整圖片位置，縮放比例以百分比設定；預覽會同步前台商品卡片的縮圖框。</div><div class="row g-2"><div class="col-sm-4"><label class="form-label small mb-1">水平位置（px）<input class="form-control" name="thumbnailOffsetX" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">垂直位置（px）<input class="form-control" name="thumbnailOffsetY" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-sm-4"><label class="form-label small mb-1">縮放比例（%）<input class="form-control" name="thumbnailScale" type="number" min="25" max="300" step="1" value="100"></label></div></div><div class="inventory-thumbnail-preview mt-3" data-thumbnail-preview style="width:220px;max-width:100%;aspect-ratio:1 / 1;padding:clamp(16px, 2vw, 28px);border:1px solid #e5e7eb;border-radius:14px;background:#f7f7f7;display:grid;align-items:center;box-sizing:border-box;overflow:hidden"><img data-thumbnail-preview-image alt="縮圖預覽" style="display:block;width:100%;height:auto;max-height:100%;object-fit:contain;transform-origin:center bottom;transition:transform .15s ease"></div>';
+    field.innerHTML = '<label class="form-label mb-1">縮圖顯示區塊</label><div class="small text-secondary mb-2">電腦與手機可分別設定水平位置、垂直位置與縮放比例；未設定手機參數時會沿用電腦版。</div><div class="row g-3"><div class="col-md-6"><div class="border rounded p-3"><strong class="d-block mb-2">電腦版</strong><div class="row g-2"><div class="col-4"><label class="form-label small mb-1">水平（px）<input class="form-control" name="thumbnailDesktopOffsetX" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-4"><label class="form-label small mb-1">垂直（px）<input class="form-control" name="thumbnailDesktopOffsetY" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-4"><label class="form-label small mb-1">縮放（%）<input class="form-control" name="thumbnailDesktopScale" type="number" min="25" max="300" step="1" value="100"></label></div></div><div class="inventory-thumbnail-preview mt-3" data-thumbnail-preview="desktop" style="width:100%;max-width:220px;aspect-ratio:1 / 1;margin:auto;padding:clamp(16px, 2vw, 28px);border:1px solid #e5e7eb;border-radius:14px;background:#f7f7f7;display:grid;align-items:center;box-sizing:border-box;overflow:hidden"><img data-thumbnail-preview-image alt="電腦版縮圖預覽" style="display:block;width:100%;height:auto;max-height:100%;object-fit:contain;transform-origin:center bottom;transition:transform .15s ease"></div></div></div><div class="col-md-6"><div class="border rounded p-3"><strong class="d-block mb-2">手機版</strong><div class="row g-2"><div class="col-4"><label class="form-label small mb-1">水平（px）<input class="form-control" name="thumbnailMobileOffsetX" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-4"><label class="form-label small mb-1">垂直（px）<input class="form-control" name="thumbnailMobileOffsetY" type="number" min="-1000" max="1000" step="1" value="0"></label></div><div class="col-4"><label class="form-label small mb-1">縮放（%）<input class="form-control" name="thumbnailMobileScale" type="number" min="25" max="300" step="1" value="100"></label></div></div><div class="inventory-thumbnail-preview mt-3" data-thumbnail-preview="mobile" style="width:100%;max-width:180px;aspect-ratio:1 / 1;margin:auto;padding:clamp(16px, 2vw, 28px);border:1px solid #e5e7eb;border-radius:14px;background:#f7f7f7;display:grid;align-items:center;box-sizing:border-box;overflow:hidden"><img data-thumbnail-preview-image alt="手機版縮圖預覽" style="display:block;width:100%;height:auto;max-height:100%;object-fit:contain;transform-origin:center bottom;transition:transform .15s ease"></div></div></div></div>';
     imageColumn.insertAdjacentElement('afterend', field);
     const update = () => {
-      const settings = thumbnailSettings({ thumbnail: {
-        offsetX: form.elements.thumbnailOffsetX.value,
-        offsetY: form.elements.thumbnailOffsetY.value,
-        scale: form.elements.thumbnailScale.value,
-      }});
-      const image = field.querySelector('[data-thumbnail-preview-image]');
-      const presetOffsetY = thumbnailPresetOffsetY(field._thumbnailProduct, settings);
-      image.style.transform = `translate(${settings.offsetX}px, ${settings.offsetY + presetOffsetY}px) scale(${settings.scale / 100})`;
+      const settings = collectThumbnailSettings();
+      ['desktop', 'mobile'].forEach(device => {
+        const image = field.querySelector(`[data-thumbnail-preview="${device}"] [data-thumbnail-preview-image]`);
+        const deviceSettings = settings[device];
+        const presetOffsetY = thumbnailPresetOffsetY(field._thumbnailProduct, deviceSettings);
+        if (image) image.style.transform = `translate(${deviceSettings.offsetX}px, ${deviceSettings.offsetY + presetOffsetY}px) scale(${deviceSettings.scale / 100})`;
+      });
     };
     field._thumbnailProduct = null;
     field._updateThumbnailPreview = update;
-    [form.elements.thumbnailOffsetX, form.elements.thumbnailOffsetY, form.elements.thumbnailScale, form.elements.img].forEach(input => input?.addEventListener('input', () => {
-      const image = field.querySelector('[data-thumbnail-preview-image]');
-      if (input === form.elements.img) image.src = thumbnailImagePath(input.value);
+    [form.elements.thumbnailDesktopOffsetX, form.elements.thumbnailDesktopOffsetY, form.elements.thumbnailDesktopScale, form.elements.thumbnailMobileOffsetX, form.elements.thumbnailMobileOffsetY, form.elements.thumbnailMobileScale, form.elements.img].forEach(input => input?.addEventListener('input', () => {
+      const images = field.querySelectorAll('[data-thumbnail-preview-image]');
+      if (input === form.elements.img) images.forEach(image => { image.src = thumbnailImagePath(input.value); });
       update();
     }));
     update();
@@ -281,10 +282,14 @@
   function collectThumbnailSettings() {
     const form = $('#inventory-product-form');
     ensureThumbnailEditor();
+    const read = prefix => ({
+      offsetX: form.elements[`${prefix}OffsetX`]?.value,
+      offsetY: form.elements[`${prefix}OffsetY`]?.value,
+      scale: form.elements[`${prefix}Scale`]?.value,
+    });
     return thumbnailSettings({ thumbnail: {
-      offsetX: form.elements.thumbnailOffsetX?.value,
-      offsetY: form.elements.thumbnailOffsetY?.value,
-      scale: form.elements.thumbnailScale?.value,
+      desktop: read('thumbnailDesktop'),
+      mobile: read('thumbnailMobile'),
     }});
   }
 
@@ -419,12 +424,15 @@
       form.elements.flavorCount.value = flavors.length ? Number(form._editingVariants.flavorCount || 1) : '';
     }
     const thumbnail = thumbnailSettings(product);
-    if (form.elements.thumbnailOffsetX) form.elements.thumbnailOffsetX.value = thumbnail.offsetX;
-    if (form.elements.thumbnailOffsetY) form.elements.thumbnailOffsetY.value = thumbnail.offsetY;
-    if (form.elements.thumbnailScale) form.elements.thumbnailScale.value = thumbnail.scale;
+    ['desktop', 'mobile'].forEach(device => {
+      const settings = thumbnail[device];
+      if (form.elements[`thumbnail${device[0].toUpperCase()}${device.slice(1)}OffsetX`]) form.elements[`thumbnail${device[0].toUpperCase()}${device.slice(1)}OffsetX`].value = settings.offsetX;
+      if (form.elements[`thumbnail${device[0].toUpperCase()}${device.slice(1)}OffsetY`]) form.elements[`thumbnail${device[0].toUpperCase()}${device.slice(1)}OffsetY`].value = settings.offsetY;
+      if (form.elements[`thumbnail${device[0].toUpperCase()}${device.slice(1)}Scale`]) form.elements[`thumbnail${device[0].toUpperCase()}${device.slice(1)}Scale`].value = settings.scale;
+    });
     if (thumbnailEditor) {
       thumbnailEditor._thumbnailProduct = product || null;
-      thumbnailEditor.querySelector('[data-thumbnail-preview-image]').src = thumbnailImagePath(product?.img || form.elements.img.value);
+      thumbnailEditor.querySelectorAll('[data-thumbnail-preview-image]').forEach(image => { image.src = thumbnailImagePath(product?.img || form.elements.img.value); });
       thumbnailEditor._updateThumbnailPreview?.();
     }
     form.elements.published.checked = product?.published !== false;

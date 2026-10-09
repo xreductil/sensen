@@ -184,11 +184,14 @@
   const thumbnailSettings = product => {
     const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
     const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-    return {
-      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
-      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
-      scale: Math.max(25, Math.min(300, number(source.scale, 100))),
-    };
+    const normalize = value => ({
+      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(value?.offsetX, number(source.offsetX, 0))))),
+      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(value?.offsetY, number(source.offsetY, 0))))),
+      scale: Math.max(25, Math.min(300, number(value?.scale, number(source.scale, 100)))),
+    });
+    const desktop = normalize(source.desktop && typeof source.desktop === 'object' ? source.desktop : source);
+    const mobile = normalize(source.mobile && typeof source.mobile === 'object' ? source.mobile : desktop);
+    return { ...desktop, desktop, mobile };
   };
   const thumbnailLegacyOffset = (product, settings) => {
     if (legacyRelativeThumbnailProductIds.has(product?.id) && product?.id !== 'new-birthday-cake-image-03') {
@@ -212,8 +215,8 @@
     const price = amount > 0 ? `NT$${amount.toLocaleString('zh-TW')}` : '價格洽詢';
     const thumbnail = thumbnailSettings(product);
     const legacyOffset = thumbnailLegacyOffset(product, thumbnail);
-    const thumbnailStyle = `--product-thumbnail-x:${thumbnail.offsetX}px;--product-thumbnail-y:${thumbnail.offsetY}px;--product-thumbnail-scale:${thumbnail.scale / 100};--product-thumbnail-legacy-y:${legacyOffset.desktop}px;--product-thumbnail-legacy-y-mobile:${legacyOffset.mobile}px;`;
-    const adjustableClass = thumbnail.offsetX !== 0 || thumbnail.offsetY !== 0 || thumbnail.scale !== 100
+    const thumbnailStyle = `--product-thumbnail-x:${thumbnail.desktop.offsetX}px;--product-thumbnail-y:${thumbnail.desktop.offsetY}px;--product-thumbnail-scale:${thumbnail.desktop.scale / 100};--product-thumbnail-x-mobile:${thumbnail.mobile.offsetX}px;--product-thumbnail-y-mobile:${thumbnail.mobile.offsetY}px;--product-thumbnail-scale-mobile:${thumbnail.mobile.scale / 100};--product-thumbnail-legacy-y:${legacyOffset.desktop}px;--product-thumbnail-legacy-y-mobile:${legacyOffset.mobile}px;`;
+    const adjustableClass = ['desktop', 'mobile'].some(device => thumbnail[device].offsetX !== 0 || thumbnail[device].offsetY !== 0 || thumbnail[device].scale !== 100)
       ? ' product-thumbnail-adjustable'
       : '';
     const body = `<span class="cake-product-image"><img src="${escapeHtml(imagePath(product))}" alt="${escapeHtml(name)}" loading="lazy"></span>`;

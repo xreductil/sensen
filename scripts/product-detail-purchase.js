@@ -156,11 +156,14 @@
   const thumbnailSettings = product => {
     const source = product?.thumbnail && typeof product.thumbnail === 'object' ? product.thumbnail : {};
     const number = (value, fallback) => Number.isFinite(Number(value)) ? Number(value) : fallback;
-    return {
-      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetX, 0)))),
-      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(source.offsetY, 0)))),
-      scale: Math.max(25, Math.min(300, number(source.scale, 100)))
-    };
+    const normalize = value => ({
+      offsetX: Math.max(-1000, Math.min(1000, Math.round(number(value?.offsetX, number(source.offsetX, 0))))),
+      offsetY: Math.max(-1000, Math.min(1000, Math.round(number(value?.offsetY, number(source.offsetY, 0))))),
+      scale: Math.max(25, Math.min(300, number(value?.scale, number(source.scale, 100))))
+    });
+    const desktop = normalize(source.desktop && typeof source.desktop === 'object' ? source.desktop : source);
+    const mobile = normalize(source.mobile && typeof source.mobile === 'object' ? source.mobile : desktop);
+    return { ...desktop, desktop, mobile };
   };
   const legacyRelativeThumbnailProductIds = new Set([
     'new-birthday-cake-image-01',
@@ -182,7 +185,7 @@
     const legacyOffset = legacyRelativeThumbnailProductIds.has(product?.id)
       ? -120
       : 0;
-    return `--product-thumbnail-x:${settings.offsetX}px;--product-thumbnail-y:${settings.offsetY + legacyOffset}px;--product-thumbnail-scale:${settings.scale / 100};`;
+    return `--product-thumbnail-x:${settings.desktop.offsetX}px;--product-thumbnail-y:${settings.desktop.offsetY + legacyOffset}px;--product-thumbnail-scale:${settings.desktop.scale / 100};--product-thumbnail-x-mobile:${settings.mobile.offsetX}px;--product-thumbnail-y-mobile:${settings.mobile.offsetY + legacyOffset}px;--product-thumbnail-scale-mobile:${settings.mobile.scale / 100};`;
   };
 
   let orderInfoModal;
