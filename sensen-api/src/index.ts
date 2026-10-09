@@ -939,7 +939,8 @@ const productPriceForQuantity = (product: StoreProduct, quantity: number, basePr
     : {};
   const originalPrice = Number(priceTypes["原價"] ?? product.originalPrice ?? basePrice) || 0;
   const salePrice = Number(priceTypes["特價"] ?? product.priceValue ?? basePrice) || 0;
-  const hasTieredPrice = originalPrice > salePrice && salePrice > 0;
+  const hasSingleExplicitPriceType = Object.keys(priceTypes).length === 1;
+  const hasTieredPrice = !hasSingleExplicitPriceType && originalPrice > salePrice && salePrice > 0;
   const currentQuantity = Math.max(1, Number(quantity || 1));
   const useSalePrice = hasTieredPrice && currentQuantity >= 30;
   const priceValue = hasTieredPrice
@@ -949,7 +950,7 @@ const productPriceForQuantity = (product: StoreProduct, quantity: number, basePr
     originalPrice: hasTieredPrice ? originalPrice : priceValue,
     salePrice: hasTieredPrice ? salePrice : priceValue,
     priceValue,
-    priceMode: useSalePrice ? "特價" : "原價",
+    priceMode: useSalePrice ? "特價" : hasTieredPrice ? "原價" : "不指定",
   };
 };
 

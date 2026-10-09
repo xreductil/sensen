@@ -547,7 +547,7 @@ function normalizeProductVariants(value, fallbackPrice = 0) {
   const rawSizes = Object.fromEntries(Object.entries(variants.sizes || {})
     .map(([label, price]) => [String(label).trim(), Number(price)])
     .filter(([label, price]) => label && Number.isFinite(price) && price >= 0));
-  const priceTypeNames = new Set(['原價', '特價']);
+  const priceTypeNames = new Set(['原價', '特價', '不指定']);
   const explicitPriceTypes = Object.fromEntries(Object.entries(variants.priceTypes || {})
     .map(([label, price]) => [String(label).trim(), Number(price)])
     .filter(([label, price]) => priceTypeNames.has(label) && Number.isFinite(price) && price >= 0));
@@ -696,7 +696,8 @@ function productPriceForQuantity(product, quantity, basePrice = product.priceVal
   const priceTypes = variants.priceTypes && typeof variants.priceTypes === 'object' ? variants.priceTypes : {};
   const originalPrice = Number(priceTypes['原價'] ?? product.originalPrice ?? basePrice) || 0;
   const salePrice = Number(priceTypes['特價'] ?? product.priceValue ?? basePrice) || 0;
-  const hasTieredPrice = originalPrice > salePrice && salePrice > 0;
+  const hasSingleExplicitPriceType = Object.keys(priceTypes).length === 1;
+  const hasTieredPrice = !hasSingleExplicitPriceType && originalPrice > salePrice && salePrice > 0;
   const currentQuantity = Math.max(1, Number(quantity || 1));
   const useSalePrice = hasTieredPrice && currentQuantity >= 30;
   const priceValue = hasTieredPrice ? (useSalePrice ? salePrice : originalPrice) : Number(basePrice || salePrice || originalPrice) || 0;
@@ -704,7 +705,7 @@ function productPriceForQuantity(product, quantity, basePrice = product.priceVal
     originalPrice: hasTieredPrice ? originalPrice : priceValue,
     salePrice: hasTieredPrice ? salePrice : priceValue,
     priceValue,
-    priceMode: useSalePrice ? '特價' : '原價'
+    priceMode: useSalePrice ? '特價' : hasTieredPrice ? '原價' : '不指定'
   };
 }
 

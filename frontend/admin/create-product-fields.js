@@ -49,7 +49,7 @@
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'mb-3';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請分別選擇規格／名稱與價格類型（原價或特價），再填寫對應金額；預設價格請勾選「預設」。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請分別選擇規格／名稱與價格類型（單一價格請選「不指定」；多組價格再選原價或特價），再填寫對應金額；預設價格請勾選「預設」。</div><div data-create-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-create-add-price-option>＋新增規格售價</button>';
     (categoryBlock || priceRow).insertAdjacentElement('afterend', field);
     field.querySelector('[data-create-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-create-price-options]');
@@ -69,7 +69,8 @@
     row.className = 'row g-2 align-items-end mb-2';
     const optionLabel = String(option[0] || '').trim();
     const priceType = ['原價', '特價'].includes(optionLabel) ? optionLabel : '';
-    const specLabel = priceType ? '' : optionLabel;
+    const isUnspecified = ['不指定', '售價'].includes(optionLabel);
+    const specLabel = priceType || isUnspecified ? '' : optionLabel;
     row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-create-price-default type="radio" name="createDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-create-price-spec type="text" placeholder="例如：6吋、8吋；或一盒數量"></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-create-price-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-create-price-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-create-remove-price>移除</button></div>`;
     row.querySelector('[data-create-price-spec]').value = specLabel;
     row.querySelector('[data-create-price-type]').value = priceType;
@@ -93,8 +94,9 @@
       if ((!spec && !priceType) || !Number.isFinite(price) || price <= 0) throw new Error('每組售價都需要填寫規格或價格類型，並填寫有效價格。');
       const normalizedValue = Number(price.toFixed(2));
       if (spec) sizeOptions[spec] = normalizedValue;
-      if (priceType) priceTypes[priceType] = normalizedValue;
-      if (row.querySelector('[data-create-price-default]')?.checked) defaultSize = spec || priceType;
+      else if (priceType) priceTypes[priceType] = normalizedValue;
+      else priceTypes['不指定'] = normalizedValue;
+      if (row.querySelector('[data-create-price-default]')?.checked) defaultSize = spec || priceType || '不指定';
     }
     if (!Object.keys(sizeOptions).length && !Object.keys(priceTypes).length) throw new Error('請至少新增一組規格售價。');
     if (defaultSize === '' && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
@@ -102,8 +104,7 @@
   };
 
   ensurePriceOptionsEditor();
-  addPriceOptionRow(['原價', '']);
-  addPriceOptionRow(['特價', '']);
+  addPriceOptionRow(['不指定', ''], true);
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -119,7 +120,7 @@
     try {
       if (!files.length) throw new Error('請至少選擇一張商品圖片。');
       const { sizeOptions, priceTypes, defaultSize } = collectPriceOptions();
-      const defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : '原價';
+      const defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : Object.keys(priceTypes)[0] || '';
       document.getElementById('productPrice').value = priceTypes['特價'] ?? sizeOptions[defaultSize] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0];
       document.getElementById('productSize').value = Object.keys(sizeOptions).join('、');
       status.textContent = `正在上傳 ${files.length} 張圖片…`;
@@ -160,8 +161,7 @@
       if (imagePreview) imagePreview.replaceChildren();
       const priceOptions = form.querySelector('[data-create-price-options]');
       if (priceOptions) priceOptions.innerHTML = '';
-      addPriceOptionRow(['原價', '']);
-      addPriceOptionRow(['特價', '']);
+      addPriceOptionRow(['不指定', ''], true);
       status.className = 'small mt-3 mb-0 text-success';
       status.replaceChildren(
         document.createTextNode(`${data.product?.title || title} 已加入前台菜單與 Inventory，商品詳細頁已建立：`),

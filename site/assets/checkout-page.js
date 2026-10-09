@@ -43,7 +43,7 @@
     localStorage.setItem('sensen-cart-note', fields.note.value.trim());
   };
   const renderItems = items => {
-    root.querySelector('[data-checkout-items]').innerHTML = items.length ? items.map(item => '<div class="checkout-item"><span>' + escapeHtml(item.title || '商品') + ' × ' + Number(item.qty || 0) + '</span><span>' + escapeHtml(item.priceMode || '原價') + ' ' + money(Number(item.priceValue || 0) * Number(item.qty || 0)) + '</span></div>').join('') : '<p>目前購物車是空的。</p>';
+    root.querySelector('[data-checkout-items]').innerHTML = items.length ? items.map(item => '<div class="checkout-item"><span>' + escapeHtml(item.title || '商品') + ' × ' + Number(item.qty || 0) + '</span><span>' + escapeHtml(item.priceMode || '不指定') + ' ' + money(Number(item.priceValue || 0) * Number(item.qty || 0)) + '</span></div>').join('') : '<p>目前購物車是空的。</p>';
   };
   const renderQuote = data => {
     root.querySelector('[data-checkout-subtotal]').textContent = money(data.subtotal);

@@ -101,21 +101,29 @@
 
   function productPriceOptions(product) {
     const priceTypes = product?.variants?.priceTypes || {};
-    const variantSizes = product?.variants?.sizes || {};
+    const priceTypeLabels = Object.keys(priceTypes).map(label => String(label).trim());
+    const hasUnspecifiedOnly = priceTypeLabels.length === 1 && ['不指定', '售價'].includes(priceTypeLabels[0]);
+    const variantSizes = hasUnspecifiedOnly ? {} : (product?.variants?.sizes || {});
     const sizes = { ...variantSizes, ...priceTypes };
     const fallbackSizes = Object.keys(sizes).length ? sizes : product?.priceOptions || {};
-    return Object.entries(fallbackSizes).filter(([label, value]) => String(label).trim() && Number.isFinite(Number(value)) && Number(value) > 0);
+    const options = Object.entries(fallbackSizes).filter(([label, value]) => String(label).trim() && Number.isFinite(Number(value)) && Number(value) > 0);
+    if (options.length === 1 && ['原價', '特價', '售價'].includes(String(options[0][0]).trim())) {
+      return [['不指定', options[0][1]]];
+    }
+    return options;
   }
 
   function productPriceSummary(product) {
     const options = productPriceOptions(product);
     const values = Object.fromEntries(options);
+    const rawPriceTypes = product?.variants?.priceTypes || {};
+    const hasSingleExplicitPriceType = Object.keys(rawPriceTypes).length === 1;
     const originalPrice = Number(values['原價'] ?? product?.originalPrice ?? product?.priceValue ?? 0) || 0;
     const salePrice = Number(values['特價'] ?? product?.priceValue ?? originalPrice) || 0;
-    const isTiered = originalPrice > salePrice && salePrice > 0;
+    const isTiered = !hasSingleExplicitPriceType && originalPrice > salePrice && salePrice > 0;
     const hasOnlyPriceTypeLabels = options.length > 1 && options.every(([label]) => ['原價', '特價'].includes(String(label).trim()));
     const sourceOptions = !isTiered && hasOnlyPriceTypeLabels
-      ? [['售價', salePrice || originalPrice]]
+      ? [['不指定', salePrice || originalPrice]]
       : options;
     const rows = [];
     const seen = new Set();
@@ -126,7 +134,7 @@
       seen.add(normalizedLabel);
       rows.push([normalizedLabel, normalizedValue]);
     });
-    if (!rows.length && !isTiered && salePrice > 0) rows.push(['售價', salePrice]);
+    if (!rows.length && !isTiered && salePrice > 0) rows.push(['不指定', salePrice]);
     return {
       originalPrice: isTiered ? originalPrice : Number(rows[0]?.[1] || salePrice || originalPrice || 0),
       salePrice: isTiered ? salePrice : Number(rows[0]?.[1] || salePrice || originalPrice || 0),
@@ -156,7 +164,7 @@
     if (sizeColumn) sizeColumn.hidden = true;
     const field = document.createElement('div');
     field.className = 'col-12';
-    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請分別選擇規格／名稱與價格類型（原價或特價），再填寫對應金額；預設價格請勾選「預設」。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
+    field.innerHTML = '<label class="form-label mb-1">多組售價</label><div class="small text-secondary mb-2">請分別選擇規格／名稱與價格類型（單一價格請選「不指定」；多組價格再選原價或特價），再填寫對應金額；預設價格請勾選「預設」。</div><div data-inventory-price-options></div><button type="button" class="btn btn-sm btn-outline-secondary mt-2" data-inventory-add-price-option>＋新增規格售價</button>';
     (categoryColumn || priceColumn).insertAdjacentElement('afterend', field);
     field.querySelector('[data-inventory-add-price-option]').addEventListener('click', () => addPriceOptionRow());
     return field.querySelector('[data-inventory-price-options]');
@@ -177,7 +185,8 @@
     row.className = 'row g-2 align-items-end mb-2 inventory-price-option';
     const optionLabel = String(option[0] || '').trim();
     const priceType = ['原價', '特價'].includes(optionLabel) ? optionLabel : '';
-    const specLabel = priceType ? '' : optionLabel;
+    const isUnspecified = ['不指定', '售價'].includes(optionLabel);
+    const specLabel = priceType || isUnspecified ? '' : optionLabel;
     row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-spec type="text" placeholder="例如：6吋、8吋；或一盒數量"></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-price-option-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
     row.querySelector('[data-price-option-spec]').value = specLabel;
     row.querySelector('[data-price-option-type]').value = priceType;
@@ -202,8 +211,9 @@
       if ((!spec && !priceType) || !Number.isFinite(value) || value <= 0) throw new Error('每組售價都需要填寫規格或價格類型，並填寫有效價格。');
       const normalizedValue = Number(value.toFixed(2));
       if (spec) sizeOptions[spec] = normalizedValue;
-      if (priceType) priceTypes[priceType] = normalizedValue;
-      if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = spec || priceType;
+      else if (priceType) priceTypes[priceType] = normalizedValue;
+      else priceTypes['不指定'] = normalizedValue;
+      if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = spec || priceType || '不指定';
     }
     if (!Object.keys(sizeOptions).length && !Object.keys(priceTypes).length) throw new Error('請至少新增一組規格售價。');
     if (defaultSize === '' && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
@@ -445,8 +455,8 @@
         ? summary.options
         : summary.isTiered
           ? [['原價', summary.originalPrice], ['特價', summary.salePrice]]
-          : [['售價', summary.salePrice]]
-      : [['原價', ''], ['特價', '']];
+          : [['不指定', summary.salePrice]]
+      : [['不指定', '']];
     const optionLabels = [...new Set([...summary.options.map(([label]) => label), ...(summary.isTiered || !product ? ['原價', '特價'] : [])])];
     priceRows.forEach(option => addPriceOptionRow(option, option[0] === defaultSize || (!defaultSize && option[0] === '原價'), optionLabels));
     $('#inventory-product-message').textContent = '';
@@ -478,7 +488,7 @@
       const variants = { ...(form._editingVariants || {}), sizes: sizeOptions, defaultSize };
       if (Object.keys(priceTypes).length) {
         variants.priceTypes = priceTypes;
-        variants.defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : '原價';
+        variants.defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : Object.keys(priceTypes)[0] || '';
       } else {
         delete variants.priceTypes;
         delete variants.defaultPriceType;
