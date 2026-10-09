@@ -111,16 +111,27 @@
     const values = Object.fromEntries(options);
     const originalPrice = Number(values['原價'] ?? product?.originalPrice ?? product?.priceValue ?? 0) || 0;
     const salePrice = Number(values['特價'] ?? product?.priceValue ?? originalPrice) || 0;
+    const isTiered = originalPrice > salePrice && salePrice > 0;
+    const hasOnlyPriceTypeLabels = options.length > 1 && options.every(([label]) => ['原價', '特價'].includes(String(label).trim()));
+    const sourceOptions = !isTiered && hasOnlyPriceTypeLabels
+      ? [['售價', salePrice || originalPrice]]
+      : options;
     const rows = [];
     const seen = new Set();
-    [['原價', originalPrice], ['特價', salePrice], ...options].forEach(([label, value]) => {
+    sourceOptions.forEach(([label, value]) => {
       const normalizedLabel = String(label || '').trim();
       const normalizedValue = Number(value);
       if (!normalizedLabel || !Number.isFinite(normalizedValue) || normalizedValue <= 0 || seen.has(normalizedLabel)) return;
       seen.add(normalizedLabel);
       rows.push([normalizedLabel, normalizedValue]);
     });
-    return { originalPrice, salePrice, options: rows };
+    if (!rows.length && !isTiered && salePrice > 0) rows.push(['售價', salePrice]);
+    return {
+      originalPrice: isTiered ? originalPrice : Number(rows[0]?.[1] || salePrice || originalPrice || 0),
+      salePrice: isTiered ? salePrice : Number(rows[0]?.[1] || salePrice || originalPrice || 0),
+      isTiered,
+      options: rows,
+    };
   }
 
   function ensurePriceOptionsEditor() {
@@ -163,7 +174,7 @@
     if (!container) return;
     const row = document.createElement('div');
     row.className = 'row g-2 align-items-end mb-2 inventory-price-option';
-    const labels = [...new Set(['原價', '特價', ...optionLabels, option[0]].map(value => String(value || '').trim()).filter(Boolean))];
+    const labels = [...new Set([...(optionLabels.length ? optionLabels : ['原價', '特價']), option[0]].map(value => String(value || '').trim()).filter(Boolean))];
     row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-4"><label class="form-label small mb-1">規格／名稱<select class="form-select" data-price-option-label>${labels.map(label => `<option value="${escapeHtml(label)}">${escapeHtml(label)}</option>`).join('')}</select></label></div><div class="col-sm-4"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-2"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
     row.querySelector('[data-price-option-label]').value = option[0] || labels[0] || '';
     row.querySelector('[data-price-option-value]').value = option[1] ?? '';
@@ -354,7 +365,7 @@
     currentPage = Math.min(Math.max(1, currentPage), totalPages);
     const start = (currentPage - 1) * pageSize;
     const visible = filtered.slice(start, start + pageSize);
-    $('[data-sensen-table="inventory"]').innerHTML = visible.length ? visible.map(item => { const summary = productPriceSummary(item); const extras = summary.options.filter(([label]) => !['原價', '特價'].includes(label)); const priceMarkup = `<div><span class="text-secondary">原價</span> ${money(summary.originalPrice)}</div><div><span class="text-danger">特價</span> ${money(summary.salePrice)} <small class="text-secondary">預設</small></div>${extras.map(([label, value]) => `<small class="d-block text-secondary">${escapeHtml(label)}：${money(value)}</small>`).join('')}`; return `<tr class="align-middle"><td><div class="d-flex align-items-center gap-3"><img src="${escapeHtml(item.img || '/images/admin/product-1.webp')}" alt="${escapeHtml(item.title)}" class="avatar avatar-md rounded object-fit-cover" style="width:48px;height:48px;" onerror="this.onerror=null;this.src='/images/admin/product-1.webp';"><div><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">${escapeHtml(item.day || '')} 天製作</small></div></div></td><td>${escapeHtml(item.sku || item.id)}</td><td>${escapeHtml(item.cat || '')}</td><td>${escapeHtml(item.spec || '—')}</td><td>${priceMarkup}</td><td class="${Number(item.quantity || 0) < 10 ? 'text-danger fw-bold' : ''}">${Number(item.quantity || 0)}</td><td><span class="badge ${item.published === false ? 'text-bg-secondary' : 'text-bg-success'}">${item.published === false ? '下架' : '上架'}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary me-1" data-inventory-edit="${escapeHtml(item.id)}">編輯</button><button type="button" class="btn btn-sm btn-outline-secondary me-1" data-inventory-toggle="${escapeHtml(item.id)}">${item.published === false ? '上架' : '下架'}</button><button type="button" class="btn btn-sm btn-outline-danger" data-inventory-delete="${escapeHtml(item.id)}">刪除</button></td></tr>`; }).join('') : '<tr><td colspan="8" class="text-secondary py-4">沒有符合條件的商品。</td></tr>';
+    $('[data-sensen-table="inventory"]').innerHTML = visible.length ? visible.map(item => { const summary = productPriceSummary(item); const priceMarkup = summary.isTiered ? `<div><span class="text-secondary">原價</span> ${money(summary.originalPrice)}</div><div><span class="text-danger">特價</span> ${money(summary.salePrice)} <small class="text-secondary">預設</small></div>${summary.options.filter(([label]) => !['原價', '特價'].includes(label)).map(([label, value]) => `<small class="d-block text-secondary">${escapeHtml(label)}：${money(value)}</small>`).join('')}` : summary.options.map(([label, value]) => `<div><span class="text-secondary">${escapeHtml(label)}</span> ${money(value)}</div>`).join(''); return `<tr class="align-middle"><td><div class="d-flex align-items-center gap-3"><img src="${escapeHtml(item.img || '/images/admin/product-1.webp')}" alt="${escapeHtml(item.title)}" class="avatar avatar-md rounded object-fit-cover" style="width:48px;height:48px;" onerror="this.onerror=null;this.src='/images/admin/product-1.webp';"><div><strong>${escapeHtml(item.title)}</strong><small class="d-block text-secondary">${escapeHtml(item.day || '')} 天製作</small></div></div></td><td>${escapeHtml(item.sku || item.id)}</td><td>${escapeHtml(item.cat || '')}</td><td>${escapeHtml(item.spec || '—')}</td><td>${priceMarkup}</td><td class="${Number(item.quantity || 0) < 10 ? 'text-danger fw-bold' : ''}">${Number(item.quantity || 0)}</td><td><span class="badge ${item.published === false ? 'text-bg-secondary' : 'text-bg-success'}">${item.published === false ? '下架' : '上架'}</span></td><td><button type="button" class="btn btn-sm btn-outline-primary me-1" data-inventory-edit="${escapeHtml(item.id)}">編輯</button><button type="button" class="btn btn-sm btn-outline-secondary me-1" data-inventory-toggle="${escapeHtml(item.id)}">${item.published === false ? '上架' : '下架'}</button><button type="button" class="btn btn-sm btn-outline-danger" data-inventory-delete="${escapeHtml(item.id)}">刪除</button></td></tr>`; }).join('') : '<tr><td colspan="8" class="text-secondary py-4">沒有符合條件的商品。</td></tr>';
     const label = $('[data-inventory-page-label]');
     if (label) label.textContent = filtered.length ? `商品 ${start + 1}-${Math.min(start + pageSize, filtered.length)}／共 ${filtered.length} 項` : '商品 0-0／共 0 項';
     const pagination = $('[data-inventory-pagination]');
@@ -412,8 +423,14 @@
     form.elements.newArrival.checked = product ? product.newArrival === true : true;
     if (dietaryInput) dietaryInput.checked = ['蛋奶素', '奶蛋素'].includes(String(product?.dietary || '').trim());
     const defaultSize = String(product?.variants?.defaultPriceType || product?.variants?.defaultSize || '').trim() || summary.options.find(([, value]) => Number(value) === Number(summary.salePrice))?.[0] || summary.options[0]?.[0] || '';
-    const priceRows = product ? summary.options : [['原價', ''], ['特價', '']];
-    const optionLabels = [...new Set([...summary.options.map(([label]) => label), '原價', '特價'])];
+    const priceRows = product
+      ? summary.options.length
+        ? summary.options
+        : summary.isTiered
+          ? [['原價', summary.originalPrice], ['特價', summary.salePrice]]
+          : [['售價', summary.salePrice]]
+      : [['原價', ''], ['特價', '']];
+    const optionLabels = [...new Set([...summary.options.map(([label]) => label), ...(summary.isTiered || !product ? ['原價', '特價'] : [])])];
     priceRows.forEach(option => addPriceOptionRow(option, option[0] === defaultSize || (!defaultSize && option[0] === '原價'), optionLabels));
     $('#inventory-product-message').textContent = '';
     dialog.showModal();
