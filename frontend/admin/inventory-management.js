@@ -102,8 +102,9 @@
   function productPriceOptions(product) {
     const priceTypes = product?.variants?.priceTypes || {};
     const variantSizes = product?.variants?.sizes || {};
-    const sizes = Object.keys(priceTypes).length ? priceTypes : Object.keys(variantSizes).length ? variantSizes : product?.priceOptions || {};
-    return Object.entries(sizes).filter(([label, value]) => String(label).trim() && Number.isFinite(Number(value)) && Number(value) > 0);
+    const sizes = { ...variantSizes, ...priceTypes };
+    const fallbackSizes = Object.keys(sizes).length ? sizes : product?.priceOptions || {};
+    return Object.entries(fallbackSizes).filter(([label, value]) => String(label).trim() && Number.isFinite(Number(value)) && Number(value) > 0);
   }
 
   function productPriceSummary(product) {
@@ -180,8 +181,6 @@
     row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-price-option-default type="radio" name="inventoryDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-price-option-spec type="text" placeholder="例如：6吋、8吋；或一盒數量"></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-price-option-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-price-option-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-remove-price-option aria-label="移除這組售價">移除</button></div>`;
     row.querySelector('[data-price-option-spec]').value = specLabel;
     row.querySelector('[data-price-option-type]').value = priceType;
-    row.querySelector('[data-price-option-spec]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-price-option-type]').value = ''; });
-    row.querySelector('[data-price-option-type]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-price-option-spec]').value = ''; });
     row.querySelector('[data-price-option-value]').value = option[1] ?? '';
     row.querySelector('[data-price-option-default]').checked = isDefault;
     row.querySelector('[data-remove-price-option]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
@@ -191,22 +190,24 @@
 
   function collectPriceOptions() {
     const container = ensurePriceOptionsEditor();
-    const sizes = {};
+    const sizeOptions = {};
+    const priceTypes = {};
     const rows = [...(container?.querySelectorAll('.inventory-price-option') || [])];
     let defaultSize = '';
     for (const row of rows) {
       const spec = row.querySelector('[data-price-option-spec]').value.trim();
       const priceType = row.querySelector('[data-price-option-type]').value.trim();
-      const label = priceType || spec;
       const value = Number(row.querySelector('[data-price-option-value]').value);
-      if (!label && !row.querySelector('[data-price-option-value]').value) continue;
-      if (!label || !Number.isFinite(value) || value <= 0) throw new Error('每組售價都需要選擇規格或價格類型，並填寫有效價格。');
-      if (sizes[label]) throw new Error(`規格「${label}」不可重複。`);
-      sizes[label] = Number(value.toFixed(2));
-      if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = label;
+      if (!spec && !priceType && !row.querySelector('[data-price-option-value]').value) continue;
+      if ((!spec && !priceType) || !Number.isFinite(value) || value <= 0) throw new Error('每組售價都需要填寫規格或價格類型，並填寫有效價格。');
+      const normalizedValue = Number(value.toFixed(2));
+      if (spec) sizeOptions[spec] = normalizedValue;
+      if (priceType) priceTypes[priceType] = normalizedValue;
+      if (row.querySelector('[data-price-option-default]')?.checked) defaultSize = spec || priceType;
     }
-    if (Object.keys(sizes).length && !defaultSize) throw new Error('請勾選一組預設價格。');
-    return { sizes, defaultSize };
+    if (!Object.keys(sizeOptions).length && !Object.keys(priceTypes).length) throw new Error('請至少新增一組規格售價。');
+    if (defaultSize === '' && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
+    return { sizeOptions, priceTypes, defaultSize };
   }
 
   function thumbnailSettings(product) {
@@ -472,11 +473,8 @@
     message.textContent = '';
     message.className = 'small';
     try {
-      const { sizes, defaultSize } = collectPriceOptions();
-      if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
+      const { sizeOptions, priceTypes, defaultSize } = collectPriceOptions();
       const flavorSettings = collectFlavorSettings();
-      const priceTypes = Object.fromEntries(Object.entries(sizes).filter(([label]) => ['原價', '特價'].includes(label)));
-      const sizeOptions = Object.fromEntries(Object.entries(sizes).filter(([label]) => !['原價', '特價'].includes(label)));
       const variants = { ...(form._editingVariants || {}), sizes: sizeOptions, defaultSize };
       if (Object.keys(priceTypes).length) {
         variants.priceTypes = priceTypes;
@@ -492,9 +490,9 @@
         delete variants.flavors;
         delete variants.flavorCount;
       }
-      data.priceValue = Number(sizes['特價'] ?? sizes[defaultSize] ?? Object.values(sizes)[0]);
-      data.originalPrice = Number(sizes['原價'] ?? data.originalPrice ?? data.priceValue);
-      data.spec = Object.keys(sizes).join('、');
+      data.priceValue = Number(priceTypes['特價'] ?? sizeOptions[defaultSize] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0]);
+      data.originalPrice = Number(priceTypes['原價'] ?? data.originalPrice ?? data.priceValue);
+      data.spec = Object.keys(sizeOptions).join('、');
       data.size = data.spec;
       let images = [...new Set((form._editingImages || []).map(normalizeImagePath).filter(Boolean))];
       if (data.img && data.img !== images[0]) images = [normalizeImagePath(data.img), ...images.filter(image => image !== normalizeImagePath(data.img))];

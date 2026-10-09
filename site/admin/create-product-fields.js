@@ -73,8 +73,6 @@
     row.innerHTML = `<div class="col-sm-2"><label class="form-check mb-2"><input class="form-check-input" data-create-price-default type="radio" name="createDefaultPrice" aria-label="設為預設價格"><span class="form-check-label">預設</span></label></div><div class="col-sm-3"><label class="form-label small mb-1">規格／名稱<input class="form-control" data-create-price-spec type="text" placeholder="例如：6吋、8吋；或一盒數量"></label></div><div class="col-sm-3"><label class="form-label small mb-1">價格類型<select class="form-select" data-create-price-type><option value="">不指定</option><option value="原價">原價</option><option value="特價">特價</option></select></label></div><div class="col-sm-3"><label class="form-label small mb-1">售價<input class="form-control" data-create-price-value type="number" min="0.01" step="0.01" placeholder="例如：1080"></label></div><div class="col-sm-1"><button type="button" class="btn btn-outline-danger w-100" data-create-remove-price>移除</button></div>`;
     row.querySelector('[data-create-price-spec]').value = specLabel;
     row.querySelector('[data-create-price-type]').value = priceType;
-    row.querySelector('[data-create-price-spec]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-create-price-type]').value = ''; });
-    row.querySelector('[data-create-price-type]').addEventListener('change', event => { if (event.currentTarget.value) row.querySelector('[data-create-price-spec]').value = ''; });
     row.querySelector('[data-create-price-value]').value = option[1] ?? '';
     row.querySelector('[data-create-price-default]').checked = isDefault;
     row.querySelector('[data-create-remove-price]').addEventListener('click', () => { row.remove(); ensureDefaultPriceOption(); });
@@ -83,22 +81,24 @@
   };
 
   const collectPriceOptions = () => {
-    const sizes = {};
+    const sizeOptions = {};
+    const priceTypes = {};
     let defaultSize = '';
     for (const row of ensurePriceOptionsEditor()?.children || []) {
       const spec = row.querySelector('[data-create-price-spec]').value.trim();
       const priceType = row.querySelector('[data-create-price-type]').value.trim();
-      const label = priceType || spec;
       const rawValue = row.querySelector('[data-create-price-value]').value;
       const price = Number(rawValue);
-      if (!label && !rawValue) continue;
-      if (!label || !Number.isFinite(price) || price <= 0) throw new Error('每組售價都需要選擇規格或價格類型，並填寫有效價格。');
-      if (sizes[label]) throw new Error(`規格「${label}」不可重複。`);
-      sizes[label] = Number(price.toFixed(2));
-      if (row.querySelector('[data-create-price-default]')?.checked) defaultSize = label;
+      if (!spec && !priceType && !rawValue) continue;
+      if ((!spec && !priceType) || !Number.isFinite(price) || price <= 0) throw new Error('每組售價都需要填寫規格或價格類型，並填寫有效價格。');
+      const normalizedValue = Number(price.toFixed(2));
+      if (spec) sizeOptions[spec] = normalizedValue;
+      if (priceType) priceTypes[priceType] = normalizedValue;
+      if (row.querySelector('[data-create-price-default]')?.checked) defaultSize = spec || priceType;
     }
-    if (Object.keys(sizes).length && !defaultSize) throw new Error('請勾選一組預設價格。');
-    return { sizes, defaultSize };
+    if (!Object.keys(sizeOptions).length && !Object.keys(priceTypes).length) throw new Error('請至少新增一組規格售價。');
+    if (defaultSize === '' && (Object.keys(sizeOptions).length || Object.keys(priceTypes).length)) throw new Error('請勾選一組預設價格。');
+    return { sizeOptions, priceTypes, defaultSize };
   };
 
   ensurePriceOptionsEditor();
@@ -118,12 +118,9 @@
 
     try {
       if (!files.length) throw new Error('請至少選擇一張商品圖片。');
-      const { sizes, defaultSize } = collectPriceOptions();
-      if (!Object.keys(sizes).length) throw new Error('請至少新增一組規格售價。');
-      const priceTypes = Object.fromEntries(Object.entries(sizes).filter(([label]) => ['原價', '特價'].includes(label)));
-      const sizeOptions = Object.fromEntries(Object.entries(sizes).filter(([label]) => !['原價', '特價'].includes(label)));
+      const { sizeOptions, priceTypes, defaultSize } = collectPriceOptions();
       const defaultPriceType = priceTypes[defaultSize] != null ? defaultSize : '原價';
-      document.getElementById('productPrice').value = sizes['特價'] ?? sizes[defaultSize] ?? Object.values(sizes)[0];
+      document.getElementById('productPrice').value = priceTypes['特價'] ?? sizeOptions[defaultSize] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0];
       document.getElementById('productSize').value = Object.keys(sizeOptions).join('、');
       status.textContent = `正在上傳 ${files.length} 張圖片…`;
       const imagePaths = [];
@@ -140,7 +137,7 @@
           title,
           sku: value('productSKU'),
           priceValue: Number(value('productPrice')),
-          originalPrice: Number(sizes['原價'] ?? value('productPrice')),
+          originalPrice: Number(priceTypes['原價'] ?? value('productPrice')),
           quantity: Number(value('productStock')),
           cat: value('productCategory'),
           img: imagePaths[0],
@@ -150,7 +147,7 @@
           storage: value('productStorage'),
           other: value('productOther'),
           published: true,
-          variants: Object.keys(sizes).length ? { sizes: sizeOptions, priceTypes, defaultSize, defaultPriceType } : null,
+          variants: Object.keys(sizeOptions).length || Object.keys(priceTypes).length ? { sizes: sizeOptions, priceTypes, defaultSize, defaultPriceType } : null,
         }),
       });
       const data = await response.json().catch(() => ({}));
