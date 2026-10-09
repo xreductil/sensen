@@ -93,7 +93,7 @@
       pickupInput.value = savedPickup >= pickupInput.min ? savedPickup : pickupInput.min;
       dateHintEl.textContent = products.length ? `最早可取貨日期：${pickupInput.min}（依購物車內最長製作時間計算）` : '';
       saveFields();
-      itemsEl.innerHTML = products.map((item) => `<article class="sensen-cart-item"><img src="${escapeHtml(item.img || '')}" alt=""><div><h3>${escapeHtml(item.title || '商品')}</h3><small>${escapeHtml(item.cat || '')} · ${escapeHtml(item.priceMode || '原價')} ${money(item.priceValue)} · 製作時間 ${Number(item.day || 5)} 天</small><div class="sensen-cart-qty"><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) - 1}">−</button><b>${Number(item.qty)}</b><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) + 1}">＋</button></div></div><strong>${money(Number(item.priceValue || 0) * Number(item.qty || 0))}</strong></article>`).join('');
+      itemsEl.innerHTML = products.map((item) => `<article class="sensen-cart-item"><img src="${escapeHtml(item.img || '')}" alt=""><div><h3>${escapeHtml(item.title || '商品')}</h3><small>${escapeHtml(item.cat || '')} · ${escapeHtml(item.priceMode || '原價')} ${money(item.priceValue)} · 製作時間 ${Number(item.day || 5)} 天</small><div class="sensen-cart-qty"><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) - 1}" aria-label="減少數量">−</button><b>${Number(item.qty)}</b><button type="button" data-cart-id="${escapeHtml(item.id)}" data-cart-qty="${Number(item.qty) + 1}" aria-label="增加數量">＋</button><button type="button" class="sensen-cart-remove" data-cart-remove="${escapeHtml(item.id)}" aria-label="移除商品" title="移除商品"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3m-9 0 1 13h8l1-13M10 11v5m4-5v5"></path></svg><span class="site-sr-only">移除商品</span></button></div></div><strong>${money(Number(item.priceValue || 0) * Number(item.qty || 0))}</strong></article>`).join('');
       if (products.length && couponInput.value.trim()) await applyQuote(cart);
     } catch (error) {
       messageEl.hidden = false;
@@ -151,11 +151,12 @@
   couponInput.addEventListener('change', saveFields);
   pickupInput.addEventListener('change', saveFields);
   itemsEl.addEventListener('click', async (event) => {
-    const button = event.target.closest('[data-cart-id]');
+    const button = event.target.closest('[data-cart-id], [data-cart-remove]');
     if (!button) return;
     button.disabled = true;
     try {
-      const response = await fetch('/api/cart/item', { method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) });
+      const isRemove = button.hasAttribute('data-cart-remove');
+      const response = await fetch('/api/cart/item', { method: isRemove ? 'DELETE' : 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isRemove ? { productId: button.dataset.cartRemove } : { productId: button.dataset.cartId, qty: Number(button.dataset.cartQty) }) });
       if (!response.ok) throw new Error('購物車內容更新失敗，請稍後再試。');
       await loadCart();
     } catch (error) {
