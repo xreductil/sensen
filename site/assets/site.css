@@ -4888,6 +4888,23 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 .storefront-catalog-empty { width: min(1120px, calc(100% - 48px)); margin: 0 auto; padding: 72px 0; color: #8c8178; font-size: clamp(16px, 1.25vw, 22px); text-align: center; }
 .storefront-catalog-error { color: #a65d42; }
 .storefront-catalog-page [data-storefront-catalog-content] { min-height: 120px; }
+.storefront-category-nav {
+  display: flex;
+  width: min(1440px, calc(100% - 64px));
+  align-items: center;
+  gap: 18px;
+  margin: 28px auto 0;
+  padding: 14px 18px;
+  border: 1px solid #eadfce;
+  border-radius: 8px;
+  background: #fffaf4;
+}
+.storefront-category-nav-label { color: #8c8178; font-size: 15px; font-weight: 700; white-space: nowrap; }
+.storefront-category-nav-list { display: flex; flex-wrap: wrap; gap: 10px; }
+.storefront-category-nav a { display: inline-flex; min-height: 38px; align-items: center; padding: 0 16px; border: 1px solid #ddcfbf; border-radius: 999px; color: #5d4b3d; background: #fff; font-size: 15px; text-decoration: none; transition: color .2s ease, background .2s ease, border-color .2s ease, transform .2s ease; }
+.storefront-category-nav a:hover, .storefront-category-nav a:focus-visible { border-color: #b66f2d; color: #fff; background: #b66f2d; transform: translateY(-2px); }
+.storefront-category-nav a.is-featured { border-color: #b66f2d; color: #fff; background: #b66f2d; font-weight: 700; }
+.storefront-category-nav a.is-featured:hover, .storefront-category-nav a.is-featured:focus-visible { border-color: #8f5423; background: #8f5423; }
 .storefront-sort-bar {
   display: flex;
   width: min(1440px, calc(100% - 64px));
@@ -4966,6 +4983,9 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .tea-party-menu-card a:hover img, .tea-party-menu-card a:focus-visible img { transform: scale(1.02); }
 .tea-party-menu-card figcaption { margin-top: 12px; color: #6d6560; font-size: 15px; text-align: center; }
 @media (max-width: 700px) {
+  .storefront-category-nav { width: calc(100% - 28px); align-items: flex-start; flex-direction: column; gap: 10px; margin-top: 20px; padding: 14px; }
+  .storefront-category-nav-list { width: 100%; }
+  .storefront-category-nav a { flex: 1 1 auto; justify-content: center; padding: 0 12px; font-size: 14px; }
   .storefront-sort-bar { width: calc(100% - 28px); justify-content: space-between; gap: 8px; padding-top: 24px; }
   .storefront-sort-bar label { font-size: 14px; }
   .storefront-sort-bar select { min-width: 0; flex: 1; font-size: 14px; }

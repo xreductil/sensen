@@ -3101,13 +3101,24 @@ function staticCatalogMarkup(view) {
   return overview || `<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>`;
 }
 
+function storefrontCategoryNavigation() {
+  const links = [
+    ["伴手禮", "/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/", ""],
+    ["長條蛋糕", `${encodeURI(ONLINE_LONG_CAKE_PATH)}/`, ""],
+    ["點心餐盒", `${encodeURI(ONLINE_TEA_PARTY_PATH)}/`, "is-featured"],
+    ["歐式麵包(冷凍)", `${encodeURI(FROZEN_BREAD_PATH)}/`, ""],
+  ];
+  return `<nav class="storefront-category-nav" aria-label="商城分類"><span class="storefront-category-nav-label">商城分類</span><div class="storefront-category-nav-list">${links.map(([title, href, className]) => `<a class="${className}" href="${escapeAttr(href)}">${escapeHtml(title)}</a>`).join("")}</div></nav>`;
+}
+
 function storefrontCatalogContent(view) {
   const classes = view === "cakes" || view === "long-cakes" ? "cake-page storefront-catalog-page" : view === "souvenir" ? "souvenir-page storefront-catalog-page" : "product-intro-page storefront-catalog-page";
   const dm = view === "cakes" ? `<section class="cake-dm" id="cake-dm"><a href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" class="cake-dm-link" target="_blank" rel="noreferrer">生日蛋糕DM下載 <span aria-hidden="true">→</span></a><a class="cake-dm-icon" href="https://drive.google.com/file/d/1QW07oLnBIAq4wa2NuMnL7oZZvS-uu0je/view" target="_blank" rel="noreferrer" aria-label="開啟生日蛋糕 DM"><span class="cake-dm-book" aria-hidden="true"></span></a><p>森森不定期推出各式新品蛋糕，歡迎關注我們的FB。</p></section>` : "";
   const sortId = `storefront-sort-${view}`;
   const sortBar = `<div class="storefront-sort-bar" data-storefront-sort-bar><label for="${sortId}">商品排序</label><select id="${sortId}" data-storefront-sort aria-label="商品排序"><option value="newest" selected>上架時間: 由新到舊</option><option value="oldest">上架時間: 由舊到新</option><option value="price-desc">價格: 由高至低</option><option value="price-asc">價格: 由低至高</option></select></div>`;
   const menuGallery = view === "tea-party" ? teaPartyMenuGallery() : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}">${menuGallery}${sortBar}<p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
+  const categoryNavigation = view === "overview" ? storefrontCategoryNavigation() : "";
+  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}">${menuGallery}${categoryNavigation}${sortBar}<p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
