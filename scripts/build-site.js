@@ -628,6 +628,10 @@ const BEAN_TART_PATH = "/product-item/豆塔禮盒";
 const TASTE_APPLY_PATH = "/頂家彌月/taste_apply";
 const FROZEN_BREAD_PATH = "/產品介紹/冷凍麵包";
 const TEA_PARTY_MENU_URL = "https://drive.google.com/file/d/1jnpC9z_6F_sbyKZ2E7fHbJtQWwcqwIUS/view?usp=sharing";
+const TEA_PARTY_MENU_ASSETS = [
+  ["S__298065927.jpg", "tea-party-menu-bread.jpg"],
+  ["S__298065928.jpg", "tea-party-menu-desserts-drinks.jpg"],
+];
 const STORE_INFO_HERO_SOURCE = "/images/headtitle-bg6.jpg";
 const BIRTHDAY_CAKE_PAGE_TITLE = "蛋糕 (下方有DM供下載)";
 
@@ -3037,7 +3041,14 @@ function readStaticCatalogProducts() {
 }
 
 function teaPartyMenuGallery() {
-  return `<section class="tea-party-menu-gallery" aria-labelledby="tea-party-menu-gallery-title"><div class="tea-party-menu-gallery-heading"><p>TEA PARTY BOX MENU</p><h2 id="tea-party-menu-gallery-title">點心餐盒一覽表</h2><span>2026 年 5 月起</span></div><div class="tea-party-menu-gallery-grid"><figure class="tea-party-menu-card"><a href="/images/tea-party-menu-bread.jpg" target="_blank" rel="noreferrer"><img src="/images/tea-party-menu-bread.jpg" alt="點心餐盒一覽表：麵包類" loading="lazy"></a><figcaption>麵包類</figcaption></figure><figure class="tea-party-menu-card"><a href="/images/tea-party-menu-desserts-drinks.jpg" target="_blank" rel="noreferrer"><img src="/images/tea-party-menu-desserts-drinks.jpg" alt="點心餐盒一覽表：西點類與飲料類" loading="lazy"></a><figcaption>西點類與飲料類</figcaption></figure></div></section>`;
+  return `<section class="tea-party-menu-gallery" aria-labelledby="tea-party-menu-gallery-title"><div class="tea-party-menu-gallery-heading"><p>TEA PARTY BOX MENU</p><h2 id="tea-party-menu-gallery-title">點心餐盒一覽表</h2><span>2026 年 5 月起</span></div><div class="tea-party-menu-gallery-grid"><figure class="tea-party-menu-card"><a href="/tea-party-menu-bread.jpg" target="_blank" rel="noreferrer"><img src="/tea-party-menu-bread.jpg" alt="點心餐盒一覽表：麵包類" loading="lazy"></a><figcaption>麵包類</figcaption></figure><figure class="tea-party-menu-card"><a href="/tea-party-menu-desserts-drinks.jpg" target="_blank" rel="noreferrer"><img src="/tea-party-menu-desserts-drinks.jpg" alt="點心餐盒一覽表：西點類與飲料類" loading="lazy"></a><figcaption>西點類與飲料類</figcaption></figure></div></section>`;
+}
+
+function syncTeaPartyMenuAssets() {
+  for (const [sourceName, outputName] of TEA_PARTY_MENU_ASSETS) {
+    const source = path.join(ROOT, sourceName);
+    if (fs.existsSync(source)) fs.copyFileSync(source, path.join(OUT_DIR, outputName));
+  }
 }
 
 function staticCatalogTitle(value) {
@@ -4361,6 +4372,7 @@ function main() {
     rewriteStaticSnapshotNavigation();
     syncStaticSnapshotSeoMetadata();
     syncStaticSnapshotStructuredData();
+    syncTeaPartyMenuAssets();
     rewriteR2ImagePaths();
     rewriteWebpImagePaths();
     writeSitemapXml();
@@ -4436,6 +4448,7 @@ function main() {
   if (fs.existsSync(IMAGE_DATA_DIR)) {
     fs.cpSync(IMAGE_DATA_DIR, path.join(OUT_DIR, "assets", "images"), { recursive: true });
   }
+  syncTeaPartyMenuAssets();
   syncAdminFrontendSnapshot();
 
   const home = pages.find((page) => localPathFromUrl(page.url) === "/") || pages[0];
