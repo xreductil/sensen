@@ -4950,6 +4950,21 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .product-intro-carousel-controls button:hover, .product-intro-carousel-controls button:focus-visible { color: #fff; background: var(--brown-2); }
 .product-intro-load-more { display: flex; width: fit-content; min-height: 52px; align-items: center; justify-content: center; margin: 32px auto 0; padding: 0 28px; color: #74491f; background: #e9c995; font-size: clamp(16px, 1.1vw, 20px); text-decoration: none; transition: background .2s ease, transform .2s ease; }
 .product-intro-load-more:hover, .product-intro-load-more:focus-visible { background: #dfb978; transform: translateY(-2px); }
+.tea-party-storefront-section { padding-top: 56px; }
+.tea-party-storefront-intro { width: min(760px, 100%); margin: -8px auto 0; color: #6d6560; font-size: clamp(16px, 1.2vw, 20px); line-height: 1.8; text-align: center; }
+.tea-party-storefront-grid { margin-top: 42px; }
+.tea-party-storefront-empty { margin-top: 42px; margin-bottom: 0; }
+.tea-party-menu-gallery { width: min(1320px, calc(100% - 48px)); margin: 48px auto 0; padding: clamp(24px, 3vw, 48px); border: 1px solid #eee8e4; background: linear-gradient(135deg, #fffaf4, #fff); }
+.tea-party-menu-gallery-heading { margin-bottom: 28px; text-align: center; }
+.tea-party-menu-gallery-heading p { margin: 0 0 8px; color: #b88949; font-size: 13px; font-weight: 700; letter-spacing: .16em; }
+.tea-party-menu-gallery-heading h2 { margin: 0; color: #17321f; font-size: clamp(24px, 2.4vw, 38px); letter-spacing: .12em; }
+.tea-party-menu-gallery-heading span { display: block; margin-top: 8px; color: #8c8178; font-size: 14px; }
+.tea-party-menu-gallery-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(18px, 2.5vw, 36px); }
+.tea-party-menu-card { margin: 0; }
+.tea-party-menu-card a { display: block; overflow: hidden; border: 1px solid #eadfce; background: #fff; box-shadow: 0 12px 24px rgba(81, 54, 36, .08); }
+.tea-party-menu-card img { display: block; width: 100%; height: auto; transition: transform .25s ease; }
+.tea-party-menu-card a:hover img, .tea-party-menu-card a:focus-visible img { transform: scale(1.02); }
+.tea-party-menu-card figcaption { margin-top: 12px; color: #6d6560; font-size: 15px; text-align: center; }
 @media (max-width: 700px) {
   .storefront-sort-bar { width: calc(100% - 28px); justify-content: space-between; gap: 8px; padding-top: 24px; }
   .storefront-sort-bar label { font-size: 14px; }
@@ -4962,6 +4977,9 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
   .product-intro-section-heading p { font-size: 12px; }
   .product-intro-carousel-controls button { width: 36px; height: 36px; font-size: 25px; }
   .product-intro-card, .product-intro-menu-card { flex-basis: 70vw; }
+  .tea-party-menu-gallery { width: calc(100% - 28px); margin-top: 32px; padding: 22px 14px; }
+  .tea-party-menu-gallery-grid { grid-template-columns: 1fr; gap: 24px; }
+  .tea-party-menu-gallery-heading h2 { font-size: 27px; letter-spacing: .08em; }
 }
 
 .drink-menu-grid {

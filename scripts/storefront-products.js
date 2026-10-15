@@ -82,14 +82,16 @@
   const categoryRoutes = {
     '造型蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
     '冰淇淋蛋糕': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e7%94%9f%e6%97%a5%e8%9b%8b%e7%b3%95-%e4%b8%8b%e6%96%b9%e6%9c%89dm%e4%be%9b%e4%b8%8b%e8%bc%89-264/',
-    '伴手禮': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/'
+    '伴手禮': '/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/%e4%bc%b4%e6%89%8b%e7%a6%ae/',
+    '點心餐盒': '/%E7%94%A2%E5%93%81%E4%BB%8B%E7%B4%B9/%E9%BB%9E%E5%BF%83%E9%A4%90%E7%9B%92/'
   };
   const categoryMeta = {
     '生日蛋糕': { eyebrow: 'BIRTHDAY CAKE', icon: '/images/icon-cake.png' },
     '造型蛋糕': { eyebrow: 'CARTOON SHAPE CAKE', icon: '/images/icon-cake.png' },
     '冰淇淋蛋糕': { eyebrow: 'ICE CREAM CAKE', icon: '/images/icon-cake2.png' },
     '長條蛋糕': { eyebrow: 'LONG CAKE', icon: '/images/icon-cake2.png' },
-    '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.png' }
+    '伴手禮': { eyebrow: 'SOUVENIR', icon: '/images/icon-cupcake.png' },
+    '點心餐盒': { eyebrow: 'TEA PARTY BOX', icon: '/images/icon-cake2.png' }
   };
   const categoryOrder = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮'];
   const menuSections = [
@@ -311,6 +313,15 @@
     content.innerHTML = `<section class="souvenir-products"><img class="souvenir-icon" src="/images/icon-cupcake.png" alt="" aria-hidden="true"><div class="souvenir-grid">${items.map(souvenirCard).join('')}</div>${items.length ? '' : '<p class="storefront-catalog-empty">目前沒有已上架的商品。</p>'}</section>`;
   };
 
+  const renderTeaParty = products => {
+    const items = products.filter(product => product.cat === '點心餐盒');
+    const meta = categoryMeta['點心餐盒'];
+    const productsMarkup = items.length
+      ? `<div class="cake-product-grid tea-party-storefront-grid">${items.map(cakeCard).join('')}</div>`
+      : `<div class="catalog-empty-state tea-party-storefront-empty"><p class="catalog-empty-eyebrow">TEA PARTY BOX</p><h2>商品頁面準備中</h2><p>點心餐盒商品資料正在整理中，敬請期待。</p><a class="catalog-empty-link" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/">回到線上商城</a></div>`;
+    content.innerHTML = `<section class="product-intro-section tea-party-storefront-section"><div class="product-intro-section-heading"><div><p>${meta.eyebrow}</p><h2><img src="${meta.icon}" alt="" aria-hidden="true">點心餐盒</h2></div></div><p class="tea-party-storefront-intro">適合會議、活動與聚會的精緻點心，歡迎選購森森點心坊的點心餐盒。</p>${productsMarkup}</section>`;
+  };
+
   const bindInteractions = () => {
     content.querySelectorAll('[data-storefront-previous], [data-storefront-next]').forEach(button => button.addEventListener('click', () => {
       const track = button.closest('[data-storefront-section]')?.querySelector('[data-storefront-track]');
@@ -374,6 +385,8 @@
         renderCakes(products);
       } else if (view === 'long-cakes') {
         renderLongCakes(products);
+      } else if (view === 'tea-party') {
+        renderTeaParty(products);
       } else {
         renderSouvenirs(products);
       }

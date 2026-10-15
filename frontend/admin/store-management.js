@@ -14,7 +14,7 @@
     '頂家彌月｜彌月長條蛋糕',
     '頂家彌月｜搭配單品',
   ];
-  const defaultCategories = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮', '飲品 MENU', ...topHouseCategories];
+  const defaultCategories = ['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '伴手禮', '點心餐盒', '飲品 MENU', ...topHouseCategories];
   let products = [], orders = [], customers = [];
 
   const productDialog = $('#product-dialog');
