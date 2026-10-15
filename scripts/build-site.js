@@ -3065,9 +3065,7 @@ function teaPartyArticleMarkup() {
     <a class="latest-news-article-back" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/">← 返回線上商城</a>
     <div class="latest-news-article-shell is-free-layout tea-party-article-shell">
       <section class="latest-news-layout-block is-header">
-        <p class="latest-news-layout-date"><span aria-hidden="true">◷</span>2026 年 5 月起</p>
-        <p class="latest-news-article-category">TEA PARTY BOX</p>
-        <h1 id="tea-party-article-title" class="latest-news-layout-title">點心餐盒</h1>
+        <h1 id="tea-party-article-title" class="latest-news-layout-title">餐盒MENU</h1>
       </section>
       <section class="latest-news-layout-block is-media">
         <div class="latest-news-layout-gallery">
