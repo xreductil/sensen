@@ -3044,6 +3044,17 @@ function teaPartyMenuGallery() {
   return `<section class="tea-party-menu-gallery" aria-labelledby="tea-party-menu-gallery-title"><div class="tea-party-menu-gallery-heading"><p>TEA PARTY BOX MENU</p><h2 id="tea-party-menu-gallery-title">點心餐盒一覽表</h2><span>2026 年 5 月起</span></div><div class="tea-party-menu-gallery-grid"><figure class="tea-party-menu-card"><a href="/tea-party-menu-bread.jpg" target="_blank" rel="noreferrer"><img src="/tea-party-menu-bread.jpg" alt="點心餐盒一覽表：麵包類" loading="lazy"></a><figcaption>麵包類</figcaption></figure><figure class="tea-party-menu-card"><a href="/tea-party-menu-desserts-drinks.jpg" target="_blank" rel="noreferrer"><img src="/tea-party-menu-desserts-drinks.jpg" alt="點心餐盒一覽表：西點類與飲料類" loading="lazy"></a><figcaption>西點類與飲料類</figcaption></figure></div></section>`;
 }
 
+function teaPartyOrderInfo() {
+  const stores = [
+    ["澄和店", "三民區澄和路 78號", "07-3816662"],
+    ["新富店", "鳳山區新富路276號", "07-7675992"],
+    ["博愛店", "鳳山區博愛路219號", "07-7993070"],
+    ["文龍店", "鳳山區文龍東路336號", "07-7335812"],
+  ];
+  const storeRows = stores.map(([name, address, phone]) => `<li><strong>${escapeHtml(name)}</strong><span>${escapeHtml(address)}</span><a href="tel:${escapeAttr(phone)}">${escapeHtml(phone)}</a></li>`).join("");
+  return `<section class="tea-party-order-info" aria-labelledby="tea-party-order-info-title"><div class="tea-party-order-copy"><p>我們準備了許多客製化小麵包，提供大家選擇：</p><p>餐盒為客製化需求，最低量需10盒以上，可協助外送。</p><p class="tea-party-delivery-note"><span aria-hidden="true">📍</span>外送範圍為高雄市區。</p><p>歡迎洽詢門市訂購</p></div><div class="tea-party-store-info"><p class="tea-party-info-eyebrow">STORE INFORMATION</p><h2 id="tea-party-order-info-title">門市資訊</h2><ul>${storeRows}</ul></div></section>`;
+}
+
 function syncTeaPartyMenuAssets() {
   for (const [sourceName, outputName] of TEA_PARTY_MENU_ASSETS) {
     const source = path.join(ROOT, sourceName);
@@ -3132,8 +3143,9 @@ function storefrontCatalogContent(view) {
   const sortId = `storefront-sort-${view}`;
   const sortBar = `<div class="storefront-sort-bar" data-storefront-sort-bar><label for="${sortId}">商品排序</label><select id="${sortId}" data-storefront-sort aria-label="商品排序"><option value="newest" selected>上架時間: 由新到舊</option><option value="oldest">上架時間: 由舊到新</option><option value="price-desc">價格: 由高至低</option><option value="price-asc">價格: 由低至高</option></select></div>`;
   const menuGallery = view === "tea-party" ? teaPartyMenuGallery() : "";
+  const orderInfo = view === "tea-party" ? teaPartyOrderInfo() : "";
   const categoryNavigation = view === "overview" ? storefrontCategoryNavigation() : "";
-  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}">${menuGallery}${categoryNavigation}${sortBar}<p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
+  return `<section class="${classes}" data-storefront-catalog data-storefront-static="true" data-storefront-view="${escapeAttr(view)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap()))}">${orderInfo}${menuGallery}${categoryNavigation}${sortBar}<p class="storefront-catalog-status" data-storefront-catalog-status hidden>商品資料載入中…</p><div data-storefront-catalog-content>${staticCatalogMarkup(view)}</div>${dm}</section><script src="${STOREFRONT_PRODUCTS_SCRIPT_URL}"></script>`;
 }
 
 function cakeRelatedProducts(currentPath) {
