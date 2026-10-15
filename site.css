@@ -900,7 +900,8 @@ body.site-search-open { overflow: hidden; }
 }
 .submenu a { padding: 8px 12px; color: var(--brown); font-size: 14px; white-space: nowrap; }
 .menu-item:hover .submenu,
-.menu-item:focus-within .submenu { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
+.menu-item:focus-within .submenu,
+.menu-item.is-submenu-open .submenu { opacity: 1; pointer-events: auto; transform: translate(-50%, 0); }
 
 .page-main,
 .home-main {

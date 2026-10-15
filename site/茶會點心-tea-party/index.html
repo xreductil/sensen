@@ -278,19 +278,23 @@
       if (!isOpen) resetSubmenus();
     };
     toggle.addEventListener("click", () => setMenuState(!menu.classList.contains("is-open")));
+    const openSubmenu = (menuItem) => {
+      menu.querySelectorAll(".menu-item.is-submenu-open").forEach(item => {
+        item.classList.remove("is-submenu-open");
+        const parentLink = item.querySelector(".menu-item > a[aria-expanded]");
+        if (parentLink) parentLink.setAttribute("aria-expanded", "false");
+      });
+      menuItem.classList.add("is-submenu-open");
+      const parentLink = menuItem.querySelector(":scope > a[aria-expanded]");
+      if (parentLink) parentLink.setAttribute("aria-expanded", "true");
+    };
     menu.addEventListener("click", (event) => {
       const link = event.target.closest("a");
       const menuItem = link && link.closest(".menu-item");
       const hasSubmenu = menuItem && menuItem.querySelector(".submenu");
-      if (link && hasSubmenu && window.matchMedia("(max-width: 880px)").matches && !menuItem.classList.contains("is-submenu-open")) {
+      if (link && hasSubmenu && !menuItem.classList.contains("is-submenu-open")) {
         event.preventDefault();
-        menu.querySelectorAll(".menu-item.is-submenu-open").forEach(item => {
-          item.classList.remove("is-submenu-open");
-          const parentLink = item.querySelector(".menu-item > a[aria-expanded]");
-          if (parentLink) parentLink.setAttribute("aria-expanded", "false");
-        });
-        menuItem.classList.add("is-submenu-open");
-        link.setAttribute("aria-expanded", "true");
+        openSubmenu(menuItem);
         return;
       }
       if (link) {
