@@ -315,11 +315,12 @@
 
   const renderTeaParty = products => {
     const items = products.filter(product => product.cat === '點心餐盒');
+    if (!items.length) {
+      content.innerHTML = '';
+      return;
+    }
     const meta = categoryMeta['點心餐盒'];
-    const productsMarkup = items.length
-      ? `<div class="cake-product-grid tea-party-storefront-grid">${items.map(cakeCard).join('')}</div>`
-      : `<div class="catalog-empty-state tea-party-storefront-empty"><p class="catalog-empty-eyebrow">TEA PARTY BOX</p><h2>商品頁面準備中</h2><p>點心餐盒商品資料正在整理中，敬請期待。</p><a class="catalog-empty-link" href="/%e7%94%a2%e5%93%81%e4%bb%8b%e7%b4%b9/">回到線上商城</a></div>`;
-    content.innerHTML = `<section class="product-intro-section tea-party-storefront-section"><div class="product-intro-section-heading"><div><p>${meta.eyebrow}</p><h2><img src="${meta.icon}" alt="" aria-hidden="true">點心餐盒</h2></div></div><p class="tea-party-storefront-intro">適合會議、活動與聚會的精緻點心，歡迎選購森森點心坊的點心餐盒。</p>${productsMarkup}</section>`;
+    content.innerHTML = `<section class="product-intro-section tea-party-storefront-section"><div class="product-intro-section-heading"><div><p>${meta.eyebrow}</p><h2><img src="${meta.icon}" alt="" aria-hidden="true">點心餐盒商品</h2></div></div><div class="cake-product-grid tea-party-storefront-grid">${items.map(cakeCard).join('')}</div></section>`;
   };
 
   const bindInteractions = () => {

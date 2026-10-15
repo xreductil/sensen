@@ -4629,6 +4629,63 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
   overflow-wrap: anywhere;
 }
 
+.tea-party-article-page.latest-news-article-page {
+  padding-bottom: 56px;
+}
+
+.tea-party-article-page .latest-news-layout-date {
+  margin: 0 0 14px;
+  color: #8f817a;
+  font-size: 16px;
+}
+
+.tea-party-article-page .latest-news-layout-date span {
+  margin-right: 8px;
+  color: #b96543;
+}
+
+.tea-party-article-page .latest-news-layout-title {
+  font-size: clamp(34px, 4vw, 58px);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.tea-party-article-page .latest-news-layout-link {
+  display: block;
+  text-decoration: none;
+}
+
+.tea-party-article-copy {
+  color: #3f3f3f;
+  font-size: clamp(17px, 1.3vw, 22px);
+  line-height: 2;
+  overflow-wrap: anywhere;
+}
+
+.tea-party-article-copy .tea-party-order-copy p {
+  margin: 0 0 24px;
+}
+
+.tea-party-article-copy .tea-party-store-info {
+  margin-top: 36px;
+  padding: 28px 0 0;
+  border-top: 1px solid #e5cfaa;
+  border-left: 0;
+}
+
+.tea-party-article-copy .tea-party-store-info h2 {
+  margin-bottom: 20px;
+}
+
+.tea-party-article-copy .tea-party-store-info ul {
+  gap: 14px;
+  font-size: 16px;
+}
+
+.tea-party-article-copy .tea-party-store-info li {
+  grid-template-columns: 5em minmax(0, 1fr) auto;
+}
+
 .latest-news-article-status {
   grid-column: 1 / -1;
   margin: 0;
@@ -4830,6 +4887,33 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
   .latest-news-article-page {
     width: calc(100% - 28px);
     padding: 58px 0 72px;
+  }
+
+  .tea-party-article-page.latest-news-article-page {
+    padding-bottom: 36px;
+  }
+
+  .tea-party-article-page .latest-news-layout-title {
+    font-size: 34px;
+  }
+
+  .tea-party-article-copy {
+    font-size: 16px;
+    line-height: 1.85;
+  }
+
+  .tea-party-article-copy .tea-party-store-info {
+    margin-top: 28px;
+    padding-top: 24px;
+  }
+
+  .tea-party-article-copy .tea-party-store-info li {
+    grid-template-columns: 4.5em minmax(0, 1fr);
+    gap: 4px 8px;
+  }
+
+  .tea-party-article-copy .tea-party-store-info a {
+    grid-column: 2;
   }
 
   .latest-news-article-shell {
