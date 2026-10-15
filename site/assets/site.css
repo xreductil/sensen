@@ -4657,13 +4657,18 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
 
 .tea-party-article-copy {
   color: #3f3f3f;
-  font-size: clamp(17px, 1.3vw, 22px);
-  line-height: 2;
+  font-size: 17px;
+  line-height: 1.9;
   overflow-wrap: anywhere;
 }
 
+.tea-party-article-copy .tea-party-order-copy {
+  font-size: 17px;
+  line-height: 1.9;
+}
+
 .tea-party-article-copy .tea-party-order-copy p {
-  margin: 0 0 24px;
+  margin: 0 0 18px;
 }
 
 .tea-party-article-copy .tea-party-store-info {
@@ -4898,6 +4903,11 @@ body:has(.latest-news-page) .menu-item:nth-child(2) > a {
   }
 
   .tea-party-article-copy {
+    font-size: 16px;
+    line-height: 1.85;
+  }
+
+  .tea-party-article-copy .tea-party-order-copy {
     font-size: 16px;
     line-height: 1.85;
   }
