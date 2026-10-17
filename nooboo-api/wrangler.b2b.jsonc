@@ -1,0 +1,61 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "nooboo-api-b2b",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-08-21",
+  "triggers": {
+    "crons": ["0 * * * *"]
+  },
+  "observability": {
+    "enabled": true,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1
+    },
+    "traces": {
+      "enabled": true,
+      "head_sampling_rate": 0.1
+    }
+  },
+  "vars": {
+    "STOREFRONT_CHANNEL": "b2b",
+    "LINE_PAY_ENV": "production",
+    "LINE_PAY_SITE_ORIGIN": "https://nooboo.vercel.app"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "sensen-db-b2b",
+      "database_id": "88a081fd-da3c-4e37-bcb2-c514624e2a66",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "BUCKET",
+      "bucket_name": "sensen-images-b2b"
+    }
+  ],
+  "ratelimits": [
+    {
+      "name": "AUTH_LIMITER",
+      "namespace_id": "2026101805",
+      "simple": { "limit": 5, "period": 60 }
+    },
+    {
+      "name": "PUBLIC_WRITE_LIMITER",
+      "namespace_id": "2026101806",
+      "simple": { "limit": 10, "period": 60 }
+    },
+    {
+      "name": "SEARCH_LIMITER",
+      "namespace_id": "2026101807",
+      "simple": { "limit": 60, "period": 60 }
+    },
+    {
+      "name": "UPLOAD_LIMITER",
+      "namespace_id": "2026101808",
+      "simple": { "limit": 10, "period": 60 }
+    }
+  ]
+}

@@ -1,0 +1,3255 @@
+const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
+const GUEST_COOKIE = "nooboo_guest";
+const SESSION_COOKIE = "nooboo_session";
+type StorefrontChannel = "b2c" | "b2b";
+const channelCookie = (prefix: string, channel: StorefrontChannel) => `${prefix}_${channel}`;
+const getStorefrontChannel = (request: Request): StorefrontChannel =>
+  request.headers.get("X-Storefront-Channel")?.trim().toLowerCase() === "b2b" ? "b2b" : "b2c";
+const getConfiguredStorefrontChannel = (env: Env): StorefrontChannel =>
+  String(env.STOREFRONT_CHANNEL || "").trim().toLowerCase() === "b2b" ? "b2b" : "b2c";
+const VERCEL_EMAIL_ENDPOINT = "https://nooboo.vercel.app/api/send-email";
+const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
+const MFA_SETUP_TTL_SECONDS = 10 * 60;
+const TOTP_STEP_SECONDS = 30;
+const MAX_JSON_BODY_BYTES = 512 * 1024;
+const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_UPLOAD_FILES = 10;
+const MAX_UPLOAD_TOTAL_BYTES = 20 * 1024 * 1024;
+const MAX_UPLOAD_REQUEST_BYTES = 22 * 1024 * 1024;
+const RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
+const ALLOWED_ORIGINS = new Set([
+  "https://nooboo.vercel.app",
+  "http://localhost:3000",
+  "http://localhost:5173",
+  "http://127.0.0.1:3000",
+  "http://127.0.0.1:5173",
+]);
+const SECURITY_HEADERS: Record<string, string> = {
+  "Cache-Control": "no-store",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "Referrer-Policy": "strict-origin-when-cross-origin",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=(), usb=()",
+  "Content-Security-Policy-Report-Only": [
+    "default-src 'self'",
+    "base-uri 'self'",
+    "object-src 'none'",
+    "frame-ancestors 'none'",
+    "form-action 'self'",
+    "img-src 'self' data: blob: https:",
+    "font-src 'self' data: https://fonts.gstatic.com",
+    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
+    "script-src 'self' https://static.line-scdn.net",
+    "connect-src 'self' https://nooboo-api.jinfeng8605.workers.dev https://api.line.me",
+  ].join("; "),
+};
+
+class PayloadTooLargeError extends Error {}
+
+const isAllowedOrigin = (origin: string | null) => !origin || ALLOWED_ORIGINS.has(origin);
+
+const isUnsafeRequest = (request: Request) => !["GET", "HEAD", "OPTIONS"].includes(request.method);
+
+const clientRateLimitKey = (request: Request, scope: string) => {
+  const ip = request.headers.get("CF-Connecting-IP") || "unknown";
+  return `${scope}:${ip}`;
+};
+
+const rateLimitedResponse = (request: Request) => {
+  const response = json(request, { error: "請求過於頻繁，請稍後再試。" }, 429);
+  response.headers.set("Retry-After", String(RATE_LIMIT_RETRY_AFTER_SECONDS));
+  return response;
+};
+
+const rateLimitUnavailableResponse = (request: Request) => {
+  const response = json(request, { error: "流量防護暫時無法使用，請稍後再試。" }, 503);
+  response.headers.set("Retry-After", String(RATE_LIMIT_RETRY_AFTER_SECONDS));
+  return response;
+};
+
+const enforceRateLimit = async (request: Request, limiter: RateLimit, key: string) => {
+  try {
+    const result = await limiter.limit({ key });
+    return result.success ? null : rateLimitedResponse(request);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "rate_limit_error",
+      path: new URL(request.url).pathname,
+      detail: error instanceof Error ? error.message : String(error),
+    }));
+    // Rate limiting protects login, writes, searches, and uploads. If the
+    // binding is unavailable, fail closed instead of allowing an unbounded
+    // request stream through the protected route.
+    return rateLimitUnavailableResponse(request);
+  }
+};
+
+const readRateLimitIdentifier = async (request: Request) => {
+  if (request.method !== "POST") return "";
+  try {
+    const text = await request.clone().text();
+    if (new TextEncoder().encode(text).byteLength > MAX_JSON_BODY_BYTES) return "";
+    const body = JSON.parse(text) as Record<string, unknown>;
+    return String(body.login || body.email || "").trim().toLowerCase().slice(0, 254);
+  } catch {
+    return "";
+  }
+};
+
+const accountRateLimitKey = async (scope: string, identifier: string) => {
+  const digest = await crypto.subtle.digest(
+    "SHA-256",
+    new TextEncoder().encode(`${scope}:${identifier}`),
+  );
+  return `${scope}:account:${bytesToHex(new Uint8Array(digest))}`;
+};
+
+const sendOrderCompletionEmail = async (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
+  const recipient = String(row.customer_email || row.user_email || "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(recipient)) return { status: "not_requested", recipient };
+  const customerName = String(row.customer_name || row.user_name || "會員").trim();
+  const orderNumber = String(row.order_number || "").trim();
+  const itemLines = items.length
+    ? items.map(item => `- ${String(item.title || "商品")} × ${Number(item.qty || 0)}｜$${(Number(item.priceValue || 0) * Number(item.qty || 0)).toFixed(0)}`).join("\n")
+    : "（訂單商品明細請至會員中心查看）";
+  const message = [
+    `您好 ${customerName}：`, "", `您的訂單「${orderNumber}」已完成。`, "", "訂單內容：", itemLines, "",
+    `訂單金額：$${Number(row.total_amount || 0).toFixed(0)}`,
+    `取貨／配送方式：${shippingLabel(String(row.shipping_method || "pickup"))}`,
+    `取貨／配送日期：${String(row.fulfillment_date || "請依訂單資料確認")}`, "",
+    "感謝您的訂購，森森點心坊祝您順心！",
+  ].join("\n");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(VERCEL_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({ type: "order_status", name: customerName, email: recipient, subject: `您的訂單 ${orderNumber} 已完成`, message }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error("Order completion email returned", response.status);
+      return { status: "pending", recipient };
+    }
+    return { status: "sent", recipient };
+  } catch (error) {
+    console.error("Order completion email failed", error instanceof Error ? error.message : error);
+    return { status: "pending", recipient };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const sendOrderCreatedEmail = async (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
+  const recipient = String(row.customer_email || row.user_email || "").trim().toLowerCase();
+  if (!/^\S+@\S+\.\S+$/.test(recipient)) return { status: "not_requested", recipient };
+  const customerName = String(row.customer_name || row.user_name || "會員").trim();
+  const orderNumber = String(row.order_number || "").trim();
+  const itemLines = items.length
+    ? items.map(item => `- ${String(item.title || "商品")} × ${Number(item.qty || 0)}｜$${(Number(item.priceValue || 0) * Number(item.qty || 0)).toFixed(0)}`).join("\n")
+    : "（訂單商品明細請至後台訂單管理查看）";
+  const shippingAddress = parseJson<Record<string, unknown> | null>(String(row.shipping_address || ""), null);
+  const address = shippingAddress
+    ? [shippingAddress.city, shippingAddress.zip, shippingAddress.address].filter(Boolean).join(" ")
+    : "";
+  const message = [
+    "郵件內容來自 森森官網-線上商城訂單",
+    "===== 以下為內容 ====",
+    `訂單編號：${orderNumber}`,
+    `顧客姓名：${customerName}`,
+    `電子信箱：${recipient}`,
+    `連絡電話：${String(row.customer_phone || row.user_phone || "")}`,
+    "",
+    "訂單商品：",
+    itemLines,
+    "",
+    `訂單金額：$${Number(row.total_amount || 0).toFixed(0)}`,
+    `取貨／配送方式：${shippingLabel(String(row.shipping_method || "pickup"))}`,
+    `取貨／配送日期：${String(row.fulfillment_date || "")}`,
+    address ? `宅配地址：${address}` : "",
+    row.customer_note ? `備註：${String(row.customer_note)}` : "",
+    "----完畢----",
+    "",
+    "這封電子郵件由《森森點心坊》線上商城傳送，網站網址為 https://www.sensen.com.tw",
+  ].filter(Boolean).join("\n");
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 5000);
+  try {
+    const response = await fetch(VERCEL_EMAIL_ENDPOINT, {
+      method: "POST",
+      headers: { "content-type": "application/json", accept: "application/json" },
+      body: JSON.stringify({
+        type: "order_created",
+        name: customerName,
+        email: recipient,
+        subject: `顧客「${customerName}」的新訂單 ${orderNumber}`,
+        message,
+      }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      console.error("Order notification email returned", response.status);
+      return { status: "pending", recipient };
+    }
+    return { status: "sent", recipient };
+  } catch (error) {
+    console.error("Order notification email failed", error instanceof Error ? error.message : error);
+    return { status: "pending", recipient };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+// D1/SQLite CURRENT_TIMESTAMP is UTC but is returned without an offset.
+// Mark that value explicitly so browsers do not parse it as local time.
+const utcDateString = (value: unknown) => {
+  const text = String(value || "").trim();
+  if (!text) return "";
+  return /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(text)
+    ? `${text.replace(" ", "T")}Z`
+    : text;
+};
+
+type ProductRow = {
+  db_id: number;
+  slug: string;
+  title: string;
+  description: string | null;
+  price: number;
+  stock: number;
+  image_key: string | null;
+  is_active: number;
+  category: string | null;
+  metadata_json: string | null;
+  created_at: string | null;
+  gallery_json: string | null;
+  cart_quantity?: number;
+  cart_variant_key?: string | null;
+  cart_selected_options_json?: string | null;
+};
+
+// Existing top-house products were created before original/sale prices were
+// stored in metadata. Keep their established original prices available until
+// each product is saved from the admin editor.
+const TOP_HOUSE_ORIGINAL_PRICE_BY_ID: Record<string, number> = {
+  "top-house-boston-classic": 520,
+  "top-house-pa1-boston-gift": 635,
+  "top-house-pa2-boston-gift": 690,
+  "top-house-pa3-boston-gift": 685,
+  "top-house-pa4-boston-gift": 880,
+  "top-house-c1-big-bear": 835,
+  "top-house-c2-big-bear": 670,
+  "top-house-c3-big-bear": 875,
+  "top-house-c4-big-bear": 785,
+  "top-house-b1-little-bear": 720,
+  "top-house-b2-little-bear": 530,
+  "top-house-b3-little-bear": 475,
+  "top-house-b4-little-bear": 515,
+  "top-house-l1-country-cheese": 1145,
+  "top-house-l2-country-cheese": 1355,
+  "top-house-l3-country-cheese": 1000,
+  "top-house-k1-creme-brulee": 760,
+  "top-house-k2-pistachio-marble": 760,
+  "top-house-k3-cheesecake": 760,
+  "top-house-k4-light-cheesecake": 670,
+  "top-house-k5-belgian-chocolate": 670,
+  "top-house-k6-lemon-cheesecake": 670,
+  "top-house-a1-strawberry-marble": 360,
+  "top-house-a2-honey-cake": 360,
+  "top-house-a3-blueberry-angel": 360,
+  "top-house-a4-lemon-love": 360,
+  "top-house-a5-classic-chocolate": 360,
+  "top-house-a6-left-bank-coffee-roll": 580,
+  "top-house-a7-vanilla-napoleon": 580,
+  "top-house-a7-chocolate-napoleon": 580,
+  "top-house-a8-earl-grey-roll": 580,
+  "top-house-a9-mocha-chocolate": 580,
+  "top-house-a10-violet": 580,
+  "top-house-a11-japanese-layer": 580,
+  "top-house-a12-osmanthus-oolong": 580,
+};
+
+type StoreProduct = {
+  id: string;
+  sku: string;
+  title: string;
+  url: string;
+  cat: string;
+  price: string;
+  priceValue: number;
+  originalPrice: number;
+  priceOptions: Record<string, number>;
+  quantity: number;
+  day: string;
+  img: string;
+  images: string[];
+  desc: string;
+  spec: string;
+  size: string;
+  storage: string;
+  other: string;
+  emphasis: string;
+  note: string;
+  variants: Record<string, unknown>;
+  createdAt: string;
+  likes: number;
+  dietary: string;
+  dietaryImage: string;
+  published: boolean;
+  thumbnail: ThumbnailSettings;
+};
+
+type ThumbnailAdjustment = {
+  offsetX: number;
+  offsetY: number;
+  scale: number;
+};
+
+type ThumbnailSettings = ThumbnailAdjustment & {
+  desktop: ThumbnailAdjustment;
+  mobile: ThumbnailAdjustment;
+};
+
+type UserRow = {
+  id: number;
+  name: string | null;
+  email: string | null;
+  phone: string | null;
+  role: string | null;
+  storefront_channel?: StorefrontChannel | null;
+  password_salt: string | null;
+  password_hash: string | null;
+  mfa_enabled?: number | null;
+  mfa_secret_ciphertext?: string | null;
+  mfa_pending_secret_ciphertext?: string | null;
+  mfa_pending_created_at?: number | null;
+  mfa_last_used_step?: number | null;
+};
+
+type MemberPointRuleRow = {
+  id: number;
+  enabled: number;
+  spend_amount: number;
+  earn_points: number;
+  minimum_order_amount: number;
+  redeem_points: number;
+  redeem_amount: number;
+  description: string;
+  updated_at: string;
+};
+
+const publicMemberPointRule = (row: MemberPointRuleRow | null | undefined) => {
+  const number = (value: unknown, fallback: number) => value === null || value === undefined ? fallback : Number(value);
+  return {
+    enabled: number(row?.enabled, 0) === 1,
+    spendAmount: number(row?.spend_amount, 100),
+    earnPoints: number(row?.earn_points, 1),
+    minimumOrderAmount: number(row?.minimum_order_amount, 0),
+    redeemPoints: number(row?.redeem_points, 1),
+    redeemAmount: number(row?.redeem_amount, 1),
+    description: String(row?.description || "訂單完成後依規則發放紅利點數。"),
+    updatedAt: utcDateString(row?.updated_at),
+  };
+};
+
+const readMemberPointRule = async (env: Env, channel: StorefrontChannel) => env.DB.prepare(`
+  SELECT id, enabled, spend_amount, earn_points, minimum_order_amount,
+         redeem_points, redeem_amount, description, updated_at
+  FROM member_point_rules
+  WHERE storefront_channel = ?1 AND id = 1
+  LIMIT 1
+`).bind(channel).first<MemberPointRuleRow>();
+
+const awardCompletedOrderPoints = async (env: Env, order: Record<string, unknown>) => {
+  const userId = Number(order.user_id || 0);
+  const orderNumber = String(order.order_number || "").trim();
+  const totalAmount = Number(order.total_amount || 0);
+  if (!userId || !orderNumber || totalAmount <= 0) return null;
+  const channel = order.storefront_channel === "b2b" ? "b2b" : "b2c";
+  const rule = await readMemberPointRule(env, channel);
+  if (!rule || Number(rule.enabled) !== 1 || Number(rule.spend_amount) <= 0 || Number(rule.earn_points) <= 0 || totalAmount < Number(rule.minimum_order_amount || 0)) return null;
+  const points = Math.floor(totalAmount / Number(rule.spend_amount)) * Number(rule.earn_points);
+  if (points <= 0) return null;
+  const result = await env.DB.prepare(`
+    INSERT OR IGNORE INTO member_point_transactions
+      (storefront_channel, user_id, points, description, source_type, source_id)
+    VALUES (?1, ?2, ?3, ?4, 'order', ?5)
+  `).bind(channel, userId, points, `訂單 ${orderNumber} 完成回饋`, orderNumber).run();
+  return result.meta.changes ? { points, orderNumber } : null;
+};
+
+const getGuestId = (request: Request, channel: StorefrontChannel = getStorefrontChannel(request)) => {
+  const scoped = getCookie(request, channelCookie(GUEST_COOKIE, channel));
+  if (scoped) return scoped;
+  // Preserve carts created before channel partitioning for the B2C channel.
+  return channel === "b2c" ? (getCookie(request, GUEST_COOKIE) || crypto.randomUUID()) : crypto.randomUUID();
+};
+
+const responseHeaders = (request: Request, extra: Record<string, string> = {}) => {
+  const origin = request.headers.get("Origin");
+  const headers: Record<string, string> = {
+    "Content-Type": JSON_CONTENT_TYPE,
+    ...SECURITY_HEADERS,
+    ...extra,
+  };
+  if (origin && ALLOWED_ORIGINS.has(origin)) {
+    headers["Access-Control-Allow-Origin"] = origin;
+    headers["Access-Control-Allow-Credentials"] = "true";
+    headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
+    headers["Access-Control-Allow-Headers"] = "Content-Type, X-Guest-ID, X-Storefront-Channel";
+    headers.Vary = "Origin";
+  } else if (origin) {
+    headers.Vary = "Origin";
+  }
+  return headers;
+};
+
+const json = (request: Request, body: unknown, status = 200, guestId?: string, sessionToken?: string) => {
+  const headers = new Headers(responseHeaders(request));
+  const channel = getStorefrontChannel(request);
+  const secureCookie = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  if (guestId) {
+    headers.append("Set-Cookie", `${channelCookie(GUEST_COOKIE, channel)}=${encodeURIComponent(guestId)}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secureCookie}`);
+  }
+  if (sessionToken !== undefined) {
+    const sessionCookieName = channelCookie(SESSION_COOKIE, channel);
+    const cookie = sessionToken
+      ? `${sessionCookieName}=${encodeURIComponent(sessionToken)}; Path=/; Max-Age=${SESSION_TTL_SECONDS}; HttpOnly; SameSite=Lax${secureCookie}`
+      : `${sessionCookieName}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureCookie}`;
+    headers.append("Set-Cookie", cookie);
+    if (!sessionToken && channel === "b2c") {
+      headers.append("Set-Cookie", `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureCookie}`);
+    }
+  }
+  return new Response(JSON.stringify(body), { status, headers });
+};
+
+const noStoreJson = (request: Request, body: unknown, status = 200) => {
+  const response = json(request, body, status);
+  response.headers.set("Cache-Control", "no-store, max-age=0");
+  return response;
+};
+
+const parseBody = async (request: Request) => {
+  const contentLength = Number(request.headers.get("Content-Length") || 0);
+  if (Number.isFinite(contentLength) && contentLength > MAX_JSON_BODY_BYTES) {
+    throw new PayloadTooLargeError("JSON request body is too large");
+  }
+  try {
+    const text = await request.text();
+    if (new TextEncoder().encode(text).byteLength > MAX_JSON_BODY_BYTES) {
+      throw new PayloadTooLargeError("JSON request body is too large");
+    }
+    return JSON.parse(text) as Record<string, unknown>;
+  } catch (error) {
+    if (error instanceof PayloadTooLargeError) throw error;
+    return {};
+  }
+};
+
+const constantTimeEqual = (left: string, right: string) => {
+  const leftBytes = new TextEncoder().encode(left);
+  const rightBytes = new TextEncoder().encode(right);
+  let difference = leftBytes.length ^ rightBytes.length;
+  const length = Math.max(leftBytes.length, rightBytes.length);
+  for (let index = 0; index < length; index += 1) {
+    difference |= (leftBytes[index] || 0) ^ (rightBytes[index] || 0);
+  }
+  return difference === 0;
+};
+
+const base32Encode = (bytes: Uint8Array) => {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  let output = "";
+  let buffer = 0;
+  let bits = 0;
+  for (const byte of bytes) {
+    buffer = (buffer << 8) | byte;
+    bits += 8;
+    while (bits >= 5) {
+      output += alphabet[(buffer >>> (bits - 5)) & 31];
+      bits -= 5;
+    }
+  }
+  if (bits > 0) output += alphabet[(buffer << (5 - bits)) & 31];
+  return output;
+};
+
+const base32Decode = (value: string) => {
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+  const normalized = value.toUpperCase().replace(/[^A-Z2-7]/g, "");
+  const bytes: number[] = [];
+  let buffer = 0;
+  let bits = 0;
+  for (const character of normalized) {
+    const index = alphabet.indexOf(character);
+    if (index < 0) continue;
+    buffer = (buffer << 5) | index;
+    bits += 5;
+    if (bits >= 8) {
+      bytes.push((buffer >>> (bits - 8)) & 255);
+      bits -= 8;
+    }
+  }
+  return new Uint8Array(bytes);
+};
+
+const imageSignatureMatches = async (file: File, mimeType: string) => {
+  const bytes = new Uint8Array(await file.slice(0, 16).arrayBuffer());
+  const text = (start: number, length: number) => String.fromCharCode(...bytes.slice(start, start + length));
+  if (mimeType === "image/png") return bytes.length >= 8 && text(0, 8) === "\x89PNG\r\n\x1a\n";
+  if (mimeType === "image/jpeg") return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  if (mimeType === "image/gif") return text(0, 6) === "GIF87a" || text(0, 6) === "GIF89a";
+  if (mimeType === "image/webp") return text(0, 4) === "RIFF" && text(8, 4) === "WEBP";
+  if (mimeType === "image/avif") return text(4, 4) === "ftyp" && ["avif", "avis"].includes(text(8, 4));
+  return false;
+};
+
+const uploadFiles = async (form: FormData) => {
+  const files = form.getAll("image").filter((value): value is File => value instanceof File && value.size > 0);
+  if (!files.length) {
+    return { files: [], error: { body: { error: "請選擇圖片檔案。" }, status: 400 } };
+  }
+  if (files.length > MAX_UPLOAD_FILES) {
+    return { files: [], error: { body: { error: `單次最多上傳 ${MAX_UPLOAD_FILES} 張圖片。` }, status: 413 } };
+  }
+  const totalSize = files.reduce((total, file) => total + file.size, 0);
+  if (totalSize > MAX_UPLOAD_TOTAL_BYTES) {
+    return { files: [], error: { body: { error: "單次上傳圖片總大小不可超過 20 MB。" }, status: 413 } };
+  }
+  const extensions: Record<string, string> = {
+    "image/avif": "avif",
+    "image/gif": "gif",
+    "image/jpeg": "jpg",
+    "image/png": "png",
+    "image/webp": "webp",
+  };
+  for (const file of files) {
+    if (!extensions[file.type]) {
+      return { files: [], error: { body: { error: "僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。" }, status: 415 } };
+    }
+    if (file.size > MAX_UPLOAD_BYTES) {
+      return { files: [], error: { body: { error: "單張圖片不可超過 8 MB。" }, status: 413 } };
+    }
+    if (!await imageSignatureMatches(file, file.type)) {
+      return { files: [], error: { body: { error: "圖片檔案內容與副檔名不符。" }, status: 415 } };
+    }
+  }
+  return { files, error: null };
+};
+
+const getCookie = (request: Request, name: string) => {
+  const cookie = request.headers.get("Cookie") || "";
+  return cookie.match(new RegExp(`(?:^|;\\s*)${name}=([^;]+)`))?.[1] || "";
+};
+
+const bytesToHex = (bytes: Uint8Array) => Array.from(bytes, byte => byte.toString(16).padStart(2, "0")).join("");
+
+const LINE_PAY_API_PATH = "/v3/payments";
+const LINE_PAY_PRODUCTION_ORIGIN = "https://api-pay.line.me";
+const LINE_PAY_SANDBOX_ORIGIN = "https://sandbox-api-pay.line.me";
+const PAYMENT_SITE_ORIGIN = "https://nooboo.vercel.app";
+
+const linePayConfig = (env: Env) => {
+  const bindings = env as unknown as Record<string, unknown>;
+  const channelId = String(bindings.LINE_PAY_CHANNEL_ID || "").trim();
+  const channelSecret = String(bindings.LINE_PAY_CHANNEL_SECRET || "").trim();
+  const environment = String(bindings.LINE_PAY_ENV || "production").trim().toLowerCase();
+  const siteOrigin = String(bindings.LINE_PAY_SITE_ORIGIN || PAYMENT_SITE_ORIGIN).trim().replace(/\/+$/, "");
+  return {
+    channelId,
+    channelSecret,
+    apiOrigin: environment === "sandbox" ? LINE_PAY_SANDBOX_ORIGIN : LINE_PAY_PRODUCTION_ORIGIN,
+    siteOrigin,
+  };
+};
+
+const base64FromBytes = (bytes: ArrayBuffer | Uint8Array) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
+
+const bytesFromBase64 = (value: string) => {
+  const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
+  const binary = atob(normalized);
+  return Uint8Array.from(binary, character => character.charCodeAt(0));
+};
+
+const mfaEncryptionKey = async (env: Env) => {
+  const configured = String((env as unknown as Record<string, unknown>).MFA_ENCRYPTION_KEY || "").trim();
+  if (!configured) return null;
+  try {
+    const raw = /^[0-9a-f]{64}$/i.test(configured)
+      ? Uint8Array.from(configured.match(/.{2}/g) || [], pair => Number.parseInt(pair, 16))
+      : bytesFromBase64(configured);
+    if (raw.length !== 32) return null;
+    return await crypto.subtle.importKey("raw", raw, { name: "AES-GCM" }, false, ["encrypt", "decrypt"]);
+  } catch {
+    return null;
+  }
+};
+
+const encryptMfaSecret = async (env: Env, secret: string) => {
+  const key = await mfaEncryptionKey(env);
+  if (!key) throw new Error("MFA encryption key is not configured");
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const encrypted = new Uint8Array(await crypto.subtle.encrypt(
+    { name: "AES-GCM", iv },
+    key,
+    new TextEncoder().encode(secret),
+  ));
+  const payload = new Uint8Array(iv.length + encrypted.length);
+  payload.set(iv, 0);
+  payload.set(encrypted, iv.length);
+  return base64FromBytes(payload);
+};
+
+const decryptMfaSecret = async (env: Env, ciphertext: string | null | undefined) => {
+  if (!ciphertext) return null;
+  const key = await mfaEncryptionKey(env);
+  if (!key) return null;
+  try {
+    const payload = bytesFromBase64(ciphertext);
+    if (payload.length <= 12) return null;
+    const plaintext = await crypto.subtle.decrypt(
+      { name: "AES-GCM", iv: payload.slice(0, 12) },
+      key,
+      payload.slice(12),
+    );
+    return new TextDecoder().decode(plaintext);
+  } catch {
+    return null;
+  }
+};
+
+const createTotpSecret = () => base32Encode(crypto.getRandomValues(new Uint8Array(20)));
+
+const totpCodeAt = async (secret: string, step: number) => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    base32Decode(secret),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const counter = new Uint8Array(8);
+  let value = Math.max(0, Math.floor(step));
+  for (let index = counter.length - 1; index >= 0; index -= 1) {
+    counter[index] = value % 256;
+    value = Math.floor(value / 256);
+  }
+  const digest = new Uint8Array(await crypto.subtle.sign("HMAC", key, counter));
+  const offset = digest[digest.length - 1] & 15;
+  const binary = ((digest[offset] & 127) << 24)
+    | ((digest[offset + 1] & 255) << 16)
+    | ((digest[offset + 2] & 255) << 8)
+    | (digest[offset + 3] & 255);
+  return String(binary % 1000000).padStart(6, "0");
+};
+
+const verifyTotp = async (secret: string, code: unknown) => {
+  const normalized = String(code || "").replace(/\s/g, "");
+  if (!/^\d{6}$/.test(normalized)) return null;
+  const currentStep = Math.floor(Date.now() / 1000 / TOTP_STEP_SECONDS);
+  for (const offset of [-1, 0, 1]) {
+    const step = currentStep + offset;
+    if (constantTimeEqual(await totpCodeAt(secret, step), normalized)) return step;
+  }
+  return null;
+};
+
+const totpUri = (email: string, secret: string) => {
+  const label = encodeURIComponent(`nooboo Admin:${email}`);
+  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent("nooboo")}&algorithm=SHA1&digits=6&period=${TOTP_STEP_SECONDS}`;
+};
+
+const linePayAuthorization = async (channelSecret: string, message: string) => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(channelSecret),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"],
+  );
+  return base64FromBytes(await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(message)));
+};
+
+const parseLinePayResponse = (text: string) => {
+  // LINE Pay transaction IDs can exceed JavaScript's safe integer range.
+  const safeText = text.replace(/:\s*(\d{16,})(\b)/g, ': "$1"$2');
+  try {
+    return JSON.parse(safeText) as Record<string, unknown>;
+  } catch {
+    return { returnCode: "9000", returnMessage: "LINE Pay 回應格式無法解析。" };
+  }
+};
+
+const callLinePay = async (env: Env, apiPath: string, data: Record<string, unknown>): Promise<Record<string, unknown>> => {
+  const config = linePayConfig(env);
+  if (!config.channelId || !config.channelSecret) {
+    return { configured: false, returnCode: "CONFIG_MISSING", returnMessage: "LINE Pay 尚未完成正式環境設定。" };
+  }
+  const body = JSON.stringify(data);
+  const nonce = crypto.randomUUID();
+  const authorization = await linePayAuthorization(config.channelSecret, config.channelSecret + apiPath + body + nonce);
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 40000);
+  try {
+    const response = await fetch(`${config.apiOrigin}${apiPath}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-LINE-Authorization": authorization,
+        "X-LINE-Authorization-Nonce": nonce,
+        "X-LINE-ChannelId": config.channelId,
+      },
+      body,
+      signal: controller.signal,
+    });
+    return { configured: true, httpStatus: response.status, ...parseLinePayResponse(await response.text()) };
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const paymentRedirect = (env: Env, orderId: string, result: string) => {
+  const { siteOrigin } = linePayConfig(env);
+  const params = new URLSearchParams({ order: orderId, payment: result });
+  return Response.redirect(`${siteOrigin}/orders/?${params.toString()}`, 302);
+};
+
+const randomToken = () => bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
+
+// Cloudflare Workers' native PBKDF2 implementation currently caps the work
+// factor at 100,000 iterations.
+const PASSWORD_HASH_ITERATIONS = 100_000;
+
+const derivePasswordHash = async (password: string, salt: string) => {
+  const key = await crypto.subtle.importKey(
+    "raw",
+    new TextEncoder().encode(password),
+    { name: "PBKDF2" },
+    false,
+    ["deriveBits"],
+  );
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", salt: new TextEncoder().encode(salt), iterations: PASSWORD_HASH_ITERATIONS, hash: "SHA-512" },
+    key,
+    512,
+  );
+  return bytesToHex(new Uint8Array(bits));
+};
+
+const createPasswordHash = async (password: string) => {
+  const salt = bytesToHex(crypto.getRandomValues(new Uint8Array(16)));
+  return { salt, hash: await derivePasswordHash(password, salt) };
+};
+
+const verifyPassword = async (password: string, user: UserRow) => {
+  if (!user.password_salt || !user.password_hash) return false;
+  try {
+    return constantTimeEqual(await derivePasswordHash(password, user.password_salt), user.password_hash);
+  } catch (error) {
+    console.error(JSON.stringify({
+      event: "password_hash_verify_error",
+      detail: error instanceof Error ? error.message : String(error),
+    }));
+    return false;
+  }
+};
+
+const getSessionUser = async (env: Env, request: Request, channel: StorefrontChannel = getStorefrontChannel(request)) => {
+  const token = getCookie(request, channelCookie(SESSION_COOKIE, channel))
+    || (channel === "b2c" ? getCookie(request, SESSION_COOKIE) : "");
+  if (!token) return null;
+  return env.DB.prepare(`
+    SELECT u.id, u.name, u.email, u.phone, u.role, u.password_salt, u.password_hash,
+           u.storefront_channel,
+           u.mfa_enabled, u.mfa_secret_ciphertext, u.mfa_pending_secret_ciphertext,
+           u.mfa_pending_created_at, u.mfa_last_used_step
+    FROM sessions s
+    INNER JOIN users u ON u.id = s.user_id
+    WHERE s.token = ?1
+      AND s.storefront_channel = ?2
+      AND (u.storefront_channel = ?2 OR u.role = 'admin')
+      AND s.expires_at > CAST(strftime('%s', 'now') AS INTEGER)
+  `).bind(token, channel).first<UserRow>();
+};
+
+const cleanupExpiredSessions = async (env: Env, scheduledTime: number) => {
+  const result = await env.DB.prepare(
+    "DELETE FROM sessions WHERE expires_at IS NOT NULL AND expires_at <= CAST(strftime('%s', 'now') AS INTEGER)",
+  ).run();
+  console.log(JSON.stringify({
+    event: "expired_sessions_cleanup",
+    deleted_sessions: result.meta.changes,
+    scheduled_time: new Date(scheduledTime).toISOString(),
+  }));
+};
+
+const publicUser = (user: UserRow) => ({
+  id: user.id,
+  name: user.name || "會員",
+  email: user.email || "",
+  phone: user.phone || "",
+  role: user.role || "customer",
+  isAdmin: user.role === "admin",
+});
+
+const parseJson = <T>(value: string | null | undefined, fallback: T): T => {
+  try { return value ? JSON.parse(value) as T : fallback; } catch { return fallback; }
+};
+
+const normalizeThumbnailSettings = (value: unknown): ThumbnailSettings => {
+  const source = value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : {};
+  const number = (candidate: unknown, fallback: number) => {
+    const parsed = Number(candidate);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+  const normalize = (candidate: Record<string, unknown>, fallback: Record<string, unknown>) => ({
+    offsetX: Math.max(-1000, Math.min(1000, Math.round(number(candidate.offsetX, number(fallback.offsetX, 0))))),
+    offsetY: Math.max(-1000, Math.min(1000, Math.round(number(candidate.offsetY, number(fallback.offsetY, 0))))),
+    scale: Math.max(25, Math.min(300, number(candidate.scale, number(fallback.scale, 100)))),
+  });
+  const desktopSource = source.desktop && typeof source.desktop === "object" && !Array.isArray(source.desktop)
+    ? source.desktop as Record<string, unknown>
+    : source;
+  const mobileSource = source.mobile && typeof source.mobile === "object" && !Array.isArray(source.mobile)
+    ? source.mobile as Record<string, unknown>
+    : source;
+  const desktop = normalize(desktopSource, source);
+  const mobile = normalize(mobileSource, desktop);
+  return { ...desktop, desktop, mobile };
+};
+
+const slugify = (value: string) => {
+  const slug = value.trim().toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || `product-${Date.now()}`;
+};
+
+const shippingLabel = (method: string | null | undefined) => ({
+  pickup: "門市自取",
+  home: "宅配",
+  frozen: "冷凍宅配",
+}[String(method || "pickup")] || "門市自取");
+
+const archivedNewsImages: Record<string, string> = {
+  "/wp-content/uploads/2025/07/1-scaled.jpg": "/images/photo-1-8.jpg",
+  "/wp-content/uploads/2025/07/2-1528x1080.jpg": "/images/photo-2-3.jpg",
+  "/wp-content/uploads/2025/07/3-1528x1080.jpg": "/images/photo-3-3.jpg",
+  "/wp-content/uploads/2025/07/4-1528x1080.jpg": "/images/photo-4-2.jpg",
+};
+
+const publicNewsImageUrl = (value: unknown) => {
+  const image = String(value || "").trim();
+  if (!image) return "";
+  if (/^\/?images\/legacy-news(?:\?|$)/i.test(image)) {
+    try {
+      const source = new URL(image, SITE_ORIGIN).searchParams.get("url") || "";
+      const pathname = new URL(source).pathname;
+      return archivedNewsImages[pathname] || "";
+    } catch {
+      return "";
+    }
+  }
+  try {
+    const source = new URL(image);
+    if (source.hostname === "www.sensen.com.tw" && source.pathname.startsWith("/wp-content/uploads/")) {
+      if (archivedNewsImages[source.pathname]) return archivedNewsImages[source.pathname];
+      return "";
+    }
+  } catch {
+    // Relative image paths are normalized below.
+  }
+  const localKey = image.replace(/^\/?(?:assets\/)?images\//i, "").replace(/^\/+/, "");
+  if (localKey !== image && localKey) return `/images/${localKey}`;
+  return image;
+};
+
+const newsFromRow = (row: Record<string, unknown>) => ({
+  id: row.id,
+  title: row.title,
+  slug: row.slug,
+  category: row.category || "latest-news",
+  excerpt: row.excerpt || "",
+  content: row.content || "",
+  image: publicNewsImageUrl(row.image_key),
+  layout: parseJson<Record<string, unknown>[] | null>(String(row.layout_json || ""), null)?.map(block => ({
+    ...block,
+    ...(block.type === "image" ? { src: publicNewsImageUrl(block.src) } : {}),
+    ...(block.type === "gallery" && Array.isArray(block.images) ? { images: block.images.map(publicNewsImageUrl) } : {}),
+  })) ?? null,
+  publishAt: row.publish_at,
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+  status: Number(row.is_published) === 1 ? "published" : "draft",
+});
+
+const SITE_ORIGIN = "https://nooboo.vercel.app";
+const RETIRED_CONTENT_PATHS = new Set([
+  "/author/admin", "/slide-types/index-slider",
+  "/產品介紹/page/2", "/產品介紹/page/3", "/產品介紹/生日蛋糕-下方有dm供下載-264/page/2",
+  "/latest-news/²⁰²¹-𝐅𝐚𝐭𝐡𝐞𝐫𝐬-𝐃𝐚𝐲✨-2", "/latest-news/父親節蛋糕預購開跑囉-2",
+  "/latest-news/吉祥桂圓糕-2", "/latest-news/肉鬆餅-2", "/latest-news/彌月試吃品項-2",
+  "/new-arrival/多佳米拉-2", "/new-arrival/芒果奶露麵包-2", "/new-arrival/草莓甜心-2",
+  "/latest-news/📣澄和店週年慶📣", "/latest-news/2019頂家彌月目錄", "/latest-news/2021母親節蛋糕",
+  "/latest-news/2022中秋dm", "/latest-news/2023中秋dm", "/latest-news/2023母親節蛋糕",
+  "/latest-news/2024母親節蛋糕", "/latest-news/2024新春禮盒", "/latest-news/88節蛋糕預購開跑",
+  "/latest-news/中秋dm出爐囉", "/latest-news/今年的森森芒果季開始囉-3", "/latest-news/文龍年中慶",
+  "/latest-news/文龍初秋賞", "/latest-news/生日蛋糕卷", "/latest-news/肉鬆餅禮盒", "/latest-news/芋見幸福",
+  "/latest-news/波蘿蛋黃酥-2", "/latest-news/春節禮盒預購開跑囉", "/latest-news/草莓大福禮盒",
+  "/latest-news/頂家彌月🔥人氣波士頓派🔥", "/latest-news/森森吐司", "/latest-news/新富店開幕慶",
+  "/latest-news/澄和店優惠", "/latest-news/餐盒", "/latest-news/餐盒menu", "/latest-news/歡慶新富店開幕",
+  "/latest-news/bebuilder-1930", "/new-arrival/布丁燒", "/new-arrival/栗子蒙布朗-mont-blanc",
+  "/new-arrival/森森蝴蝶酥", "/new-arrival/新品上市", "/new-arrival/新品上市-2", "/new-arrival/蝴蝶酥",
+  "/new-arrival/優荔-lichi", "/new-arrival/new-杏仁千層酥-new",
+  // 90 orphaned latest-news pages and 22 orphaned new-arrival pages.
+  "/latest-news/【2019moon-cake】",
+  "/latest-news/🍍🍍🍍鳳梨來了🍍🍍🍍",
+  "/latest-news/🍓🍓🍓黃金草莓捲🍓🍓🍓",
+  "/latest-news/🍓草莓蛋糕罐子🍓",
+  "/latest-news/🍹森森全新飲品上市🍹",
+  "/latest-news/🎀2019母親節蛋糕🎀預購開跑囉",
+  "/latest-news/🎉春節伴手禮系列🎉",
+  "/latest-news/💐明天就是母親節了💐",
+  "/latest-news/100元生日蛋糕抵用卷",
+  "/latest-news/11月份的好康大放送將於10號開始舉行囉",
+  "/latest-news/11月份的好康大放送熱烈進行中",
+  "/latest-news/1460",
+  "/latest-news/1489",
+  "/latest-news/1522",
+  "/latest-news/1577",
+  "/latest-news/2019中秋目錄即將出爐",
+  "/latest-news/2019母親節蛋糕預告",
+  "/latest-news/2019頂家彌月新目錄",
+  "/latest-news/2019聖誕新品",
+  "/latest-news/2020中秋禮盒",
+  "/latest-news/2020父親節",
+  "/latest-news/2020母親節蛋糕",
+  "/latest-news/²⁰²¹-𝐅𝐚𝐭𝐡𝐞𝐫𝐬-𝐃𝐚𝐲✨",
+  "/latest-news/2021中秋dm",
+  "/latest-news/2021父親節蛋糕",
+  "/latest-news/2022母親節蛋糕",
+  "/latest-news/2022新春禮盒",
+  "/latest-news/88節快樂",
+  "/latest-news/土鳳梨酥禮盒",
+  "/latest-news/中秋月圓",
+  "/latest-news/中秋預購開跑",
+  "/latest-news/丹麥波羅",
+  "/latest-news/五倍券優惠",
+  "/latest-news/文龍周年慶",
+  "/latest-news/文龍週年慶",
+  "/latest-news/文龍感恩季",
+  "/latest-news/父愛",
+  "/latest-news/父親節蛋糕預購",
+  "/latest-news/父親節蛋糕預購開跑囉",
+  "/latest-news/布丁燒禮盒",
+  "/latest-news/生吐司",
+  "/latest-news/仲夏88折",
+  "/latest-news/吉祥桂圓糕",
+  "/latest-news/肉鬆餅",
+  "/latest-news/初夏賞",
+  "/latest-news/芋頭蛋糕罐",
+  "/latest-news/咖啡買一送一",
+  "/latest-news/果乾塔",
+  "/latest-news/法式經典檸檬塔",
+  "/latest-news/法式蝴蝶酥",
+  "/latest-news/波蘿蛋黃酥",
+  "/latest-news/春節日式大福禮盒",
+  "/latest-news/春節限定-如意發糕",
+  "/latest-news/春節禮盒-買10送1",
+  "/latest-news/活力陽光三明治",
+  "/latest-news/重要公告",
+  "/latest-news/振興券專屬優惠",
+  "/latest-news/桂圓糕",
+  "/latest-news/㊙情人節限定㊙",
+  "/latest-news/草莓芙蓮蛋糕盒-2",
+  "/latest-news/草莓芙蓮蛋糕盒-3",
+  "/latest-news/草莓蛋糕盒開賣",
+  "/latest-news/草莓蛋糕盒熱銷中🔥🔥🔥",
+  "/latest-news/草莓藏心－季節限定",
+  "/latest-news/頂家彌月油飯",
+  "/latest-news/頂家彌月試吃",
+  "/latest-news/森森日式烤年糕",
+  "/latest-news/森森春節伴手禮預購中",
+  "/latest-news/森森特調",
+  "/latest-news/森森草莓季",
+  "/latest-news/森森感恩季part2",
+  "/latest-news/森森vip集點卡",
+  "/latest-news/週三新富優惠日",
+  "/latest-news/陽光三明治",
+  "/latest-news/新春禮盒",
+  "/latest-news/新富仲夏賞",
+  "/latest-news/預購活動",
+  "/latest-news/實聯制登記",
+  "/latest-news/瑪格麗特",
+  "/latest-news/維也納麵包",
+  "/latest-news/聚財金元寶",
+  "/latest-news/慶新年",
+  "/latest-news/摩登媽咪",
+  "/latest-news/摯愛森林",
+  "/latest-news/澄和初夏賞",
+  "/latest-news/澄和感恩季",
+  "/latest-news/澄和慶新年",
+  "/latest-news/蝴蝶酥宅配訂購",
+  "/latest-news/彌月試吃品項",
+  "/latest-news/職人手感",
+  "/new-arrival/🍫義式巧克🍫",
+  "/new-arrival/🎉蛋糕罐子-新發售🎉",
+  "/new-arrival/3吋草莓塔",
+  "/new-arrival/日式烤年糕",
+  "/new-arrival/白葡萄",
+  "/new-arrival/多佳米拉",
+  "/new-arrival/芒果仙境",
+  "/new-arrival/芒果奶酪",
+  "/new-arrival/芒果奶露麵包",
+  "/new-arrival/芒果季即將開始囉",
+  "/new-arrival/芒果蛋糕盒",
+  "/new-arrival/芒果輕乳酪",
+  "/new-arrival/芒果慕斯",
+  "/new-arrival/法式核桃",
+  "/new-arrival/洛神花小吐司",
+  "/new-arrival/香芒泡芙",
+  "/new-arrival/草莓甜心",
+  "/new-arrival/新品上市✨肉鬆球✨",
+  "/new-arrival/新品上市✨蔥酥熱狗✨",
+  "/new-arrival/聖誕草莓泡芙",
+  "/new-arrival/葡萄圓舞曲",
+  "/new-arrival/戀戀草莓季",
+]);
+const escapeMarkup = (value: unknown) => String(value ?? "").replace(/[&<>"']/g, character => ({
+  "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;",
+}[character] || character));
+const newsImageUrl = (value: unknown) => {
+  const image = publicNewsImageUrl(value);
+  if (!image) return "";
+  if (/^https?:\/\//i.test(image)) return image;
+  return `${SITE_ORIGIN}${image.startsWith("/") ? "" : "/"}${image}`;
+};
+const newsDate = (value: unknown) => {
+  const raw = String(value || "").slice(0, 10);
+  return /^\d{4}-\d{2}-\d{2}$/.test(raw) ? raw.replace(/-/g, ".") : "";
+};
+const newsCopyHtml = (value: unknown) => {
+  const imagePattern = /^(?:https?:\/\/|\/images\/)\S+\.(?:avif|gif|jpe?g|png|webp)(?:\?\S*)?$/i;
+  return String(value || "").split(/\r?\n/).filter(line => !imagePattern.test(line.trim())).map(escapeMarkup).join("<br>");
+};
+const renderNewsArticleShell = (row: Record<string, unknown>) => {
+  const title = String(row.title || "最新消息");
+  const copy = newsCopyHtml(row.content || row.excerpt || "目前沒有文章內容。");
+  const date = newsDate(row.publish_at || row.created_at);
+  const layout = parseJson<Record<string, unknown>[] | null>(String(row.layout_json || ""), null);
+  if (layout?.length) {
+    const blocks = layout.filter(block => ["date", "title", "copy", "image", "gallery", "text"].includes(String(block.type || "")));
+    const hasMedia = blocks.some(block => ["image", "gallery"].includes(String(block.type || "")));
+    const blockHtml = (block: Record<string, unknown>) => {
+      if (block.type === "date") return `<p class="latest-news-layout-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p>`;
+      if (block.type === "title") return `<h1 class="latest-news-layout-title">${escapeMarkup(title)}</h1>`;
+      if (block.type === "copy") return `<div class="latest-news-layout-copy">${copy}</div>`;
+      if (block.type === "text") return `<div class="latest-news-layout-copy">${escapeMarkup(block.value).replace(/\r?\n/g, "<br>")}</div>`;
+      if (block.type === "image") return `<img class="latest-news-layout-image" src="${escapeMarkup(newsImageUrl(block.src))}" alt="${escapeMarkup(title)}－內文圖片" loading="lazy">`;
+      const images = Array.isArray(block.images) ? block.images : [];
+      return `<div class="latest-news-layout-gallery">${images.map(image => `<img class="latest-news-layout-image" src="${escapeMarkup(newsImageUrl(image))}" alt="${escapeMarkup(title)}－內文圖片" loading="lazy">`).join("")}</div>`;
+    };
+    return `<div class="latest-news-article-shell is-free-layout">${blocks.map(block => {
+      const markup = blockHtml(block);
+      const link = /^(https?:\/\/|\/)/i.test(String(block.link || "").trim()) ? String(block.link).trim() : "";
+      const role = ["image", "gallery"].includes(String(block.type || "")) ? "media" : ["copy", "text"].includes(String(block.type || "")) ? (hasMedia ? "copy" : "full") : "header";
+      return `<section class="latest-news-layout-block is-${role}">${link ? `<a class="latest-news-layout-link" href="${escapeMarkup(link)}">${markup}</a>` : markup}</section>`;
+    }).join("")}</div>`;
+  }
+  const imagePattern = /^(?:https?:\/\/|\/images\/)\S+\.(?:avif|gif|jpe?g|png|webp)(?:\?\S*)?$/i;
+  const images = String(row.content || "").split(/\r?\n/).map(line => line.trim()).filter(line => imagePattern.test(line));
+  return `<div class="latest-news-article-shell${images.length ? "" : " has-no-images"}"><header class="latest-news-article-header"><p class="latest-news-card-date"><span aria-hidden="true">◷</span>${escapeMarkup(date)}</p><h1 id="latest-news-article-title">${escapeMarkup(title)}</h1></header><div class="latest-news-article-image"${images.length ? "" : " hidden"}>${images.map((image, index) => `<img src="${escapeMarkup(newsImageUrl(image))}" alt="${escapeMarkup(title)}－內文圖片 ${index + 1}" loading="lazy">`).join("")}</div><div class="latest-news-article-copy"><div class="latest-news-article-content">${copy}</div></div></div>`;
+};
+
+const renderNewsArticlePage = (template: string, row: Record<string, unknown>) => {
+  const title = String(row.title || "最新消息");
+  const description = String(row.excerpt || newsCopyHtml(row.content).replace(/<br>/g, " ") || title).replace(/\s+/g, " ").trim().slice(0, 155);
+  const articleKey = String(row.slug || row.id || "");
+  const canonical = `${SITE_ORIGIN}/latest-news/article/${encodeURIComponent(articleKey)}/`;
+  const image = newsImageUrl(row.image_key);
+  const seo = `<title>${escapeMarkup(title)} – 森森點心坊</title>\n  <meta name="description" content="${escapeMarkup(description)}">\n  <link rel="canonical" href="${escapeMarkup(canonical)}">\n  <meta name="robots" content="index, follow">\n  <meta property="og:locale" content="zh_TW">\n  <meta property="og:type" content="article">\n  <meta property="og:site_name" content="森森點心坊">\n  <meta property="og:title" content="${escapeMarkup(title)}">\n  <meta property="og:description" content="${escapeMarkup(description)}">\n  <meta property="og:url" content="${escapeMarkup(canonical)}">${image ? `\n  <meta property="og:image" content="${escapeMarkup(image)}">` : ""}`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>[\s\S]*?<meta property="og:url"[^>]*>/i, seo)
+    .replace('data-latest-news-article-page', 'data-latest-news-article-page data-article-hydrated="true"')
+    .replace(/<!-- NEWS_ARTICLE_SHELL_START -->[\s\S]*?<!-- NEWS_ARTICLE_SHELL_END -->/, `<!-- NEWS_ARTICLE_SHELL_START -->${renderNewsArticleShell(row)}<!-- NEWS_ARTICLE_SHELL_END -->`);
+};
+
+const adminProductFromRow = (row: ProductRow) => {
+  const product = productFromRow(row);
+  const metadata = parseJson<Record<string, unknown>>(row.metadata_json, {});
+  return {
+    ...product,
+    sku: String(metadata.sku || product.id),
+    spec: normalizeProductSpec(metadata.spec || product.size || ""),
+    day: String(metadata.day || 5),
+    img: String(metadata.img || product.img),
+  };
+};
+
+const normalizeDietary = (value: unknown) => {
+  if (value === true) return "蛋奶素";
+  const normalized = String(value ?? "").trim();
+  return ["蛋奶素", "奶蛋素"].includes(normalized) ? "蛋奶素" : "";
+};
+
+const normalizeProductSpec = (value: unknown) => {
+  const normalized = String(value ?? "").trim();
+  return ["原價", "特價", "不指定", "售價"].includes(normalized) ? "" : normalized;
+};
+
+const orderFromRow = (row: Record<string, unknown>, items: Record<string, unknown>[]) => {
+  const total = Number(row.total_amount || 0);
+  const shippingFee = Number(row.shipping_fee || 0);
+  const discount = Number(row.discount_amount || 0);
+  const shippingAddress = parseJson<Record<string, unknown> | null>(String(row.shipping_address || ""), null);
+  const status = String(row.status || "created");
+  return {
+    id: row.order_number,
+    userId: row.user_id,
+    createdAt: utcDateString(row.created_at),
+    updatedAt: utcDateString(row.updated_at),
+    status,
+    statusHistory: [{ status, at: utcDateString(row.updated_at || row.created_at) }],
+    paymentMethod: row.payment_method || "",
+    paymentStatus: row.payment_status || "unpaid",
+    paidAt: utcDateString(row.paid_at),
+    total,
+    subtotal: Number((total - shippingFee + discount).toFixed(2)),
+    shippingFee,
+    discount,
+    couponCode: row.coupon_code || "",
+    couponDiscount: Number(row.coupon_discount_amount ?? Math.max(0, discount - Number(row.member_discount_amount || 0) - Number(row.points_discount_amount || 0))),
+    memberDiscount: Number(row.member_discount_amount || 0),
+    pointsRedeemed: Number(row.points_redeemed || 0),
+    pointsDiscount: Number(row.points_discount_amount || 0),
+    shippingMethod: row.shipping_method || "pickup",
+    shippingLabel: shippingLabel(String(row.shipping_method || "pickup")),
+    shippingStatus: row.shipping_status || "pending",
+    fulfillmentDate: row.fulfillment_date || "",
+    trackingNumber: row.tracking_number || "",
+    shippingAddress,
+    customerNote: row.customer_note || "",
+    customer: {
+      id: row.user_id,
+      name: row.customer_name || row.user_name || "會員",
+      email: row.customer_email || row.user_email || "",
+      phone: row.customer_phone || row.user_phone || "",
+    },
+    items,
+  };
+};
+
+const productFromRow = (row: ProductRow): StoreProduct => {
+  let metadata: Record<string, unknown> = {};
+  try {
+    metadata = row.metadata_json ? JSON.parse(row.metadata_json) : {};
+  } catch {
+    metadata = {};
+  }
+  const priceValue = Number(row.price || 0);
+  const imageKey = String(row.image_key || "").replace(/^images\//, "");
+  const description = row.description || String(metadata.desc || metadata.description || "");
+  const galleryKeys = parseJson<unknown[]>(row.gallery_json, [])
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  const images = [...new Set([
+    imageKey ? `/images/${imageKey}` : "",
+    ...galleryKeys.map((value) => imagePathFromKey(value)),
+  ].filter(Boolean))];
+  const variants = metadata.variants && typeof metadata.variants === "object" && !Array.isArray(metadata.variants)
+    ? metadata.variants as Record<string, unknown>
+    : {};
+  const priceTypes = variants.priceTypes && typeof variants.priceTypes === "object" && !Array.isArray(variants.priceTypes)
+    ? variants.priceTypes as Record<string, unknown>
+    : {};
+  const originalPrice = Number(
+    metadata.originalPrice
+      ?? metadata.priceOriginal
+      ?? priceTypes["原價"]
+      ?? TOP_HOUSE_ORIGINAL_PRICE_BY_ID[row.slug]
+      ?? priceValue,
+  ) || priceValue;
+  const priceOptions = metadata.priceOptions && typeof metadata.priceOptions === "object" && !Array.isArray(metadata.priceOptions)
+    ? Object.fromEntries(Object.entries(metadata.priceOptions).reduce<Array<[string, number]>>((entries, [size, value]) => {
+      const amount = Number(value);
+      if (Number.isFinite(amount) && amount > 0) entries.push([size, amount]);
+      return entries;
+    }, []))
+    : {};
+  return {
+    id: row.slug,
+    sku: String(metadata.sku || row.slug),
+    title: row.title,
+    url: `/product-item/${encodeURIComponent(String(row.slug || ""))}/`,
+    cat: row.category || String(metadata.cat || "未分類"),
+    price: `$${priceValue.toFixed(2)}`,
+    priceValue,
+    originalPrice,
+    priceOptions,
+    quantity: Math.max(0, Number(row.stock || 0)),
+    day: String(metadata.day || 5),
+    img: images[0] || "",
+    images,
+    desc: description,
+    spec: normalizeProductSpec(metadata.spec || metadata.productSpec || ""),
+    size: normalizeProductSpec(metadata.size || metadata.productSize || ""),
+    storage: String(metadata.storage || metadata.storageMethod || ""),
+    other: String(metadata.other || metadata.otherNotes || ""),
+    emphasis: String(metadata.emphasis || ""),
+    note: String(metadata.note || ""),
+    variants: {
+      ...variants,
+      sizes: Object.keys((variants.sizes || {}) as Record<string, unknown>).length ? variants.sizes : priceOptions,
+    },
+    createdAt: String(row.created_at || ""),
+    likes: Math.max(0, Number(metadata.likes || 0)),
+    dietary: String(metadata.dietary || metadata.dietaryLabel || ""),
+    dietaryImage: imagePathFromKey(metadata.dietaryImage || metadata.badgeImage || ""),
+    published: row.is_active === 1,
+    thumbnail: normalizeThumbnailSettings(metadata.thumbnail),
+  };
+};
+
+const renderProductDetailTemplate = (template: string, product: StoreProduct) => {
+  const title = String(product.title || "商品").trim() || "商品";
+  const description = String(product.desc || `${title}｜森森點心坊商品介紹與訂購資訊。`)
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 155);
+  const canonical = `${SITE_ORIGIN}/product-item/${encodeURIComponent(product.id)}/`;
+  const image = product.img
+    ? (/^https?:\/\//i.test(product.img) ? product.img : `${SITE_ORIGIN}${product.img}`)
+    : "";
+  const attributes = `data-product-id="${escapeMarkup(product.id)}"`;
+  return template
+    .replace(/<title>[\s\S]*?<\/title>/i, `<title>${escapeMarkup(title)} – 森森點心坊</title>`)
+    .replace(/<meta name="description"[^>]*>/i, `<meta name="description" content="${escapeMarkup(description)}">`)
+    .replace(/<link rel="canonical"[^>]*>/i, `<link rel="canonical" href="${escapeMarkup(canonical)}">`)
+    .replace(/<meta property="og:title"[^>]*>/i, `<meta property="og:title" content="${escapeMarkup(title)} – 森森點心坊">`)
+    .replace(/<meta property="og:description"[^>]*>/i, `<meta property="og:description" content="${escapeMarkup(description)}">`)
+    .replace(/<meta property="og:url"[^>]*>/i, `<meta property="og:url" content="${escapeMarkup(canonical)}">`)
+    .replace(/(<meta property="og:type"[^>]*>)/i, `$1${image ? `\n  <meta property="og:image" content="${escapeMarkup(image)}">` : ""}`)
+    .replace('data-product-kind="cake" data-product-id=""', `data-product-kind="cake" ${attributes}`)
+    .replace(/data-product-hero-title>商品<\/h1>/i, `data-product-hero-title>${escapeMarkup(title)}</h1>`)
+    .replace(/data-product-title>商品<\/h2>/i, `data-product-title>${escapeMarkup(title)}</h2>`);
+};
+
+const productSizeOptions = (product: StoreProduct) => {
+  const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const sizes = variants.sizes && typeof variants.sizes === "object" && !Array.isArray(variants.sizes)
+    ? variants.sizes as Record<string, unknown>
+    : product.priceOptions;
+  return Object.fromEntries(Object.entries(sizes || {}).reduce<Array<[string, number]>>((entries, [size, value]) => {
+    const label = String(size).trim();
+    const amount = Number(value);
+    if (label && Number.isFinite(amount) && amount > 0) entries.push([label, amount]);
+    return entries;
+  }, []));
+};
+
+const productVariant = (product: StoreProduct, options: Record<string, unknown> = {}) => {
+  const sizes = productSizeOptions(product);
+  const labels = Object.keys(sizes);
+  if (!labels.length) return null;
+  const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const configuredDefaultSize = String(variants.defaultSize || "").trim();
+  const size = labels.includes(String(options.size || ""))
+    ? String(options.size)
+    : labels.includes(configuredDefaultSize)
+      ? configuredDefaultSize
+      : labels[0];
+  const temperatures = Array.isArray(variants.temperatures) && variants.temperatures.length
+    ? variants.temperatures.map(value => String(value).trim()).filter(Boolean)
+    : ["冷"];
+  const sugars = Array.isArray(variants.sugars) && variants.sugars.length
+    ? variants.sugars.map(value => String(value).trim()).filter(Boolean)
+    : ["正常甜"];
+  const flavors = Array.isArray(variants.flavors) && variants.flavors.length
+    ? variants.flavors.map(value => String(value).trim()).filter(Boolean)
+    : [];
+  const flavorCount = Math.max(0, Number(variants.flavorCount || 0));
+  const requestedFlavors = Array.isArray(options.flavors)
+    ? options.flavors.map(value => String(value).trim()).filter(value => flavors.includes(value))
+    : String(options.flavor || "").trim() && flavors.includes(String(options.flavor).trim())
+      ? [String(options.flavor).trim()]
+      : [];
+  const selectedFlavors = flavorCount > 1
+    ? [...new Set(requestedFlavors)].slice(0, flavorCount)
+    : requestedFlavors.slice(0, 1);
+  const flavor = selectedFlavors.length ? selectedFlavors.join("、") : flavors[0];
+  const temperature = temperatures.includes(String(options.temperature || "")) ? String(options.temperature) : temperatures[0];
+  const sugar = sugars.includes(String(options.sugar || "")) ? String(options.sugar) : sugars[0];
+  const flavorPrices = variants.flavorPrices && typeof variants.flavorPrices === "object" && !Array.isArray(variants.flavorPrices)
+    ? variants.flavorPrices as Record<string, unknown>
+    : {};
+  const flavorPrice = Number(flavorPrices[flavor] ?? (selectedFlavors.length === 1 ? flavorPrices[selectedFlavors[0]] : NaN));
+  const sizePrice = Number(sizes[size] || 0);
+  return {
+    size,
+    flavor,
+    flavors: selectedFlavors,
+    flavorCount,
+    temperature,
+    sugar,
+    priceValue: Number.isFinite(flavorPrice) && flavorPrice > 0 ? flavorPrice : sizePrice,
+  };
+};
+
+const productPriceForQuantity = (product: StoreProduct, quantity: number, basePrice = product.priceValue) => {
+  const variants = product.variants && typeof product.variants === "object" ? product.variants : {};
+  const priceTypes = variants.priceTypes && typeof variants.priceTypes === "object" && !Array.isArray(variants.priceTypes)
+    ? variants.priceTypes as Record<string, unknown>
+    : {};
+  const originalPrice = Number(priceTypes["原價"] ?? product.originalPrice ?? basePrice) || 0;
+  const salePrice = Number(priceTypes["特價"] ?? product.priceValue ?? basePrice) || 0;
+  const hasSingleExplicitPriceType = Object.keys(priceTypes).length === 1;
+  const hasTieredPrice = !hasSingleExplicitPriceType && originalPrice > salePrice && salePrice > 0;
+  const currentQuantity = Math.max(1, Number(quantity || 1));
+  const useSalePrice = hasTieredPrice && currentQuantity >= 30;
+  const priceValue = hasTieredPrice
+    ? (useSalePrice ? salePrice : originalPrice)
+    : Number(basePrice || salePrice || originalPrice) || 0;
+  return {
+    originalPrice: hasTieredPrice ? originalPrice : priceValue,
+    salePrice: hasTieredPrice ? salePrice : priceValue,
+    priceValue,
+    priceMode: useSalePrice ? "特價" : hasTieredPrice ? "原價" : "不指定",
+  };
+};
+
+const variantKey = (variant: ReturnType<typeof productVariant>) => variant
+  ? encodeURIComponent([variant.flavor, variant.size, variant.temperature, variant.sugar].filter(Boolean).join("|"))
+  : "";
+
+const variantTitle = (title: string, variant: ReturnType<typeof productVariant>) => {
+  if (!variant) return title;
+  const details = [variant.flavor, variant.size !== "單杯" ? variant.size : "", variant.temperature, variant.sugar].filter(Boolean).join("・");
+  return details ? `${title}（${details}）` : title;
+};
+
+const baseProductLookup = (value: string) => String(value || "").split("::", 1)[0];
+
+const imagePathFromKey = (value: unknown) => {
+  const key = String(value || "").trim().replace(/^\/?(?:assets\/)?images\//i, "");
+  return key ? `/images/${key}` : "";
+};
+
+const imageKeyFromValue = (value: unknown) => String(value || "")
+  .trim()
+  .replace(/^\/?(?:assets\/)?images\//i, "")
+  .replace(/^\/+/, "");
+
+const imageKeysFromValues = (value: unknown) => {
+  const values = Array.isArray(value) ? value : [value];
+  return [...new Set(values.map(imageKeyFromValue).filter(Boolean))];
+};
+
+const replaceProductImages = async (env: Env, productId: number, imageKeys: string[]) => {
+  const statements = [env.DB.prepare("DELETE FROM product_images WHERE product_id = ?1").bind(productId)];
+  imageKeys.forEach((key, index) => {
+    statements.push(env.DB.prepare(`
+      INSERT INTO product_images (product_id, image_key, sort_order, is_primary)
+      VALUES (?1, ?2, ?3, ?4)
+    `).bind(productId, `images/${key}`, index, index === 0 ? 1 : 0));
+  });
+  await env.DB.batch(statements);
+};
+
+const adminOrderItemFromRow = (item: Record<string, unknown>) => ({
+  ...item,
+  cat: String(item.category || "Menu"),
+  price: `$${Number(item.priceValue || 0).toFixed(2)}`,
+  img: imagePathFromKey(item.imageKey),
+});
+
+const productSelect = `
+  SELECT
+    p.id AS db_id,
+    p.slug,
+    p.name AS title,
+    p.description,
+    p.price,
+    p.stock,
+    p.image_key,
+    p.is_active,
+    c.name AS category,
+    p.metadata_json,
+    p.created_at,
+    (SELECT json_group_array(image_key) FROM (
+      SELECT image_key
+      FROM product_images
+      WHERE product_id = p.id
+      ORDER BY sort_order ASC, id ASC
+    )) AS gallery_json
+  FROM products p
+`;
+
+type HomepageCategory = {
+  id: string;
+  name: string;
+  filter: string;
+  image: string;
+  count: number;
+};
+
+const homepagePayload = (products: StoreProduct[]) => {
+  const categories = new Map<string, HomepageCategory>();
+  for (const product of products) {
+    const name = String(product.cat || "").trim();
+    if (!name) continue;
+    const existing = categories.get(name);
+    if (existing) {
+      existing.count += 1;
+      continue;
+    }
+    categories.set(name, {
+      id: slugify(name),
+      name,
+      filter: name,
+      image: product.img || "",
+      count: 1,
+    });
+  }
+
+  return {
+    products,
+    sections: {
+      quickMeals: products.slice(0, 3),
+      localFavourites: products.slice(3, 9),
+      menu: products,
+    },
+    categories: [
+      {
+        id: "all",
+        name: "全部",
+        filter: "ALL",
+        image: products[0]?.img || "",
+        count: products.length,
+      },
+      ...categories.values(),
+    ],
+  };
+};
+
+const findProduct = async (env: Env, value: string) => {
+  const lookup = baseProductLookup(value);
+  if (!lookup) return null;
+  const row = await env.DB.prepare(`${productSelect}
+    LEFT JOIN categories c ON c.id = p.category_id
+    WHERE p.is_active = 1 AND (p.slug = ?1 OR p.name = ?1 OR CAST(p.id AS TEXT) = ?1)
+    LIMIT 1`).bind(lookup).first<ProductRow>();
+  return row || null;
+};
+
+type LegacyRecord = {
+  id: number;
+  storefront_channel: StorefrontChannel;
+  entity_type: string;
+  source_key: string;
+  payload_json: string;
+  created_at: string;
+  updated_at: string;
+};
+
+const legacyPayload = <T extends Record<string, unknown>>(row: LegacyRecord | null | undefined): T => ({
+  id: row?.source_key || "",
+  ...parseJson<T>(row?.payload_json, {} as T),
+});
+
+const readLegacyRecord = async (env: Env, entityType: string, sourceKey: string, channel: StorefrontChannel = "b2c") => {
+  const row = await env.DB.prepare(`
+  SELECT id, entity_type, source_key, payload_json, created_at, updated_at
+  FROM legacy_records
+  WHERE storefront_channel = ?1 AND entity_type = ?2 AND source_key = ?3
+  LIMIT 1
+`).bind(channel, entityType, sourceKey).first<LegacyRecord>();
+  // CMS/settings are intentionally shared until the B2B content is edited for
+  // the first time; all other operational records remain channel-isolated.
+  if (row || channel === "b2c" || entityType !== "settings") return row;
+  return env.DB.prepare(`
+    SELECT id, entity_type, source_key, payload_json, created_at, updated_at
+    FROM legacy_records
+    WHERE storefront_channel = 'b2c' AND entity_type = ?1 AND source_key = ?2
+    LIMIT 1
+  `).bind(entityType, sourceKey).first<LegacyRecord>();
+};
+
+const listLegacyRecords = async (env: Env, entityType: string, channel: StorefrontChannel = "b2c") => env.DB.prepare(`
+  SELECT id, entity_type, source_key, payload_json, created_at, updated_at
+  FROM legacy_records
+  WHERE storefront_channel = ?1 AND entity_type = ?2
+  ORDER BY updated_at DESC, id DESC
+`).bind(channel, entityType).all<LegacyRecord>();
+
+const saveLegacyRecord = async (env: Env, entityType: string, sourceKey: string, payload: Record<string, unknown>, channel: StorefrontChannel = "b2c") => {
+  await env.DB.prepare(`
+    INSERT INTO legacy_records (storefront_channel, entity_type, source_key, payload_json, updated_at)
+    VALUES (?1, ?2, ?3, ?4, CURRENT_TIMESTAMP)
+    ON CONFLICT(storefront_channel, entity_type, source_key) DO UPDATE SET
+      payload_json = excluded.payload_json,
+      updated_at = CURRENT_TIMESTAMP
+  `).bind(channel, entityType, sourceKey, JSON.stringify(payload)).run();
+  return readLegacyRecord(env, entityType, sourceKey, channel);
+};
+
+const deleteLegacyRecord = async (env: Env, entityType: string, sourceKey: string, channel: StorefrontChannel = "b2c") => {
+  await env.DB.prepare("DELETE FROM legacy_records WHERE storefront_channel = ?1 AND entity_type = ?2 AND source_key = ?3")
+    .bind(channel, entityType, sourceKey).run();
+};
+
+const cartSummary = async (env: Env, guestId: string, channel: StorefrontChannel) => {
+  const cartProductSelect = productSelect.replace(
+    "    p.created_at,\n",
+    "    p.created_at,\n    ci.quantity AS cart_quantity,\n    ci.variant_key AS cart_variant_key,\n    ci.selected_options_json AS cart_selected_options_json,\n",
+  );
+  const result = await env.DB.prepare(`${cartProductSelect}
+    LEFT JOIN categories c ON c.id = p.category_id
+    INNER JOIN cart_items ci ON ci.product_id = p.id
+    WHERE ci.storefront_channel = ?1 AND ci.guest_id = ?2 AND p.is_active = 1
+    ORDER BY ci.created_at ASC`).bind(channel, guestId).all<ProductRow & { quantity: number }>();
+  const items = result.results.map((row) => {
+    const product = productFromRow(row);
+    const options = parseJson<Record<string, unknown>>(row.cart_selected_options_json, {});
+    const variant = productVariant(product, options);
+    const key = String(row.cart_variant_key || variantKey(variant));
+    const qty = Math.max(1, Number(row.cart_quantity || 1));
+    const pricing = productPriceForQuantity(product, qty, variant?.priceValue ?? product.priceValue);
+    return {
+      ...product,
+      id: key ? `${product.id}::${key}` : product.id,
+      productId: product.id,
+      title: variantTitle(product.title, variant),
+      price: `$${pricing.priceValue.toFixed(2)}`,
+      priceValue: pricing.priceValue,
+      originalPrice: pricing.originalPrice,
+      salePrice: pricing.salePrice,
+      priceMode: pricing.priceMode,
+      selectedOptions: variant ? { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : undefined,
+      qty,
+    };
+  });
+  const subtotal = items.reduce((sum, item) => sum + item.priceValue * item.qty, 0);
+  const leadDays = items.reduce((max, item) => Math.max(max, Number(item.day || 5)), 0);
+  return {
+    items,
+    subtotal: Number(subtotal.toFixed(2)),
+    total: Number(subtotal.toFixed(2)),
+    leadDays,
+  };
+};
+
+const couponDiscount = async (env: Env, code: unknown, subtotal: number, channel: StorefrontChannel) => {
+  const normalizedCode = String(code || "").trim().toUpperCase();
+  if (!normalizedCode) return { discount: 0, coupon: null as Record<string, unknown> | null };
+
+  const coupon = await env.DB.prepare(`
+    SELECT code, label, type, value, min_amount AS min
+    FROM coupons
+    WHERE storefront_channel = ?1 AND code = ?2 AND enabled = 1
+    LIMIT 1
+  `).bind(channel, normalizedCode).first<Record<string, unknown>>();
+  if (!coupon) return { discount: 0, coupon: null, error: "優惠碼不存在或已停用。" };
+
+  const minimum = Math.max(0, Number(coupon.min || 0));
+  if (subtotal < minimum) {
+    return { discount: 0, coupon, error: `此優惠碼須滿 $${minimum.toFixed(2)} 才能使用。` };
+  }
+
+  const value = Math.max(0, Number(coupon.value || 0));
+  const discount = coupon.type === "percent"
+    ? subtotal * Math.min(value, 100) / 100
+    : value;
+  return { discount: Number(Math.min(subtotal, discount).toFixed(2)), coupon };
+};
+
+const memberPointBalance = async (env: Env, userId: number | null | undefined, channel: StorefrontChannel) => {
+  if (!userId) return 0;
+  const row = await env.DB.prepare(`
+    SELECT COALESCE(SUM(points), 0) AS points
+    FROM member_point_transactions
+    WHERE storefront_channel = ?1 AND user_id = ?2
+  `).bind(channel, userId).first<{ points: number }>();
+  return Math.max(0, Math.floor(Number(row?.points || 0)));
+};
+
+const calculateCartQuote = async (
+  env: Env,
+  cart: Awaited<ReturnType<typeof cartSummary>>,
+  user: UserRow | null,
+  couponCode: unknown,
+  requestedShippingMethod: unknown,
+  requestedRedeemPoints: unknown,
+  channel: StorefrontChannel,
+) => {
+  const shippingMethod = String(requestedShippingMethod || "pickup");
+  if (!["pickup", "home", "frozen"].includes(shippingMethod)) {
+    return { error: "物流方式無效。" };
+  }
+
+  const requestedPoints = Number(requestedRedeemPoints || 0);
+  if (!Number.isFinite(requestedPoints) || requestedPoints < 0 || !Number.isInteger(requestedPoints)) {
+    return { error: "點數折抵必須是非負整數。" };
+  }
+
+  const coupon = await couponDiscount(env, couponCode, cart.subtotal, channel);
+  if (coupon.error) return { error: coupon.error };
+
+  const rule = await readMemberPointRule(env, channel);
+  const pointsBalance = await memberPointBalance(env, user?.id, channel);
+  const memberDiscount = 0;
+  let pointsRedeemed = 0;
+  let pointsDiscount = 0;
+  if (requestedPoints > 0) {
+    if (!user) return { error: "請先登入會員，再使用點數折抵。" };
+    if (!rule || Number(rule.enabled) !== 1) return { error: "目前尚未開放點數折抵。" };
+    const redeemPoints = Math.max(1, Math.floor(Number(rule.redeem_points || 0)));
+    const redeemAmount = Math.max(0, Number(rule.redeem_amount || 0));
+    if (!redeemAmount) return { error: "目前的點數折抵規則無效，請聯絡店家。" };
+    const remaining = Math.max(0, cart.subtotal - coupon.discount - memberDiscount);
+    const maxByBalance = Math.min(pointsBalance, requestedPoints);
+    const maxByTotal = Math.floor(remaining / redeemAmount) * redeemPoints;
+    pointsRedeemed = Math.floor(Math.min(maxByBalance, maxByTotal) / redeemPoints) * redeemPoints;
+    pointsDiscount = Number(Math.min(remaining, pointsRedeemed / redeemPoints * redeemAmount).toFixed(2));
+  }
+
+  const shippingFee = shippingMethod === "frozen" ? 240 : shippingMethod === "home" ? 120 : 0;
+  const discount = Number((coupon.discount + memberDiscount + pointsDiscount).toFixed(2));
+  const total = Number(Math.max(0, cart.subtotal + shippingFee - discount).toFixed(2));
+  return {
+    ...cart,
+    shippingMethod,
+    shippingFee,
+    coupon: coupon.coupon,
+    couponCode: String(coupon.coupon?.code || ""),
+    couponDiscount: coupon.discount,
+    memberDiscount,
+    pointsBalance,
+    pointsRedeemed,
+    pointsDiscount,
+    discount,
+    total,
+  };
+};
+
+const imageResponse = async (request: Request, env: Env) => {
+  const url = new URL(request.url);
+  if (url.pathname === "/images/legacy-news" && url.searchParams.has("url")) {
+    let source: URL;
+    try {
+      source = new URL(url.searchParams.get("url") || "");
+    } catch {
+      return json(request, { error: "圖片來源無效。" }, 400);
+    }
+    if (source.hostname !== "www.sensen.com.tw" || !source.pathname.startsWith("/wp-content/uploads/")) {
+      return json(request, { error: "不允許代理此圖片來源。" }, 403);
+    }
+    const mapped = archivedNewsImages[source.pathname];
+    if (!mapped) return json(request, { error: "找不到圖片。" }, 404);
+    url.pathname = mapped;
+  }
+  let requestedKey: string;
+  try {
+    requestedKey = decodeURIComponent(url.pathname.slice("/images/".length));
+  } catch {
+    return json(request, { error: "圖片路徑無效。" }, 400);
+  }
+  if (!requestedKey || requestedKey.split("/").includes("..")) {
+    return json(request, { error: "圖片路徑無效。" }, 400);
+  }
+
+  const object = await env.BUCKET.get("images/" + requestedKey);
+  if (!object) return json(request, { error: "找不到圖片。" }, 404);
+
+  const headers = new Headers(SECURITY_HEADERS);
+  object.writeHttpMetadata(headers);
+  headers.set("etag", object.httpEtag);
+  headers.set("cache-control", headers.get("cache-control") || "public, max-age=31536000, immutable");
+  return new Response(object.body, { headers });
+};
+
+export default {
+  async fetch(request, env): Promise<Response> {
+    // The deployed Worker is the security boundary for its storefront. Always
+    // overwrite the client-provided channel with the channel configured on
+    // this Worker so a caller cannot select another backend's data set.
+    const configuredChannel = getConfiguredStorefrontChannel(env);
+    const channelHeaders = new Headers(request.headers);
+    channelHeaders.set("X-Storefront-Channel", configuredChannel);
+    request = new Request(request, { headers: channelHeaders });
+    const url = new URL(request.url);
+    const origin = request.headers.get("Origin");
+    const storefrontChannel = getStorefrontChannel(request);
+
+    if (request.method === "OPTIONS") {
+      if (!isAllowedOrigin(origin)) {
+        return new Response(null, { status: 403, headers: SECURITY_HEADERS });
+      }
+      return new Response(null, { status: 204, headers: responseHeaders(request) });
+    }
+
+    if (isUnsafeRequest(request) && !isAllowedOrigin(origin)) {
+      return json(request, { error: "不允許的請求來源。" }, 403);
+    }
+
+    const rateLimitConfig = url.pathname === "/api/login" || url.pathname === "/api/register"
+      ? { limiter: env.AUTH_LIMITER, scope: "auth" }
+      : url.pathname.startsWith("/api/admin/mfa/")
+        ? { limiter: env.AUTH_LIMITER, scope: "mfa" }
+      : url.pathname === "/api/contact" || url.pathname === "/api/reservations"
+        || url.pathname === "/api/newsletter" || url.pathname === "/api/checkout"
+        ? { limiter: env.PUBLIC_WRITE_LIMITER, scope: url.pathname }
+        : url.pathname === "/api/search"
+          ? { limiter: env.SEARCH_LIMITER, scope: "search" }
+          : null;
+    if (rateLimitConfig) {
+      const rateLimitKeys = [clientRateLimitKey(request, rateLimitConfig.scope)];
+      if (rateLimitConfig.scope === "auth") {
+        const identifier = await readRateLimitIdentifier(request);
+        if (identifier) rateLimitKeys.push(await accountRateLimitKey(rateLimitConfig.scope, identifier));
+      }
+      for (const key of rateLimitKeys) {
+        const limited = await enforceRateLimit(request, rateLimitConfig.limiter, key);
+        if (limited) return limited;
+      }
+    }
+
+    try {
+      const decodedPathname = decodeURI(url.pathname);
+
+      // Keep old asset URLs working while ensuring the image bytes come from R2.
+      if ((request.method === "GET" || request.method === "HEAD") && decodedPathname.startsWith("/assets/images/")) {
+        const r2Url = new URL(request.url);
+        r2Url.pathname = `/images/${decodedPathname.slice("/assets/images/".length)}`;
+        return imageResponse(new Request(r2Url, request), env);
+      }
+
+      if (url.pathname === "/health" && request.method === "GET") {
+        const result = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
+        return json(request, { ok: result?.ok === 1, database: "connected" });
+      }
+
+      if (url.pathname === "/api/products" && request.method === "GET") {
+        const result = await env.DB.prepare(`${productSelect}
+          LEFT JOIN categories c ON c.id = p.category_id
+          WHERE p.is_active = 1 ORDER BY p.id DESC`).all<ProductRow>();
+        return noStoreJson(request, homepagePayload(result.results.map(productFromRow)));
+      }
+
+      if (url.pathname.startsWith("/api/products/") && request.method === "GET") {
+        let lookup = "";
+        try {
+          lookup = decodeURIComponent(url.pathname.slice("/api/products/".length)).trim();
+        } catch {
+          return noStoreJson(request, { error: "商品網址無效。" }, 400);
+        }
+        const row = await findProduct(env, lookup);
+        if (!row) return noStoreJson(request, { error: "找不到商品。" }, 404);
+        return noStoreJson(request, { product: productFromRow(row) });
+      }
+
+      if (url.pathname === "/api/homepage" && request.method === "GET") {
+        const result = await env.DB.prepare(`${productSelect}
+          LEFT JOIN categories c ON c.id = p.category_id
+          WHERE p.is_active = 1 ORDER BY p.id DESC`).all<ProductRow>();
+        return noStoreJson(request, homepagePayload(result.results.map(productFromRow)));
+      }
+
+      if (url.pathname === "/api/cms" && request.method === "GET") {
+        const row = await readLegacyRecord(env, "settings", "cms", storefrontChannel);
+        return noStoreJson(request, { cms: { homepageNotice: "", aboutText: "", announcement: "", ...legacyPayload<Record<string, unknown>>(row) } });
+      }
+
+      if (url.pathname === "/api/news" && request.method === "GET") {
+        const id = url.searchParams.get("id");
+        const result = id
+          ? await env.DB.prepare(`SELECT * FROM news WHERE is_published = 1 AND (id = ?1 OR slug = ?1) LIMIT 1`).bind(id).all<Record<string, unknown>>()
+          : await env.DB.prepare(`SELECT * FROM news WHERE is_published = 1 AND (publish_at IS NULL OR datetime(replace(publish_at, 'T', ' ')) <= CURRENT_TIMESTAMP) ORDER BY COALESCE(publish_at, created_at) DESC`).all<Record<string, unknown>>();
+        return json(request, { news: result.results.map(newsFromRow) });
+      }
+
+      if (url.pathname === "/api/coupons" && request.method === "GET") {
+        const result = await env.DB.prepare(`SELECT code, label, type, value, min_amount AS min, enabled, updated_at AS updatedAt FROM coupons WHERE storefront_channel = ?1 AND enabled = 1 ORDER BY updated_at DESC`).bind(storefrontChannel).all<Record<string, unknown>>();
+        return json(request, { coupons: result.results });
+      }
+
+      if (url.pathname === "/api/contact" && request.method === "POST") {
+        const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        const name = String(body.name || "").trim();
+        const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
+        const phone = String(body.phone || "").trim();
+        const subject = String(body.subject || "外燴詢價").trim();
+        const message = String(body.message || body.requests || "").trim();
+        if (!name || !email || !message) return json(request, { error: "請填寫姓名、Email 與需求內容。" }, 400);
+        await env.DB.prepare(`
+          INSERT INTO engagement_records (storefront_channel, record_type, payload_json)
+          VALUES (?1, 'message', ?2)
+        `).bind(storefrontChannel, JSON.stringify({ name, email, phone, subject, message })).run();
+        const emailController = new AbortController();
+        const emailTimeout = setTimeout(() => emailController.abort(), 5000);
+        const notification = await fetch(VERCEL_EMAIL_ENDPOINT, {
+          method: "POST",
+          headers: { "content-type": "application/json", accept: "application/json" },
+          body: JSON.stringify({ name, email, phone, subject, message }),
+          signal: emailController.signal,
+        }).catch(error => {
+          console.error("Vercel email notification failed", error instanceof Error ? error.message : error);
+          return null;
+        }).finally(() => clearTimeout(emailTimeout));
+        if (notification && !notification.ok) {
+          console.error("Vercel email notification returned", notification.status);
+        }
+        return json(request, {
+          message: "訊息已送出，我們會盡快與您聯絡。",
+          record: { name, email, phone, subject, message },
+          email: { status: notification?.ok ? "sent" : "pending" },
+          ok: true,
+        }, 201);
+      }
+
+      if (url.pathname === "/api/reservations" && request.method === "POST") {
+        const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        const name = String(body.name || "").trim();
+        const phone = String(body.phone || "").trim();
+        const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
+        const date = String(body.date || "").trim();
+        const time = String(body.time || "").trim();
+        if (!name || !phone || !email || !date || !time) return json(request, { error: "請填寫完整的預約資料。" }, 400);
+        await env.DB.prepare("INSERT INTO engagement_records (storefront_channel, record_type, payload_json) VALUES (?1, 'reservation', ?2)")
+          .bind(storefrontChannel, JSON.stringify({ name, phone, email, guests: body.guests || "", date, time, requests: String(body.requests || body.specialRequests || "").trim() })).run();
+        return json(request, { reservation: { name, phone, email, guests: body.guests || "", date, time, requests: String(body.requests || body.specialRequests || "").trim() }, ok: true }, 201);
+      }
+
+      if (url.pathname === "/api/newsletter" && request.method === "POST") {
+        const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
+        if (!email || !email.includes("@")) return json(request, { error: "請填寫有效的 Email。" }, 400);
+        await env.DB.prepare("INSERT INTO engagement_records (storefront_channel, record_type, payload_json) VALUES (?1, 'subscriber', ?2)")
+          .bind(storefrontChannel, JSON.stringify({ email, status: "active" })).run();
+        return json(request, { subscriber: { email, status: "active" }, ok: true }, 201);
+      }
+
+      if (url.pathname === "/api/search" && (request.method === "GET" || request.method === "POST")) {
+        const body = request.method === "POST" ? await parseBody(request) : {};
+        const query = String(request.method === "POST" ? body.query || body.q || "" : url.searchParams.get("q") || "").trim();
+        if (!query) return json(request, { query: "", products: [] });
+        const like = `%${query}%`;
+        const result = await env.DB.prepare(`${productSelect}
+          LEFT JOIN categories c ON c.id = p.category_id
+          WHERE p.is_active = 1 AND (p.name LIKE ?1 OR p.description LIKE ?1 OR c.name LIKE ?1)
+          ORDER BY p.id DESC LIMIT 50`).bind(like).all<ProductRow>();
+        await env.DB.prepare("INSERT INTO engagement_records (storefront_channel, record_type, payload_json) VALUES (?1, 'search', ?2)")
+          .bind(storefrontChannel, JSON.stringify({ query, resultCount: result.results.length })).run();
+        return json(request, { query, products: result.results.map(productFromRow) });
+      }
+
+      if (url.pathname === "/api/reviews" && request.method === "GET") {
+        const productId = String(url.searchParams.get("productId") || "").trim();
+        const result = await listLegacyRecords(env, "review", storefrontChannel);
+        const reviews = result.results
+          .map(row => legacyPayload<Record<string, unknown>>(row))
+          .filter(review => review.status === "approved" && (!productId || String(review.productId || "") === productId));
+        return json(request, { reviews });
+      }
+
+      if (url.pathname === "/api/reviews" && request.method === "POST") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "請先登入會員。" }, 401);
+        const body = await parseBody(request);
+        const productId = String(body.productId || "").trim();
+        const rating = Number(body.rating);
+        const comment = String(body.comment || "").trim();
+        const product = await findProduct(env, productId);
+        if (!product) return json(request, { error: "商品不存在。" }, 404);
+        if (!Number.isInteger(rating) || rating < 1 || rating > 5) return json(request, { error: "評論星等必須介於 1 到 5。" }, 400);
+        if (!comment) return json(request, { error: "請填寫評論內容。" }, 400);
+        const id = randomToken().slice(0, 12);
+        const review = { id, productId, customerId: user.id, customer: user.name || "會員", rating, comment, status: "pending", createdAt: new Date().toISOString() };
+        await saveLegacyRecord(env, "review", id, review, storefrontChannel);
+        return json(request, { review }, 201);
+      }
+
+      if (url.pathname === "/api/refunds" && request.method === "GET") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "請先登入。" }, 401);
+        const result = await listLegacyRecords(env, "refund", storefrontChannel);
+        const refunds = result.results.map(row => legacyPayload<Record<string, unknown>>(row)).filter(refund => Number(refund.userId) === user.id);
+        return json(request, { refunds });
+      }
+
+      if (url.pathname === "/api/refunds" && request.method === "POST") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "請先登入。" }, 401);
+        const body = await parseBody(request);
+        const orderId = String(body.orderId || "").trim();
+        const order = await env.DB.prepare("SELECT order_number, total_amount FROM orders WHERE storefront_channel = ?1 AND (order_number = ?2 OR CAST(id AS TEXT) = ?2) AND user_id = ?3 LIMIT 1").bind(storefrontChannel, orderId, user.id).first<{ order_number: string; total_amount: number }>();
+        if (!order) return json(request, { error: "找不到訂單。" }, 404);
+        const amount = Number(body.amount || order.total_amount || 0);
+        if (!Number.isFinite(amount) || amount <= 0 || amount > Number(order.total_amount || 0)) return json(request, { error: "退款金額無效。" }, 400);
+        const id = randomToken().slice(0, 12);
+        const refund = { id, orderId: order.order_number, userId: user.id, amount, reason: String(body.reason || "").trim(), status: "requested", createdAt: new Date().toISOString() };
+        await saveLegacyRecord(env, "refund", id, refund, storefrontChannel);
+        return json(request, { refund }, 201);
+      }
+
+      if (url.pathname.startsWith("/api/admin/")) {
+        const admin = await getSessionUser(env, request, storefrontChannel);
+        if (!admin || admin.role !== "admin") {
+          return json(request, { error: "需要管理員權限。" }, 403);
+        }
+
+        if (url.pathname === "/api/admin/mfa/status" && request.method === "GET") {
+          const pendingCreatedAt = Number(admin.mfa_pending_created_at || 0);
+          const now = Math.floor(Date.now() / 1000);
+          return json(request, {
+            enabled: Number(admin.mfa_enabled) === 1,
+            pending: pendingCreatedAt > 0 && now - pendingCreatedAt <= MFA_SETUP_TTL_SECONDS,
+          });
+        }
+
+        if (url.pathname === "/api/admin/mfa/setup" && request.method === "POST") {
+          if (Number(admin.mfa_enabled) === 1) {
+            return json(request, { error: "管理員 MFA 已啟用。", code: "MFA_ALREADY_ENABLED" }, 409);
+          }
+          const secret = createTotpSecret();
+          const now = Math.floor(Date.now() / 1000);
+          let ciphertext: string;
+          try {
+            ciphertext = await encryptMfaSecret(env, secret);
+          } catch {
+            return json(request, { error: "MFA 加密設定尚未完成，請聯絡系統管理員。" }, 503);
+          }
+          await env.DB.prepare(`
+            UPDATE users
+            SET mfa_pending_secret_ciphertext = ?1,
+                mfa_pending_created_at = ?2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?3
+          `).bind(ciphertext, now, admin.id).run();
+          return json(request, {
+            enabled: false,
+            secret,
+            otpAuthUrl: totpUri(String(admin.email || "admin"), secret),
+            expiresAt: now + MFA_SETUP_TTL_SECONDS,
+          });
+        }
+
+        if (url.pathname === "/api/admin/mfa/enable" && request.method === "POST") {
+          if (Number(admin.mfa_enabled) === 1) {
+            return json(request, { error: "管理員 MFA 已啟用。", code: "MFA_ALREADY_ENABLED" }, 409);
+          }
+          const pendingCreatedAt = Number(admin.mfa_pending_created_at || 0);
+          const now = Math.floor(Date.now() / 1000);
+          if (!admin.mfa_pending_secret_ciphertext || !pendingCreatedAt || now - pendingCreatedAt > MFA_SETUP_TTL_SECONDS) {
+            return json(request, { error: "MFA 設定已過期，請重新產生設定。", code: "MFA_SETUP_EXPIRED" }, 400);
+          }
+          const secret = await decryptMfaSecret(env, admin.mfa_pending_secret_ciphertext);
+          if (!secret) return json(request, { error: "MFA 加密設定尚未完成，請聯絡系統管理員。" }, 503);
+          const body = await parseBody(request);
+          const step = await verifyTotp(secret, body.code || body.mfaCode);
+          if (step === null) return json(request, { error: "MFA 驗證碼錯誤。", code: "MFA_INVALID" }, 400);
+          await env.DB.prepare(`
+            UPDATE users
+            SET mfa_enabled = 1,
+                mfa_secret_ciphertext = ?1,
+                mfa_pending_secret_ciphertext = NULL,
+                mfa_pending_created_at = NULL,
+                mfa_last_used_step = ?2,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?3
+          `).bind(admin.mfa_pending_secret_ciphertext, step, admin.id).run();
+          await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?1").bind(admin.id).run();
+          return json(request, { enabled: true }, 200, undefined, "");
+        }
+
+        if (url.pathname === "/api/admin/mfa/disable" && request.method === "POST") {
+          if (Number(admin.mfa_enabled) !== 1) {
+            return json(request, { error: "管理員 MFA 尚未啟用。", code: "MFA_NOT_ENABLED" }, 409);
+          }
+          const body = await parseBody(request);
+          if (!(await verifyPassword(String(body.password || ""), admin))) {
+            return json(request, { error: "密碼錯誤。" }, 401);
+          }
+          const secret = await decryptMfaSecret(env, admin.mfa_secret_ciphertext);
+          if (!secret) return json(request, { error: "MFA 加密設定尚未完成，請聯絡系統管理員。" }, 503);
+          if ((await verifyTotp(secret, body.code || body.mfaCode)) === null) {
+            return json(request, { error: "MFA 驗證碼錯誤。", code: "MFA_INVALID" }, 401);
+          }
+          await env.DB.prepare(`
+            UPDATE users
+            SET mfa_enabled = 0,
+                mfa_secret_ciphertext = NULL,
+                mfa_pending_secret_ciphertext = NULL,
+                mfa_pending_created_at = NULL,
+                mfa_last_used_step = NULL,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?1
+          `).bind(admin.id).run();
+          await env.DB.prepare("DELETE FROM sessions WHERE user_id = ?1").bind(admin.id).run();
+          return json(request, { enabled: false }, 200, undefined, "");
+        }
+
+        if (url.pathname === "/api/admin/reviews" && request.method === "GET") {
+          const result = await listLegacyRecords(env, "review", storefrontChannel);
+          return json(request, { reviews: result.results.map(row => legacyPayload<Record<string, unknown>>(row)) });
+        }
+
+        if (url.pathname === "/api/admin/reviews" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const id = String(body.id || "").trim();
+          const existing = await readLegacyRecord(env, "review", id, storefrontChannel);
+          if (!existing) return json(request, { error: "評論不存在。" }, 404);
+          const review: Record<string, unknown> = { ...legacyPayload<Record<string, unknown>>(existing), ...(body as Record<string, unknown>), id, updatedAt: new Date().toISOString() };
+          if (!["pending", "approved", "rejected"].includes(String(review.status || ""))) return json(request, { error: "評論狀態無效。" }, 400);
+          await saveLegacyRecord(env, "review", id, review, storefrontChannel);
+          return json(request, { review });
+        }
+
+        if (url.pathname === "/api/admin/refunds" && request.method === "GET") {
+          const result = await listLegacyRecords(env, "refund", storefrontChannel);
+          return json(request, { refunds: result.results.map(row => legacyPayload<Record<string, unknown>>(row)) });
+        }
+
+        if (url.pathname === "/api/admin/refunds" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const id = String(body.id || "").trim();
+          const existing = await readLegacyRecord(env, "refund", id, storefrontChannel);
+          if (!existing) return json(request, { error: "退款／退貨申請不存在。" }, 404);
+          const status = String(body.status || "").trim();
+          if (!["requested", "approved", "rejected", "completed"].includes(status)) return json(request, { error: "退款／退貨狀態無效。" }, 400);
+          const refund = { ...legacyPayload<Record<string, unknown>>(existing), status, updatedAt: new Date().toISOString() };
+          await saveLegacyRecord(env, "refund", id, refund, storefrontChannel);
+          return json(request, { refund });
+        }
+
+        if (url.pathname === "/api/admin/marketing" && request.method === "GET") {
+          const result = await listLegacyRecords(env, "marketing", storefrontChannel);
+          return json(request, { campaigns: result.results.map(row => legacyPayload<Record<string, unknown>>(row)) });
+        }
+
+        if (url.pathname === "/api/admin/marketing" && request.method === "POST") {
+          const body = await parseBody(request);
+          const name = String(body.name || "").trim();
+          if (!name) return json(request, { error: "活動名稱為必填。" }, 400);
+          const id = randomToken().slice(0, 12);
+          const campaign = { id, name, channel: String(body.channel || "store"), message: String(body.message || ""), status: ["draft", "active", "completed"].includes(String(body.status || "draft")) ? String(body.status || "draft") : "draft", createdAt: new Date().toISOString() };
+          await saveLegacyRecord(env, "marketing", id, campaign, storefrontChannel);
+          return json(request, { campaign }, 201);
+        }
+
+        if (url.pathname === "/api/admin/marketing" && (request.method === "PATCH" || request.method === "DELETE")) {
+          const body = await parseBody(request);
+          const id = String(body.id || "").trim();
+          const existing = await readLegacyRecord(env, "marketing", id, storefrontChannel);
+          if (!existing) return json(request, { error: "行銷活動不存在。" }, 404);
+          if (request.method === "DELETE") {
+            await deleteLegacyRecord(env, "marketing", id, storefrontChannel);
+            return json(request, { ok: true, id });
+          }
+          const campaign = { ...legacyPayload<Record<string, unknown>>(existing), ...(body as Record<string, unknown>), id, updatedAt: new Date().toISOString() };
+          await saveLegacyRecord(env, "marketing", id, campaign, storefrontChannel);
+          return json(request, { campaign });
+        }
+
+        if (url.pathname === "/api/admin/cms" && request.method === "GET") {
+          const row = await readLegacyRecord(env, "settings", "cms", storefrontChannel);
+          return json(request, { cms: { homepageNotice: "", aboutText: "", announcement: "", ...legacyPayload<Record<string, unknown>>(row) } });
+        }
+
+        if (url.pathname === "/api/admin/cms" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const current = legacyPayload<Record<string, unknown>>(await readLegacyRecord(env, "settings", "cms", storefrontChannel));
+          const cms = { homepageNotice: String(body.homepageNotice ?? current.homepageNotice ?? "").trim(), aboutText: String(body.aboutText ?? current.aboutText ?? "").trim(), announcement: String(body.announcement ?? current.announcement ?? "").trim(), updatedAt: new Date().toISOString() };
+          await saveLegacyRecord(env, "settings", "cms", cms, storefrontChannel);
+          return json(request, { cms });
+        }
+
+        if (url.pathname === "/api/admin/settings" && request.method === "GET") {
+          const row = await readLegacyRecord(env, "settings", "store", storefrontChannel);
+          return json(request, { settings: { storeName: "森森點心坊", currency: "TWD", pickupLeadDays: 5, lowStockThreshold: 10, orderEmail: "", ...legacyPayload<Record<string, unknown>>(row) } });
+        }
+
+        if (url.pathname === "/api/admin/settings" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const current = legacyPayload<Record<string, unknown>>(await readLegacyRecord(env, "settings", "store", storefrontChannel));
+          const settings = { storeName: String(body.storeName ?? current.storeName ?? "森森點心坊").trim(), currency: String(body.currency ?? current.currency ?? "TWD").trim(), pickupLeadDays: Math.max(0, Number(body.pickupLeadDays ?? current.pickupLeadDays ?? 5)), lowStockThreshold: Math.max(0, Number(body.lowStockThreshold ?? current.lowStockThreshold ?? 10)), orderEmail: String(body.orderEmail ?? current.orderEmail ?? "").trim(), updatedAt: new Date().toISOString() };
+          await saveLegacyRecord(env, "settings", "store", settings, storefrontChannel);
+          return json(request, { settings });
+        }
+
+        if (url.pathname === "/api/admin/points/rules" && request.method === "GET") {
+          const rule = await readMemberPointRule(env, storefrontChannel);
+          const totals = await env.DB.prepare(`
+            SELECT COALESCE(SUM(points), 0) AS points,
+                   COUNT(*) AS transactionCount,
+                   COUNT(DISTINCT user_id) AS memberCount
+            FROM member_point_transactions
+            WHERE storefront_channel = ?1
+          `).bind(storefrontChannel).first<{ points: number; transactionCount: number; memberCount: number }>();
+          const transactions = await env.DB.prepare(`
+            SELECT t.id, t.points, t.description, t.source_type AS sourceType,
+                   t.source_id AS sourceId, t.created_at AS createdAt,
+                   u.name AS memberName, u.email AS memberEmail
+            FROM member_point_transactions t
+            INNER JOIN users u ON u.id = t.user_id
+            WHERE t.storefront_channel = ?1
+            ORDER BY t.created_at DESC, t.id DESC
+            LIMIT 100
+          `).bind(storefrontChannel).all<Record<string, unknown>>();
+          return json(request, {
+            rule: publicMemberPointRule(rule),
+            summary: {
+              points: Number(totals?.points || 0),
+              transactionCount: Number(totals?.transactionCount || 0),
+              memberCount: Number(totals?.memberCount || 0),
+            },
+            transactions: transactions.results.map(transaction => ({
+              ...transaction,
+              points: Number(transaction.points || 0),
+              createdAt: utcDateString(transaction.createdAt),
+            })),
+          });
+        }
+
+        if (url.pathname === "/api/admin/points/rules" && request.method === "PUT") {
+          const body = await parseBody(request);
+          const integer = (value: unknown, fallback: number, minimum: number) => {
+            const parsed = Number(value);
+            return Number.isFinite(parsed) ? Math.max(minimum, Math.min(1000000, Math.round(parsed))) : fallback;
+          };
+          const enabled = body.enabled === true ? 1 : 0;
+          const spendAmount = integer(body.spendAmount, 100, 1);
+          const earnPoints = integer(body.earnPoints, 1, 0);
+          const minimumOrderAmount = integer(body.minimumOrderAmount, 0, 0);
+          const redeemPoints = integer(body.redeemPoints, 1, 1);
+          const redeemAmount = integer(body.redeemAmount, 1, 0);
+          const description = String(body.description || "訂單完成後依規則發放紅利點數。").trim().slice(0, 500) || "訂單完成後依規則發放紅利點數。";
+          await env.DB.prepare(`
+            INSERT INTO member_point_rules
+              (storefront_channel, id, enabled, spend_amount, earn_points, minimum_order_amount,
+               redeem_points, redeem_amount, description, updated_at)
+            VALUES (?1, 1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, CURRENT_TIMESTAMP)
+            ON CONFLICT(storefront_channel, id) DO UPDATE SET
+              enabled = excluded.enabled,
+              spend_amount = excluded.spend_amount,
+              earn_points = excluded.earn_points,
+              minimum_order_amount = excluded.minimum_order_amount,
+              redeem_points = excluded.redeem_points,
+              redeem_amount = excluded.redeem_amount,
+              description = excluded.description,
+              updated_at = CURRENT_TIMESTAMP
+          `).bind(storefrontChannel, enabled, spendAmount, earnPoints, minimumOrderAmount, redeemPoints, redeemAmount, description).run();
+          const rule = await readMemberPointRule(env, storefrontChannel);
+          return json(request, { rule: publicMemberPointRule(rule) });
+        }
+
+        if (url.pathname === "/api/admin/images" && request.method === "POST") {
+          const contentLength = Number(request.headers.get("Content-Length") || 0);
+          if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_REQUEST_BYTES) {
+            return json(request, { error: "單次上傳請求不可超過 22 MB。" }, 413);
+          }
+          const uploadLimit = await enforceRateLimit(request, env.UPLOAD_LIMITER, clientRateLimitKey(request, "upload"));
+          if (uploadLimit) return uploadLimit;
+          const form = await request.formData();
+          const upload = await uploadFiles(form);
+          if (upload.error) return json(request, upload.error.body, upload.error.status);
+          const files = upload.files;
+          const requestedFolder = form.get("folder");
+          const folder = typeof requestedFolder === "string"
+            ? requestedFolder.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "") || "news"
+            : "news";
+          const uploaded = [];
+          for (const file of files) {
+            const extension = { "image/avif": "avif", "image/gif": "gif", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[file.type];
+            if (!extension) return json(request, { error: "圖片格式無效。" }, 415);
+            const key = `${folder}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+            await env.BUCKET.put(`images/${key}`, file.stream(), {
+              httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
+            });
+            uploaded.push(`/images/${key}`);
+          }
+          return json(request, { image: uploaded[0], images: uploaded }, 201);
+        }
+
+        if (url.pathname === "/api/admin/products" && (request.method === "POST" || request.method === "PATCH")
+          && request.headers.get("content-type")?.toLowerCase().startsWith("multipart/form-data")) {
+          const contentLength = Number(request.headers.get("Content-Length") || 0);
+          if (Number.isFinite(contentLength) && contentLength > MAX_UPLOAD_REQUEST_BYTES) {
+            return json(request, { error: "單次上傳請求不可超過 22 MB。" }, 413);
+          }
+          const uploadLimit = await enforceRateLimit(request, env.UPLOAD_LIMITER, clientRateLimitKey(request, "upload"));
+          if (uploadLimit) return uploadLimit;
+          const form = await request.formData();
+          const body: Record<string, unknown> = {};
+          for (const [key, value] of form.entries()) {
+            if (typeof value === "string") body[key] = value;
+          }
+          const file = form.get("image");
+          if (file instanceof File && file.size > 0) {
+            const validated = await imageSignatureMatches(file, file.type);
+            if (!validated || file.size > MAX_UPLOAD_BYTES) return json(request, { error: "圖片檔案無效或超過 8 MB。" }, 415);
+            const extension = { "image/avif": "avif", "image/gif": "gif", "image/jpeg": "jpg", "image/png": "png", "image/webp": "webp" }[file.type];
+            if (!extension) return json(request, { error: "僅支援 JPG、PNG、WebP、GIF 或 AVIF 圖片。" }, 415);
+            const key = `products/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+            await env.BUCKET.put(`images/${key}`, file.stream(), {
+              httpMetadata: { contentType: file.type, cacheControl: "public, max-age=31536000, immutable" },
+            });
+            body.img = `/images/${key}`;
+            body.images = [body.img];
+          }
+          const lookup = String(body.id || "").trim();
+          const existing = request.method === "PATCH"
+            ? await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.slug = ?1 OR CAST(p.id AS TEXT) = ?1 LIMIT 1`).bind(lookup).first<ProductRow>()
+            : null;
+          if (request.method === "PATCH" && !existing) return json(request, { error: "找不到商品。" }, 404);
+          const existingMetadata = parseJson<Record<string, unknown>>(existing?.metadata_json, {});
+          const title = String(body.title ?? existing?.title ?? "").trim();
+          const categoryName = String(body.cat ?? existing?.category ?? "未分類").trim();
+          const price = Math.max(0, Math.round(Number(body.priceValue ?? body.price ?? existing?.price ?? 0)));
+          const stock = Math.max(0, Math.round(Number(body.quantity ?? existing?.stock ?? 0)));
+          const description = String(body.desc ?? existing?.description ?? existingMetadata.desc ?? "").trim();
+          const imageKeys = body.images !== undefined
+            ? imageKeysFromValues(body.images)
+            : imageKeysFromValues(body.img ?? existing?.image_key ?? existingMetadata.img ?? "");
+          const imageKey = imageKeys[0] || "";
+          const metadata = JSON.stringify({
+            ...existingMetadata,
+            sku: String(body.sku ?? existingMetadata.sku ?? "").trim(),
+            day: String(body.day ?? existingMetadata.day ?? "5").trim(),
+            storage: String(body.storageMethod ?? existingMetadata.storage ?? "").trim(),
+            other: String(body.other ?? existingMetadata.other ?? "").trim(),
+            img: imageKey ? `/images/${imageKey}` : String(body.img ?? existingMetadata.img ?? "").trim(),
+            priceValue: price,
+          });
+          if (!title) return json(request, { error: "商品名稱不可為空白。" }, 400);
+          let category = await env.DB.prepare("SELECT id FROM categories WHERE name = ?1 OR slug = ?1 LIMIT 1").bind(categoryName).first<{ id: number }>();
+          if (!category) {
+            const insertedCategory = await env.DB.prepare("INSERT INTO categories (name, slug) VALUES (?1, ?2)").bind(categoryName, slugify(categoryName)).run();
+            category = { id: Number(insertedCategory.meta.last_row_id) };
+          }
+          if (request.method === "POST") {
+            let slug = slugify(title);
+            const duplicate = await env.DB.prepare("SELECT id FROM products WHERE slug = ?1 OR name = ?2 LIMIT 1").bind(slug, title).first<{ id: number }>();
+            if (duplicate) slug = `${slug}-${Date.now().toString(36)}`;
+            const inserted = await env.DB.prepare(`
+              INSERT INTO products (category_id, name, slug, description, price, stock, image_key, is_active, metadata_json)
+              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, 1, ?8)
+            `).bind(category.id, title, slug, description, price, stock, imageKey, metadata).run();
+            const productId = Number(inserted.meta.last_row_id);
+            await replaceProductImages(env, productId, imageKeys);
+            const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(productId).first<ProductRow>();
+            return json(request, { product: row ? adminProductFromRow(row) : null }, 201);
+          }
+          await env.DB.prepare(`
+            UPDATE products SET category_id = ?1, name = ?2, description = ?3, price = ?4,
+              stock = ?5, image_key = ?6, metadata_json = ?7, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?8
+          `).bind(category.id, title, description, price, stock, imageKey, metadata, existing?.db_id).run();
+          await replaceProductImages(env, Number(existing?.db_id), imageKeys);
+          const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(existing?.db_id).first<ProductRow>();
+          return json(request, { product: row ? adminProductFromRow(row) : null });
+        }
+
+        if (url.pathname === "/api/admin/categories" && request.method === "GET") {
+          const result = await env.DB.prepare(`
+            SELECT c.id, c.name, c.slug
+            FROM categories c
+            LEFT JOIN products p ON p.category_id = c.id AND p.is_active = 1
+            GROUP BY c.id, c.name, c.slug
+            ORDER BY c.id
+          `).all<{ id: number; name: string; slug: string }>();
+          return json(request, { categories: result.results.map(category => ({ ...category, enabled: true, description: "" })) });
+        }
+
+        if (url.pathname === "/api/admin/categories" && request.method === "POST") {
+          const body = await parseBody(request);
+          const name = String(body.name || "").trim();
+          if (!name) return json(request, { error: "分類名稱為必填。" }, 400);
+          const slug = slugify(name);
+          const existing = await env.DB.prepare("SELECT id FROM categories WHERE name = ?1 OR slug = ?2 LIMIT 1").bind(name, slug).first<{ id: number }>();
+          if (existing) return json(request, { error: "此分類已存在。" }, 409);
+          const inserted = await env.DB.prepare("INSERT INTO categories (name, slug) VALUES (?1, ?2)").bind(name, slug).run();
+          return json(request, { category: { id: Number(inserted.meta.last_row_id), name, slug, description: String(body.description || ""), enabled: true } }, 201);
+        }
+
+        if (url.pathname === "/api/admin/categories" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const id = Number(body.id);
+          const name = String(body.name || "").trim();
+          if (!Number.isInteger(id) || !name) return json(request, { error: "分類資料格式錯誤。" }, 400);
+          const existing = await env.DB.prepare("SELECT id FROM categories WHERE id = ?1").bind(id).first<{ id: number }>();
+          if (!existing) return json(request, { error: "分類不存在。" }, 404);
+          await env.DB.prepare("UPDATE categories SET name = ?1, slug = ?2 WHERE id = ?3").bind(name, slugify(name), id).run();
+          return json(request, { category: { id, name, slug: slugify(name), description: String(body.description || ""), enabled: true } });
+        }
+
+        if (url.pathname === "/api/admin/categories" && request.method === "DELETE") {
+          const body = await parseBody(request);
+          const id = Number(body.id);
+          if (!Number.isInteger(id)) return json(request, { error: "分類資料格式錯誤。" }, 400);
+          const result = await env.DB.prepare("DELETE FROM categories WHERE id = ?1").bind(id).run();
+          if (!result.meta.changes) return json(request, { error: "分類不存在。" }, 404);
+          return json(request, { ok: true, id });
+        }
+
+        if (url.pathname === "/api/admin/catalog" && request.method === "GET") {
+          const result = await env.DB.prepare(`${productSelect}
+            LEFT JOIN categories c ON c.id = p.category_id
+            ORDER BY p.id DESC`).all<ProductRow>();
+          return json(request, {
+            skus: result.results.map(product => {
+              const metadata = parseJson<Record<string, unknown>>(product.metadata_json, {});
+              return {
+                id: product.slug,
+                sku: String(metadata.sku || product.slug),
+                title: product.title,
+                category: product.category || "",
+                quantity: Number(product.stock || 0),
+              };
+            }),
+          });
+        }
+
+        if (url.pathname === "/api/admin/sku" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const lookup = String(body.id || "").trim();
+          const product = await env.DB.prepare(`${productSelect}
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE p.slug = ?1 OR CAST(p.id AS TEXT) = ?1 LIMIT 1`).bind(lookup).first<ProductRow>();
+          if (!product) return json(request, { error: "找不到商品。" }, 404);
+          const metadata = parseJson<Record<string, unknown>>(product.metadata_json, {});
+          metadata.sku = String(body.sku || product.slug).trim() || product.slug;
+          await env.DB.prepare("UPDATE products SET metadata_json = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2")
+            .bind(JSON.stringify(metadata), product.db_id).run();
+          return json(request, { product: { ...adminProductFromRow(product), sku: metadata.sku } });
+        }
+
+        if (url.pathname === "/api/admin/inventory" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const lookup = String(body.id || "").trim();
+          const quantity = Number(body.quantity);
+          const product = await env.DB.prepare(`${productSelect}
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE p.slug = ?1 OR CAST(p.id AS TEXT) = ?1 LIMIT 1`).bind(lookup).first<ProductRow>();
+          if (!product) return json(request, { error: "找不到商品。" }, 404);
+          if (!Number.isFinite(quantity) || quantity < 0) return json(request, { error: "庫存數量無效。" }, 400);
+          await env.DB.prepare("UPDATE products SET stock = ?1, updated_at = CURRENT_TIMESTAMP WHERE id = ?2")
+            .bind(Math.floor(quantity), product.db_id).run();
+          return json(request, { product: { ...adminProductFromRow(product), quantity: Math.floor(quantity) } });
+        }
+
+        if (url.pathname === "/api/admin/products" && request.method === "GET") {
+          const result = await env.DB.prepare(`${productSelect}
+            LEFT JOIN categories c ON c.id = p.category_id
+            ORDER BY p.id DESC`).all<ProductRow>();
+          return json(request, { products: result.results.map(adminProductFromRow) });
+        }
+
+        if (url.pathname === "/api/admin/products" && (request.method === "POST" || request.method === "PATCH")) {
+          const body = await parseBody(request);
+          const lookup = String(body.id || "").trim();
+          const existing = request.method === "PATCH"
+            ? await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.slug = ?1 OR CAST(p.id AS TEXT) = ?1 LIMIT 1`).bind(lookup).first<ProductRow>()
+            : null;
+          if (request.method === "PATCH" && !existing) return json(request, { error: "找不到商品。" }, 404);
+          const existingMetadata = parseJson<Record<string, unknown>>(existing?.metadata_json, {});
+          const existingVariants = existingMetadata.variants && typeof existingMetadata.variants === "object" && !Array.isArray(existingMetadata.variants)
+            ? existingMetadata.variants as Record<string, unknown>
+            : {};
+          const submittedVariants = body.variants && typeof body.variants === "object" && !Array.isArray(body.variants)
+            ? body.variants as Record<string, unknown>
+            : {};
+          const existingPriceTypes = existingVariants.priceTypes && typeof existingVariants.priceTypes === "object" && !Array.isArray(existingVariants.priceTypes)
+            ? existingVariants.priceTypes as Record<string, unknown>
+            : {};
+          const submittedPriceTypes = submittedVariants.priceTypes && typeof submittedVariants.priceTypes === "object" && !Array.isArray(submittedVariants.priceTypes)
+            ? submittedVariants.priceTypes as Record<string, unknown>
+            : {};
+          const title = String(body.title ?? existing?.title ?? "").trim();
+          const categoryName = String(body.cat ?? existing?.category ?? "未分類").trim();
+          const price = Math.max(0, Math.round(Number(body.priceValue ?? body.price ?? submittedPriceTypes["特價"] ?? existing?.price ?? 0)));
+          const originalPrice = Math.max(0, Math.round(Number(
+            body.originalPrice
+              ?? body.priceOriginal
+              ?? submittedPriceTypes["原價"]
+              ?? existingMetadata.originalPrice
+              ?? existingMetadata.priceOriginal
+              ?? existingPriceTypes["原價"]
+              ?? (existing?.slug ? TOP_HOUSE_ORIGINAL_PRICE_BY_ID[existing.slug] : undefined)
+              ?? price,
+          )));
+          const stock = Math.max(0, Math.round(Number(body.quantity ?? existing?.stock ?? 0)));
+          const published = body.published !== undefined
+            ? body.published !== false
+            : request.method === "POST"
+              ? true
+              : existing?.is_active === 1;
+          const description = String(body.desc ?? existing?.description ?? existingMetadata.desc ?? existingMetadata.description ?? "").trim();
+          const size = String(body.size ?? body.spec ?? existingMetadata.size ?? existingMetadata.productSize ?? existingMetadata.spec ?? "").trim();
+          const storage = String(body.storage ?? body.storageMethod ?? existingMetadata.storage ?? existingMetadata.storageMethod ?? "").trim();
+          const other = String(body.other ?? body.otherNotes ?? existingMetadata.other ?? existingMetadata.otherNotes ?? "").trim();
+          const dietary = body.dietary === undefined
+            ? normalizeDietary(existingMetadata.dietary ?? existingMetadata.dietaryLabel)
+            : normalizeDietary(body.dietary);
+          if (!title) return json(request, { error: "商品名稱不可為空白。" }, 400);
+          if (!Number.isFinite(price) || !Number.isFinite(originalPrice) || !Number.isFinite(stock)) return json(request, { error: "售價或庫存格式錯誤。" }, 400);
+
+          let category = await env.DB.prepare("SELECT id FROM categories WHERE name = ?1 OR slug = ?1 LIMIT 1").bind(categoryName).first<{ id: number }>();
+          if (!category) {
+            const insertedCategory = await env.DB.prepare("INSERT INTO categories (name, slug) VALUES (?1, ?2)").bind(categoryName, slugify(categoryName)).run();
+            category = { id: Number(insertedCategory.meta.last_row_id) };
+          }
+          const existingImageValues = [existing?.image_key, ...parseJson<unknown[]>(existing?.gallery_json, [])];
+          const imageKeys = body.images !== undefined
+            ? imageKeysFromValues(body.images)
+            : request.method === "PATCH"
+              ? imageKeysFromValues([body.img ?? existing?.image_key, ...existingImageValues])
+              : imageKeysFromValues(body.img ?? existingMetadata.img ?? existing?.image_key ?? "");
+          const imageKey = imageKeys[0] || "";
+          const imageValue = imageKey ? `/images/${imageKey}` : String(body.img ?? existingMetadata.img ?? "").trim();
+          const metadata = JSON.stringify({
+            ...existingMetadata,
+            sku: String(body.sku ?? existingMetadata.sku ?? "").trim(),
+            spec: size,
+            size,
+            storage,
+            other,
+            dietary,
+            day: String(body.day ?? existingMetadata.day ?? "5").trim(),
+            img: imageValue,
+            priceValue: price,
+            originalPrice,
+            thumbnail: normalizeThumbnailSettings(body.thumbnail ?? existingMetadata.thumbnail),
+            ...(body.variants !== undefined ? { variants: body.variants } : {}),
+          });
+
+          if (request.method === "POST") {
+            let slug = slugify(title);
+            const duplicate = await env.DB.prepare("SELECT id FROM products WHERE slug = ?1 OR name = ?2 LIMIT 1").bind(slug, title).first<{ id: number }>();
+            if (duplicate) slug = `${slug}-${Date.now().toString(36)}`;
+            const result = await env.DB.prepare(`
+              INSERT INTO products (category_id, name, slug, description, price, stock, image_key, is_active, metadata_json)
+              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+            `).bind(category.id, title, slug, description, price, stock, imageKey, published ? 1 : 0, metadata).run();
+            const productId = Number(result.meta.last_row_id);
+            await replaceProductImages(env, productId, imageKeys);
+            const row = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(productId).first<ProductRow>();
+            const product = row ? adminProductFromRow(row) : null;
+            return json(request, {
+              product,
+              pageUrl: product?.url || null,
+              pageTemplate: "product-detail",
+            }, 201);
+          }
+
+          await env.DB.prepare(`
+            UPDATE products SET category_id = ?1, name = ?2, description = ?3, price = ?4,
+              stock = ?5, image_key = ?6, is_active = ?7, metadata_json = ?8, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?9
+          `).bind(category.id, title, description, price, stock, imageKey, published ? 1 : 0, metadata, existing?.db_id).run();
+          await replaceProductImages(env, Number(existing?.db_id), imageKeys);
+          const updated = await env.DB.prepare(`${productSelect} LEFT JOIN categories c ON c.id = p.category_id WHERE p.id = ?1`).bind(existing?.db_id).first<ProductRow>();
+          return json(request, { product: updated ? adminProductFromRow(updated) : null });
+        }
+
+        if (url.pathname === "/api/admin/products" && request.method === "DELETE") {
+          const body = await parseBody(request);
+          const lookup = String(body.id || "").trim();
+          const row = await env.DB.prepare("SELECT id FROM products WHERE slug = ?1 OR CAST(id AS TEXT) = ?1 LIMIT 1").bind(lookup).first<{ id: number }>();
+          if (!row) return json(request, { error: "找不到商品。" }, 404);
+
+          const orderReferences = await env.DB.prepare("SELECT COUNT(*) AS count FROM order_items WHERE product_id = ?1").bind(row.id).first<{ count: number }>();
+          const cartReferences = await env.DB.prepare("SELECT COUNT(*) AS count FROM cart_items WHERE product_id = ?1").bind(row.id).first<{ count: number }>();
+          const hasReferences = Number(orderReferences?.count || 0) > 0 || Number(cartReferences?.count || 0) > 0;
+
+          if (!hasReferences) {
+            await env.DB.prepare("DELETE FROM product_images WHERE product_id = ?1").bind(row.id).run();
+            await env.DB.prepare("DELETE FROM products WHERE id = ?1").bind(row.id).run();
+            return json(request, { ok: true, id: lookup, deleted: true });
+          }
+
+          await env.DB.prepare("UPDATE products SET is_active = 0, updated_at = CURRENT_TIMESTAMP WHERE id = ?1").bind(row.id).run();
+          return json(request, { ok: true, id: lookup, deleted: false, archived: true });
+        }
+
+        if (url.pathname === "/api/admin/news" && request.method === "GET") {
+          const result = await env.DB.prepare("SELECT * FROM news ORDER BY COALESCE(publish_at, created_at) DESC").all<Record<string, unknown>>();
+          return json(request, { news: result.results.map(newsFromRow) });
+        }
+
+        if (url.pathname === "/api/admin/news" && (request.method === "POST" || request.method === "PATCH")) {
+          const body = await parseBody(request);
+          const title = String(body.title || "").trim();
+          const content = String(body.content || "").trim();
+          const excerpt = String(body.excerpt || "").trim();
+          const category = String(body.category || "latest-news").trim();
+          const image = String(body.image || "").trim();
+          const layout = Array.isArray(body.layout) ? JSON.stringify(body.layout) : null;
+          const published = String(body.status || "draft") === "published";
+          const publishAt = String(body.publishAt || new Date().toISOString());
+          if (!title) return json(request, { error: "文章標題不可為空白。" }, 400);
+          if (request.method === "POST") {
+            const id = `news-${Date.now().toString(36)}`;
+            const slug = `${slugify(title)}-${id}`;
+            await env.DB.prepare(`
+              INSERT INTO news (id, title, slug, category, excerpt, content, image_key, publish_at, is_published, layout_json)
+              VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10)
+            `).bind(id, title, slug, category, excerpt, content, image, publishAt, published ? 1 : 0, layout).run();
+            const row = await env.DB.prepare("SELECT * FROM news WHERE id = ?1").bind(id).first<Record<string, unknown>>();
+            return json(request, { news: row ? newsFromRow(row) : null }, 201);
+          }
+          const id = String(body.id || "").trim();
+          const exists = await env.DB.prepare("SELECT id FROM news WHERE id = ?1").bind(id).first<{ id: string }>();
+          if (!exists) return json(request, { error: "找不到文章。" }, 404);
+          await env.DB.prepare(`
+            UPDATE news SET title = ?1, category = ?2, excerpt = ?3, content = ?4, image_key = ?5,
+              publish_at = ?6, is_published = ?7, layout_json = ?8, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?9
+          `).bind(title, category, excerpt, content, image, publishAt, published ? 1 : 0, layout, id).run();
+          const row = await env.DB.prepare("SELECT * FROM news WHERE id = ?1").bind(id).first<Record<string, unknown>>();
+          return json(request, { news: row ? newsFromRow(row) : null });
+        }
+
+        if (url.pathname === "/api/admin/news" && request.method === "DELETE") {
+          const body = await parseBody(request);
+          const id = String(body.id || "").trim();
+          await env.DB.prepare("DELETE FROM news WHERE id = ?1").bind(id).run();
+          return json(request, { ok: true, id });
+        }
+
+        if (url.pathname === "/api/admin/coupons" && request.method === "GET") {
+          const result = await env.DB.prepare("SELECT code, label, type, value, min_amount AS min, enabled, updated_at AS updatedAt FROM coupons WHERE storefront_channel = ?1 ORDER BY updated_at DESC").bind(storefrontChannel).all<Record<string, unknown>>();
+          return json(request, { coupons: result.results });
+        }
+
+        if (url.pathname === "/api/admin/coupons" && request.method === "POST") {
+          const body = await parseBody(request);
+          const code = String(body.code || "").trim().toUpperCase();
+          const label = String(body.label || "").trim();
+          const type = String(body.type || "fixed").trim();
+          const value = Number(body.value || 0);
+          const min = Number(body.min || 0);
+          if (!code || !label || !["fixed", "percent"].includes(type) || !Number.isFinite(value)) return json(request, { error: "優惠碼資料格式錯誤。" }, 400);
+          await env.DB.prepare(`INSERT INTO coupons (storefront_channel, code, label, type, value, min_amount, enabled, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, CURRENT_TIMESTAMP) ON CONFLICT(storefront_channel, code) DO UPDATE SET label = excluded.label, type = excluded.type, value = excluded.value, min_amount = excluded.min_amount, enabled = excluded.enabled, updated_at = CURRENT_TIMESTAMP`).bind(storefrontChannel, code, label, type, value, min, body.enabled === false ? 0 : 1).run();
+          const coupon = await env.DB.prepare("SELECT code, label, type, value, min_amount AS min, enabled, updated_at AS updatedAt FROM coupons WHERE storefront_channel = ?1 AND code = ?2").bind(storefrontChannel, code).first<Record<string, unknown>>();
+          return json(request, { coupon });
+        }
+
+        if (url.pathname === "/api/admin/coupons" && (request.method === "PATCH" || request.method === "DELETE")) {
+          const body = await parseBody(request);
+          const code = String(body.code || "").trim().toUpperCase();
+          if (request.method === "DELETE") await env.DB.prepare("DELETE FROM coupons WHERE storefront_channel = ?1 AND code = ?2").bind(storefrontChannel, code).run();
+          else await env.DB.prepare("UPDATE coupons SET enabled = ?1, updated_at = CURRENT_TIMESTAMP WHERE storefront_channel = ?2 AND code = ?3").bind(body.enabled === false ? 0 : 1, storefrontChannel, code).run();
+          const result = await env.DB.prepare("SELECT code, label, type, value, min_amount AS min, enabled, updated_at AS updatedAt FROM coupons WHERE storefront_channel = ?1 ORDER BY updated_at DESC").bind(storefrontChannel).all<Record<string, unknown>>();
+          return json(request, { coupons: result.results });
+        }
+
+        if (url.pathname === "/api/admin/orders" && request.method === "GET") {
+          const result = await env.DB.prepare(`
+            SELECT o.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+            FROM orders o
+            LEFT JOIN users u ON u.id = o.user_id
+            WHERE o.storefront_channel = ?1
+            ORDER BY o.created_at DESC
+          `).bind(storefrontChannel).all<Record<string, unknown>>();
+          const orders = [];
+          for (const row of result.results) {
+            const items = await env.DB.prepare(`
+              SELECT oi.id, oi.product_id AS dbProductId, p.slug AS productId, oi.product_name AS title,
+                oi.price AS priceValue, oi.quantity AS qty, p.image_key AS imageKey,
+                c.name AS category
+              FROM order_items oi
+              LEFT JOIN products p ON p.id = oi.product_id
+              LEFT JOIN categories c ON c.id = p.category_id
+              WHERE oi.order_id = ?1 ORDER BY oi.id ASC
+            `).bind(row.id).all<Record<string, unknown>>();
+            orders.push(orderFromRow(row, items.results.map(adminOrderItemFromRow)));
+          }
+          return json(request, { orders });
+        }
+
+        if (url.pathname === "/api/admin/orders/status" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const orderId = String(body.orderId || "").trim();
+          const status = String(body.status || "processing").trim();
+          const trackingNumber = String(body.trackingNumber || "").trim();
+          const allowedStatuses = ["created", "pending", "pending_payment", "processing", "shipped", "ready_for_pickup", "completed", "picked_up", "cancelled"];
+          if (!orderId || !allowedStatuses.includes(status)) return json(request, { error: "訂單狀態資料格式錯誤。" }, 400);
+          const existing = await env.DB.prepare("SELECT id, status FROM orders WHERE storefront_channel = ?2 AND (order_number = ?1 OR CAST(id AS TEXT) = ?1) LIMIT 1").bind(orderId, storefrontChannel).first<{ id: number; status: string }>();
+          if (!existing) return json(request, { error: "找不到訂單。" }, 404);
+          await env.DB.prepare(`UPDATE orders SET status = ?1, tracking_number = ?2, updated_at = CURRENT_TIMESTAMP WHERE storefront_channel = ?3 AND id = ?4`)
+            .bind(status, trackingNumber, storefrontChannel, existing.id).run();
+          const row = await env.DB.prepare(`
+            SELECT o.*, u.name AS user_name, u.email AS user_email, u.phone AS user_phone
+            FROM orders o LEFT JOIN users u ON u.id = o.user_id WHERE o.storefront_channel = ?2 AND o.id = ?1
+          `).bind(existing.id, storefrontChannel).first<Record<string, unknown>>();
+          const items = await env.DB.prepare(`
+            SELECT oi.id, oi.product_id AS dbProductId, p.slug AS productId, oi.product_name AS title,
+              oi.price AS priceValue, oi.quantity AS qty, p.image_key AS imageKey,
+              c.name AS category
+            FROM order_items oi
+            LEFT JOIN products p ON p.id = oi.product_id
+            LEFT JOIN categories c ON c.id = p.category_id
+            WHERE oi.order_id = ?1 ORDER BY oi.id ASC
+          `).bind(existing.id).all<Record<string, unknown>>();
+          const pointReward = status === "completed" && row ? await awardCompletedOrderPoints(env, row) : null;
+          const completionNotification = status === "completed" && String(existing.status || "").toLowerCase() !== "completed"
+            ? await sendOrderCompletionEmail(row || {}, items.results.map(adminOrderItemFromRow))
+            : { status: "not_requested", recipient: row?.customer_email || row?.user_email || "" };
+          return json(request, {
+            order: row ? {
+              ...orderFromRow(row, items.results.map(adminOrderItemFromRow)),
+              completionNotification,
+              pointReward,
+              shippingNotification: body.notify ? { status: "pending", recipient: row.customer_email || row.user_email || "" } : { status: "not_requested" },
+            } : null,
+          });
+        }
+
+        if (url.pathname === "/api/admin/payments" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const orderId = String(body.orderId || "").trim();
+          const paymentStatus = String(body.paymentStatus || "").trim().toLowerCase();
+          if (!["pending", "unpaid", "paid", "failed", "refunded"].includes(paymentStatus)) {
+            return json(request, { error: "付款狀態無效。" }, 400);
+          }
+          const existing = await env.DB.prepare("SELECT id FROM orders WHERE storefront_channel = ?2 AND (order_number = ?1 OR CAST(id AS TEXT) = ?1) LIMIT 1").bind(orderId, storefrontChannel).first<{ id: number }>();
+          if (!existing) return json(request, { error: "找不到訂單。" }, 404);
+          await env.DB.prepare("UPDATE orders SET payment_status = ?1, updated_at = CURRENT_TIMESTAMP WHERE storefront_channel = ?2 AND id = ?3")
+            .bind(paymentStatus, storefrontChannel, existing.id).run();
+          return json(request, { ok: true, paymentStatus });
+        }
+
+        if (url.pathname === "/api/admin/shipping" && request.method === "PATCH") {
+          const body = await parseBody(request);
+          const orderId = String(body.orderId || "").trim();
+          const shippingStatus = String(body.shippingStatus || "").trim().toLowerCase();
+          const allowedStatuses = ["pending", "preparing", "ready", "shipped", "delivered", "returned"];
+          if (!allowedStatuses.includes(shippingStatus)) return json(request, { error: "物流狀態無效。" }, 400);
+          const existing = await env.DB.prepare("SELECT id FROM orders WHERE storefront_channel = ?2 AND (order_number = ?1 OR CAST(id AS TEXT) = ?1) LIMIT 1").bind(orderId, storefrontChannel).first<{ id: number }>();
+          if (!existing) return json(request, { error: "找不到訂單。" }, 404);
+          await env.DB.prepare("UPDATE orders SET shipping_status = ?1, tracking_number = ?2, updated_at = CURRENT_TIMESTAMP WHERE storefront_channel = ?3 AND id = ?4")
+            .bind(shippingStatus, String(body.trackingNumber || "").trim(), storefrontChannel, existing.id).run();
+          return json(request, { ok: true, shippingStatus, trackingNumber: String(body.trackingNumber || "").trim() });
+        }
+
+        if (url.pathname === "/api/admin/customers" && request.method === "GET") {
+          const customerId = url.searchParams.get("id");
+          if (customerId) {
+            const row = await env.DB.prepare(`
+              SELECT u.*, a.full_name AS address_name, a.phone AS address_phone, a.address, a.city, a.zip
+              FROM users u LEFT JOIN user_addresses a ON a.id = (
+                SELECT id FROM user_addresses WHERE user_id = u.id ORDER BY is_default DESC, id ASC LIMIT 1
+              ) WHERE u.id = ?1 AND u.storefront_channel = ?2
+            `).bind(customerId, storefrontChannel).first<Record<string, unknown>>();
+            if (!row) return json(request, { error: "找不到會員。" }, 404);
+            const totals = await env.DB.prepare("SELECT COUNT(*) AS orderCount, COALESCE(SUM(total_amount), 0) AS totalSpent FROM orders WHERE storefront_channel = ?1 AND user_id = ?2").bind(storefrontChannel, row.id).first<{ orderCount: number; totalSpent: number }>();
+            const orders = await env.DB.prepare("SELECT order_number AS id, total_amount AS total, status, created_at AS createdAt FROM orders WHERE storefront_channel = ?1 AND user_id = ?2 ORDER BY created_at DESC").bind(storefrontChannel, row.id).all<Record<string, unknown>>();
+            return json(request, {
+              customer: {
+                id: row.id, name: row.name || "", email: row.email || "", phone: row.phone || "",
+                address: row.address ? { fullName: row.address_name || row.name || "", phone: row.address_phone || row.phone || "", address: row.address, city: row.city || "", zip: row.zip || "" } : null,
+                orderCount: Number(totals?.orderCount || 0), totalSpent: Number(totals?.totalSpent || 0),
+              },
+              orders: orders.results.map(order => ({ ...order, createdAt: utcDateString(order.createdAt) })),
+            });
+          }
+          const result = await env.DB.prepare(`
+            SELECT u.id, u.name, u.email, u.phone,
+              a.full_name AS address_name, a.address, a.city, a.zip,
+              COUNT(o.id) AS orderCount, COALESCE(SUM(o.total_amount), 0) AS totalSpent
+            FROM users u
+            LEFT JOIN user_addresses a ON a.id = (SELECT id FROM user_addresses WHERE user_id = u.id ORDER BY is_default DESC, id ASC LIMIT 1)
+            LEFT JOIN orders o ON o.user_id = u.id AND o.storefront_channel = ?1
+            WHERE u.storefront_channel = ?1 AND (u.role IS NULL OR u.role != 'admin')
+            GROUP BY u.id ORDER BY u.created_at DESC
+          `).bind(storefrontChannel).all<Record<string, unknown>>();
+          return json(request, { customers: result.results.map(row => ({
+            id: row.id, name: row.name || "", email: row.email || "", phone: row.phone || "",
+            address: row.address ? { fullName: row.address_name || row.name || "", address: row.address, city: row.city || "", zip: row.zip || "" } : null,
+            orderCount: Number(row.orderCount || 0), totalSpent: Number(row.totalSpent || 0),
+          })) });
+        }
+
+        if (url.pathname === "/api/admin/engagement" && request.method === "GET") {
+          const result = await env.DB.prepare("SELECT id, record_type, payload_json, created_at, updated_at FROM engagement_records WHERE storefront_channel = ?1 ORDER BY created_at DESC").bind(storefrontChannel).all<Record<string, unknown>>();
+          const grouped: Record<string, Record<string, unknown>[]> = { reservations: [], messages: [], subscribers: [], searches: [] };
+          const groupName: Record<string, string> = { reservation: "reservations", message: "messages", subscriber: "subscribers", search: "searches" };
+          for (const row of result.results) {
+            const group = groupName[String(row.record_type)] || "messages";
+            grouped[group].push({ id: row.id, ...parseJson<Record<string, unknown>>(String(row.payload_json || ""), {}), createdAt: row.created_at, updatedAt: row.updated_at });
+          }
+          return json(request, grouped);
+        }
+
+        if (url.pathname === "/api/admin/summary" && request.method === "GET") {
+          const totals = await env.DB.prepare(`
+            SELECT COUNT(*) AS orderCount,
+              COALESCE(SUM(total_amount), 0) AS totalSales,
+              COALESCE(SUM(CASE WHEN status IN ('completed', 'picked_up') THEN total_amount ELSE 0 END), 0) AS completedSales,
+              COALESCE(SUM(CASE WHEN status NOT IN ('completed', 'picked_up', 'cancelled') THEN total_amount ELSE 0 END), 0) AS pendingSales,
+              SUM(CASE WHEN status IN ('completed', 'picked_up') THEN 1 ELSE 0 END) AS completedOrderCount
+            FROM orders
+            WHERE storefront_channel = ?1
+          `).bind(storefrontChannel).first<Record<string, unknown>>();
+          const itemCount = await env.DB.prepare("SELECT COALESCE(SUM(oi.quantity), 0) AS itemCount FROM order_items oi INNER JOIN orders o ON o.id = oi.order_id WHERE o.storefront_channel = ?1").bind(storefrontChannel).first<{ itemCount: number }>();
+          const customerCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM users WHERE storefront_channel = ?1 AND (role IS NULL OR role != 'admin')").bind(storefrontChannel).first<{ count: number }>();
+          const customersWithOrders = await env.DB.prepare("SELECT COUNT(DISTINCT user_id) AS count FROM orders WHERE storefront_channel = ?1 AND user_id IS NOT NULL").bind(storefrontChannel).first<{ count: number }>();
+          const pending = await env.DB.prepare("SELECT order_number, status, customer_name, created_at FROM orders WHERE storefront_channel = ?1 AND status NOT IN ('completed', 'picked_up', 'cancelled') ORDER BY created_at DESC LIMIT 5").bind(storefrontChannel).all<Record<string, unknown>>();
+          return json(request, {
+            summary: {
+              totalSales: Number(totals?.totalSales || 0), itemCount: Number(itemCount?.itemCount || 0),
+              completedSales: Number(totals?.completedSales || 0), pendingSales: Number(totals?.pendingSales || 0),
+              completedOrderCount: Number(totals?.completedOrderCount || 0), orderCount: Number(totals?.orderCount || 0),
+              customerCount: Number(customerCount?.count || 0), customersWithOrders: Number(customersWithOrders?.count || 0),
+            },
+            notifications: pending.results.map(row => ({ type: "order", title: `訂單 ${row.order_number} 待處理`, status: row.status, customer: row.customer_name || "會員", time: utcDateString(row.created_at) })),
+          });
+        }
+
+      }
+
+      if (url.pathname === "/api/cart" && request.method === "GET") {
+        const guestId = getGuestId(request, storefrontChannel);
+        return json(request, await cartSummary(env, guestId, storefrontChannel), 200, guestId);
+      }
+
+      if (url.pathname === "/api/cart/add" && request.method === "POST") {
+        const body = await parseBody(request);
+        const lookup = String(body.productId || body.title || "").trim();
+        const product = await findProduct(env, lookup);
+        if (!product) return json(request, { error: "找不到此商品，請重新整理商品頁。" }, 404);
+
+        const storeProduct = productFromRow(product);
+        const requestedOptions = body.options && typeof body.options === "object" && !Array.isArray(body.options) ? body.options as Record<string, unknown> : {};
+        const variants = storeProduct.variants && typeof storeProduct.variants === "object" ? storeProduct.variants : {};
+        const requiredFlavorCount = Math.max(0, Number(variants.flavorCount || 0));
+        if (requiredFlavorCount > 1) {
+          const selectedFlavors = Array.isArray(requestedOptions.flavors) ? [...new Set(requestedOptions.flavors.map(value => String(value).trim()).filter(Boolean))] : [];
+          if (selectedFlavors.length !== requiredFlavorCount) return json(request, { error: `請選擇${requiredFlavorCount}種口味。` }, 400);
+        }
+        const variant = productVariant(storeProduct, requestedOptions);
+        const selectedOptions = variant ? { ...(variant.flavorCount > 1 ? { flavors: variant.flavors } : (variant.flavor ? { flavor: variant.flavor } : {})), size: variant.size, temperature: variant.temperature, sugar: variant.sugar } : {};
+        const selectedVariantKey = variantKey(variant);
+        const guestId = getGuestId(request, storefrontChannel);
+        const quantity = Math.min(99, Math.max(1, Number(body.qty || 1)));
+        await env.DB.prepare(`
+          INSERT INTO cart_items (storefront_channel, guest_id, product_id, variant_key, selected_options_json, quantity)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+          ON CONFLICT (storefront_channel, guest_id, product_id, variant_key)
+          DO UPDATE SET quantity = quantity + excluded.quantity,
+            selected_options_json = excluded.selected_options_json,
+            updated_at = CURRENT_TIMESTAMP
+        `).bind(storefrontChannel, guestId, product.db_id, selectedVariantKey, JSON.stringify(selectedOptions), quantity).run();
+        return json(request, await cartSummary(env, guestId, storefrontChannel), 200, guestId);
+      }
+
+      if (url.pathname === "/api/cart/item" && (request.method === "PATCH" || request.method === "DELETE")) {
+        const body = await parseBody(request);
+        const lookup = String(body.productId || "").trim();
+        const product = await findProduct(env, lookup);
+        if (!product) return json(request, { error: "購物車商品不存在。" }, 404);
+        const guestId = getGuestId(request, storefrontChannel);
+        const separator = lookup.indexOf("::");
+        const selectedVariantKey = separator >= 0 ? lookup.slice(separator + 2) : "";
+        const quantity = Number(body.qty || 0);
+        if (request.method === "DELETE" || quantity <= 0) {
+          await env.DB.prepare("DELETE FROM cart_items WHERE storefront_channel = ?1 AND guest_id = ?2 AND product_id = ?3 AND variant_key = ?4").bind(storefrontChannel, guestId, product.db_id, selectedVariantKey).run();
+        } else {
+          await env.DB.prepare("UPDATE cart_items SET quantity = ?1, updated_at = CURRENT_TIMESTAMP WHERE storefront_channel = ?2 AND guest_id = ?3 AND product_id = ?4 AND variant_key = ?5").bind(Math.min(99, quantity), storefrontChannel, guestId, product.db_id, selectedVariantKey).run();
+        }
+        return json(request, await cartSummary(env, guestId, storefrontChannel), 200, guestId);
+      }
+
+      if (url.pathname === "/api/cart/quote" && request.method === "POST") {
+        const body = await parseBody(request);
+        const guestId = getGuestId(request, storefrontChannel);
+        const cart = await cartSummary(env, guestId, storefrontChannel);
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        const quote = await calculateCartQuote(
+          env,
+          cart,
+          sessionUser,
+          body.couponCode,
+          body.shippingMethod,
+          body.redeemPoints,
+          storefrontChannel,
+        );
+        if (quote.error) return json(request, { error: quote.error }, 400, guestId);
+        return json(request, quote, 200, guestId);
+      }
+
+      if (url.pathname === "/api/register" && request.method === "POST") {
+        const body = await parseBody(request);
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
+        const password = String(body.password || "");
+        const name = String(body.name || email.split("@")[0] || "Customer").trim();
+        const phone = String(body.phone || "").trim();
+        if (!/^\S+@\S+\.\S+/.test(email) || password.length < 6) {
+          return json(request, { error: "請填寫有效的 Email 與密碼。" }, 400);
+        }
+        const existing = await env.DB.prepare("SELECT id FROM users WHERE lower(email) = ?1 LIMIT 1").bind(email).first<{ id: number }>();
+        if (existing) return json(request, { error: "此 Email 已註冊。" }, 409);
+
+        const credentials = await createPasswordHash(password);
+        const inserted = await env.DB.prepare(`
+          INSERT INTO users (name, email, phone, password_salt, password_hash, storefront_channel)
+          VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+        `).bind(name, email, phone, credentials.salt, credentials.hash, storefrontChannel).run();
+        const userId = Number(inserted.meta.last_row_id);
+        const sessionToken = randomToken();
+        await env.DB.prepare("INSERT INTO sessions (token, user_id, expires_at, storefront_channel) VALUES (?1, ?2, ?3, ?4)")
+          .bind(sessionToken, userId, Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS, storefrontChannel).run();
+        const user = await env.DB.prepare("SELECT id, name, email, phone, role, password_salt, password_hash FROM users WHERE id = ?1").bind(userId).first<UserRow>();
+        return json(request, { user: user ? publicUser(user) : null }, 201, undefined, sessionToken);
+      }
+
+      if (url.pathname === "/api/login" && request.method === "POST") {
+        const body = await parseBody(request);
+        const login = String(body.login || body.email || "").trim().toLowerCase();
+        const loginEmail = login === "admin" ? "__admin_alias__" : login;
+        const password = String(body.password || "");
+        const user = await env.DB.prepare(`
+          SELECT id, name, email, phone, role, storefront_channel, password_salt, password_hash,
+                 mfa_enabled, mfa_secret_ciphertext
+          FROM users
+          WHERE (lower(email) = ?1
+             OR lower(name) = ?1
+             OR (?2 = 'admin' AND role = 'admin'))
+            AND (storefront_channel = ?3 OR role = 'admin')
+          LIMIT 1
+        `).bind(loginEmail, login, storefrontChannel).first<UserRow>();
+        if (!user || !(await verifyPassword(password, user))) {
+          return json(request, { error: "帳號或密碼錯誤。" }, 401);
+        }
+        if (user.role === "admin" && Number(user.mfa_enabled) === 1) {
+          const secret = await decryptMfaSecret(env, user.mfa_secret_ciphertext);
+          if (!secret) return json(request, { error: "管理員 MFA 尚未完成設定，請聯絡系統管理員。", code: "MFA_NOT_CONFIGURED" }, 503);
+          const step = await verifyTotp(secret, body.mfaCode || body.otp);
+          if (step === null) {
+            const hasCode = String(body.mfaCode || body.otp || "").trim().length > 0;
+            return json(request, {
+              error: hasCode ? "MFA 驗證碼錯誤。" : "請輸入 MFA 驗證碼。",
+              code: hasCode ? "MFA_INVALID" : "MFA_REQUIRED",
+              mfaRequired: true,
+            }, 401);
+          }
+          const consumed = await env.DB.prepare(`
+            UPDATE users
+            SET mfa_last_used_step = ?1, updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?2 AND (mfa_last_used_step IS NULL OR mfa_last_used_step < ?1)
+          `).bind(step, user.id).run();
+          if (!consumed.meta.changes) {
+            return json(request, { error: "MFA 驗證碼已使用，請輸入新的驗證碼。", code: "MFA_REPLAYED", mfaRequired: true }, 401);
+          }
+        }
+        const sessionToken = randomToken();
+        await env.DB.prepare("INSERT INTO sessions (token, user_id, expires_at, storefront_channel) VALUES (?1, ?2, ?3, ?4)")
+          .bind(sessionToken, user.id, Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS, storefrontChannel).run();
+        return json(request, { user: publicUser(user) }, 200, undefined, sessionToken);
+      }
+
+      if (url.pathname === "/api/logout" && request.method === "POST") {
+        const token = getCookie(request, channelCookie(SESSION_COOKIE, storefrontChannel))
+          || (storefrontChannel === "b2c" ? getCookie(request, SESSION_COOKIE) : "");
+        if (token) await env.DB.prepare("DELETE FROM sessions WHERE token = ?1 AND storefront_channel = ?2").bind(token, storefrontChannel).run();
+        return json(request, { ok: true }, 200, undefined, "");
+      }
+
+      if (url.pathname === "/api/me" && request.method === "GET") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "尚未登入。" }, 401);
+        const address = await env.DB.prepare(`
+          SELECT full_name AS fullName, phone, address, city, zip
+          FROM user_addresses
+          WHERE user_id = ?1
+          ORDER BY is_default DESC, id ASC
+          LIMIT 1
+        `).bind(user.id).first<Record<string, unknown>>();
+        const orderCount = await env.DB.prepare("SELECT COUNT(*) AS count FROM orders WHERE storefront_channel = ?1 AND user_id = ?2").bind(storefrontChannel, user.id).first<{ count: number }>();
+        return json(request, { user: publicUser(user), orderCount: Number(orderCount?.count || 0), address: address || null });
+      }
+
+      if (url.pathname === "/api/me" && request.method === "PUT") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "尚未登入。" }, 401);
+        const body = await parseBody(request);
+        const email = String(body.email || user.email || "").trim().toLowerCase();
+        const name = String(body.name || user.name || "").trim();
+        const phone = String(body.phone || "").trim();
+        if (!email || !email.includes("@")) return json(request, { error: "請填寫有效的 Email。" }, 400);
+        const duplicate = await env.DB.prepare("SELECT id FROM users WHERE lower(email) = ?1 AND id != ?2 LIMIT 1").bind(email, user.id).first<{ id: number }>();
+        if (duplicate) return json(request, { error: "此 Email 已被其他會員使用。" }, 409);
+        let salt = user.password_salt;
+        let hash = user.password_hash;
+        if (body.password) {
+          const credentials = await createPasswordHash(String(body.password));
+          salt = credentials.salt;
+          hash = credentials.hash;
+        }
+        await env.DB.prepare(`
+          UPDATE users
+          SET name = ?1, email = ?2, phone = ?3, password_salt = ?4, password_hash = ?5, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?6
+        `).bind(name, email, phone, salt, hash, user.id).run();
+        const updated = await env.DB.prepare("SELECT id, name, email, phone, role, password_salt, password_hash FROM users WHERE id = ?1").bind(user.id).first<UserRow>();
+        return json(request, { user: updated ? publicUser(updated) : null });
+      }
+
+      if (url.pathname === "/api/address" && request.method === "PUT") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "請先登入。" }, 401);
+        const body = await parseBody(request);
+        const values = [
+          String(body.fullName || "").trim(),
+          String(body.phone || "").trim(),
+          String(body.address || "").trim(),
+          String(body.city || "").trim(),
+          String(body.zip || "").trim(),
+        ];
+        const existing = await env.DB.prepare("SELECT id FROM user_addresses WHERE user_id = ?1 ORDER BY is_default DESC, id ASC LIMIT 1").bind(user.id).first<{ id: number }>();
+        if (existing) {
+          await env.DB.prepare(`UPDATE user_addresses SET full_name = ?1, phone = ?2, address = ?3, city = ?4, zip = ?5, updated_at = CURRENT_TIMESTAMP WHERE id = ?6`).bind(...values, existing.id).run();
+        } else {
+          await env.DB.prepare(`INSERT INTO user_addresses (user_id, label, full_name, phone, address, city, zip) VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6)`).bind(user.id, ...values).run();
+        }
+        return json(request, { user: publicUser(user) });
+      }
+
+      if (url.pathname === "/api/orders" && request.method === "GET") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "請先登入。" }, 401);
+        const result = await env.DB.prepare(`
+          SELECT order_number AS id, total_amount AS total, status, created_at AS createdAt,
+                 shipping_method AS shippingMethod, fulfillment_date AS fulfillmentDate,
+                 tracking_number AS trackingNumber, shipping_address AS shippingAddress,
+                 customer_note AS customerNote
+          FROM orders
+          WHERE storefront_channel = ?1 AND user_id = ?2
+          ORDER BY created_at DESC
+        `).bind(storefrontChannel, user.id).all<Record<string, unknown>>();
+        return json(request, { orders: result.results.map(order => ({ ...order, createdAt: utcDateString(order.createdAt) })) });
+      }
+
+      if (url.pathname === "/api/points" && request.method === "GET") {
+        const user = await getSessionUser(env, request, storefrontChannel);
+        if (!user) return json(request, { error: "請先登入。" }, 401);
+        const rule = await readMemberPointRule(env, storefrontChannel);
+        const balance = await env.DB.prepare(`
+          SELECT COALESCE(SUM(points), 0) AS points
+          FROM member_point_transactions
+          WHERE storefront_channel = ?1 AND user_id = ?2
+        `).bind(storefrontChannel, user.id).first<{ points: number }>();
+        const transactions = await env.DB.prepare(`
+          SELECT id, points, description, source_type AS sourceType, source_id AS sourceId, created_at AS createdAt
+          FROM member_point_transactions
+          WHERE storefront_channel = ?1 AND user_id = ?2
+          ORDER BY created_at DESC, id DESC
+          LIMIT 100
+        `).bind(storefrontChannel, user.id).all<Record<string, unknown>>();
+        return json(request, {
+          rule: publicMemberPointRule(rule),
+          points: Number(balance?.points || 0),
+          transactions: transactions.results.map(transaction => ({
+            ...transaction,
+            points: Number(transaction.points || 0),
+            createdAt: utcDateString(transaction.createdAt),
+          })),
+        });
+      }
+
+      if (url.pathname === "/api/checkout" && request.method === "POST") {
+        const body = await parseBody(request);
+        const guestId = getGuestId(request, storefrontChannel);
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        if (!sessionUser) return json(request, { error: "請先登入會員，再完成結帳，訂單才會同步到會員後台。" }, 401);
+        const cart = await cartSummary(env, guestId, storefrontChannel);
+        if (!cart.items.length) return json(request, { error: "購物車是空的。" }, 400);
+
+        const quote = await calculateCartQuote(
+          env,
+          cart,
+          sessionUser,
+          body.couponCode,
+          body.shippingMethod,
+          body.redeemPoints,
+          storefrontChannel,
+        );
+        if ("error" in quote) return json(request, { error: quote.error }, 400);
+        const shippingMethod = quote.shippingMethod;
+        const shippingFee = quote.shippingFee;
+        const discount = quote.discount;
+        const couponDiscountAmount = quote.couponDiscount;
+        const memberDiscountAmount = quote.memberDiscount;
+        const pointsRedeemed = quote.pointsRedeemed;
+        const pointsDiscountAmount = quote.pointsDiscount;
+        const total = quote.total;
+        const fulfillmentDate = String(body.fulfillmentDate || "").trim();
+        const requestedAddress = body.shippingAddress && typeof body.shippingAddress === "object"
+          ? body.shippingAddress as Record<string, unknown>
+          : {};
+        const savedAddress = sessionUser
+          ? await env.DB.prepare("SELECT full_name AS fullName, phone, address, city, zip FROM user_addresses WHERE user_id = ?1 ORDER BY is_default DESC, id ASC LIMIT 1").bind(sessionUser.id).first<Record<string, unknown>>()
+          : null;
+        const shippingAddress = { ...(savedAddress || {}), ...requestedAddress };
+        const name = String(shippingAddress.fullName || sessionUser?.name || body.name || "").trim();
+        const email = String(body.email || sessionUser?.email || "").trim().toLowerCase();
+        const phone = String(shippingAddress.phone || sessionUser?.phone || body.phone || "").trim();
+        const address = String(shippingAddress.address || "").trim();
+        if (!name || !email || !phone || !fulfillmentDate) {
+          return json(request, { error: "請填寫姓名、電子信箱、電話與取貨／配送日期。" }, 400);
+        }
+        if (shippingMethod !== "pickup" && (!address || !String(shippingAddress.city || "").trim() || !String(shippingAddress.zip || "").trim())) {
+          return json(request, { error: "宅配訂單請填寫地址、縣市與郵遞區號。" }, 400);
+        }
+
+        const orderNumber = `S${Date.now().toString(36).toUpperCase()}`;
+        const addressJson = JSON.stringify({
+          fullName: name,
+          phone,
+          address,
+          city: String(shippingAddress.city || "").trim(),
+          zip: String(shippingAddress.zip || "").trim(),
+        });
+
+        const statements: D1PreparedStatement[] = [env.DB.prepare(`
+          INSERT INTO orders (
+            storefront_channel, user_id, order_number, total_amount, status, customer_name, customer_email,
+            customer_phone, shipping_method, shipping_address, fulfillment_date,
+            customer_note, shipping_fee, discount_amount, coupon_code,
+            coupon_discount_amount, member_discount_amount, points_redeemed,
+            points_discount_amount
+          )
+          SELECT ?1, ?2, ?3, ?4, 'pending_payment', ?5, ?6, ?7, ?8, ?9, ?10,
+                 ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18, ?19
+          WHERE ?17 = 0 OR (
+            SELECT COALESCE(SUM(points), 0)
+            FROM member_point_transactions
+            WHERE storefront_channel = ?1 AND user_id = ?2
+          ) >= ?17
+        `).bind(
+          storefrontChannel,
+          sessionUser.id,
+          orderNumber,
+          total,
+          name,
+          email,
+          phone,
+          shippingMethod,
+          addressJson,
+          fulfillmentDate,
+          String(body.customerNote || "").trim(),
+          shippingFee,
+          discount,
+          quote.couponCode,
+          couponDiscountAmount,
+          memberDiscountAmount,
+          pointsRedeemed,
+          pointsDiscountAmount,
+        )];
+        for (const item of cart.items) {
+          const product = await findProduct(env, item.id);
+          statements.push(env.DB.prepare(`
+            INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
+            SELECT id, ?3, ?4, ?5, ?6
+            FROM orders
+            WHERE order_number = ?1 AND storefront_channel = ?2
+          `).bind(orderNumber, storefrontChannel, product?.db_id || null, item.title, item.priceValue, item.qty));
+        }
+        if (pointsRedeemed > 0) {
+          statements.push(env.DB.prepare(`
+            INSERT INTO member_point_transactions
+              (storefront_channel, user_id, points, description, source_type, source_id)
+            SELECT ?1, ?2, ?3, ?4, 'order_redeem', ?5
+            WHERE EXISTS (SELECT 1 FROM orders WHERE storefront_channel = ?1 AND order_number = ?5)
+              AND (SELECT COALESCE(SUM(points), 0) FROM member_point_transactions WHERE storefront_channel = ?1 AND user_id = ?2) >= ?6
+          `).bind(
+            storefrontChannel,
+            sessionUser.id,
+            -pointsRedeemed,
+            `訂單 ${orderNumber} 點數折抵`,
+            orderNumber,
+            pointsRedeemed,
+          ));
+        }
+        const batchResults = await env.DB.batch(statements);
+        if (!batchResults[0]?.meta.changes) {
+          return json(request, { error: "點數餘額已更新，請重新整理購物車後再試。" }, 409);
+        }
+
+        const order = await env.DB.prepare("SELECT * FROM orders WHERE storefront_channel = ?1 AND order_number = ?2").bind(storefrontChannel, orderNumber).first<Record<string, unknown>>();
+        for (const item of cart.items) {
+          const product = await findProduct(env, item.id);
+          await env.DB.prepare(`
+            INSERT INTO order_items (order_id, product_id, product_name, price, quantity)
+            VALUES (?1, ?2, ?3, ?4, ?5)
+          `).bind(order?.id, product?.db_id || null, item.title, item.priceValue, item.qty).run();
+        }
+        if (sessionUser) {
+          await env.DB.prepare(`
+            UPDATE users SET name = ?1, phone = ?2, updated_at = CURRENT_TIMESTAMP WHERE id = ?3
+          `).bind(name, phone, sessionUser.id).run();
+
+          const city = String(shippingAddress.city || "").trim();
+          const zip = String(shippingAddress.zip || "").trim();
+          if (address || city || zip) {
+            const existingAddress = await env.DB.prepare(`
+              SELECT id FROM user_addresses WHERE user_id = ?1 ORDER BY is_default DESC, id ASC LIMIT 1
+            `).bind(sessionUser.id).first<{ id: number }>();
+            if (existingAddress) {
+              await env.DB.prepare(`
+                UPDATE user_addresses
+                SET full_name = ?1, phone = ?2, address = ?3, city = ?4, zip = ?5, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?6
+              `).bind(name, phone, address, city, zip, existingAddress.id).run();
+            } else {
+              await env.DB.prepare(`
+                INSERT INTO user_addresses (user_id, label, full_name, phone, address, city, zip)
+                VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6)
+              `).bind(sessionUser.id, name, phone, address, city, zip).run();
+            }
+          }
+        }
+        await env.DB.prepare("DELETE FROM cart_items WHERE storefront_channel = ?1 AND guest_id = ?2").bind(storefrontChannel, guestId).run();
+        return json(request, {
+          order: { ...order, id: orderNumber, total },
+          email: { status: "pending", recipient: email },
+        }, 201, guestId);
+      }
+
+      if (url.pathname === "/api/line-pay/request" && request.method === "POST") {
+        const sessionUser = await getSessionUser(env, request, storefrontChannel);
+        if (!sessionUser) return json(request, { error: "請先登入會員，再使用 LINE Pay 付款。" }, 401);
+        const body = await parseBody(request);
+        const orderId = String(body.orderId || "").trim();
+        if (!orderId) return json(request, { error: "找不到待付款訂單。" }, 400);
+
+        const row = await env.DB.prepare(`
+          SELECT * FROM orders WHERE storefront_channel = ?1 AND order_number = ?2 AND user_id = ?3 LIMIT 1
+        `).bind(storefrontChannel, orderId, sessionUser.id).first<Record<string, unknown>>();
+        if (!row) return json(request, { error: "找不到待付款訂單。" }, 404);
+        if (String(row.payment_status || "") === "paid") return json(request, { error: "此訂單已完成付款。" }, 409);
+        if (String(row.payment_status || "") === "pending" && String(row.payment_url || "").trim()) {
+          return json(request, { orderId, paymentUrl: String(row.payment_url) });
+        }
+
+        const config = linePayConfig(env);
+        if (!config.channelId || !config.channelSecret) {
+          return json(request, { error: "LINE Pay 正式環境尚未設定，請聯絡店家。" }, 503);
+        }
+        const amount = Math.round(Number(row.total_amount || 0));
+        if (!Number.isFinite(amount) || amount <= 0) return json(request, { error: "訂單金額無效。" }, 400);
+        const paymentRequestId = `${orderId}-${randomToken().slice(0, 12)}`;
+        const paymentBody = {
+          amount,
+          currency: "TWD",
+          orderId: paymentRequestId,
+          packages: [{
+            id: paymentRequestId,
+            amount,
+            products: [{ id: orderId, name: `森森點心坊訂單 ${orderId}`, quantity: 1, price: amount }],
+          }],
+          redirectUrls: {
+            confirmUrl: `${config.siteOrigin}/api/line-pay/confirm`,
+            cancelUrl: `${config.siteOrigin}/api/line-pay/cancel`,
+          },
+        };
+        const result = await callLinePay(env, `${LINE_PAY_API_PATH}/request`, paymentBody);
+        const returnCode = String(result.returnCode || "");
+        const info = (result.info || {}) as Record<string, unknown>;
+        const paymentUrl = String(((info.paymentUrl || {}) as Record<string, unknown>).web || "").trim();
+        const transactionId = String(info.transactionId || "").trim();
+        if (returnCode !== "0000" || !paymentUrl || !transactionId) {
+          console.error("LINE Pay request failed", { returnCode, message: result.returnMessage || result.statusMessage });
+          return json(request, { error: "目前無法連線到 LINE Pay，請稍後再試。" }, 502);
+        }
+        await env.DB.prepare(`
+          UPDATE orders
+          SET payment_method = 'linepay', payment_status = 'pending', payment_transaction_id = ?1,
+              payment_request_id = ?2, payment_url = ?3, status = 'pending_payment', updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?4
+        `).bind(transactionId, paymentRequestId, paymentUrl, row.id).run();
+        return json(request, { orderId, paymentUrl });
+      }
+
+      if (url.pathname === "/api/line-pay/confirm" && request.method === "GET") {
+        const paymentRequestId = String(url.searchParams.get("orderId") || "").trim();
+        const transactionId = String(url.searchParams.get("transactionId") || "").trim();
+        const row = paymentRequestId
+          ? await env.DB.prepare("SELECT * FROM orders WHERE payment_request_id = ?1 LIMIT 1").bind(paymentRequestId).first<Record<string, unknown>>()
+          : null;
+        if (!row || !transactionId || String(row.payment_transaction_id || "") !== transactionId) {
+          return paymentRedirect(env, String(row?.order_number || ""), "failed");
+        }
+        if (String(row.payment_status || "") === "paid") return paymentRedirect(env, String(row.order_number), "success");
+
+        const amount = Math.round(Number(row.total_amount || 0));
+        const result = await callLinePay(env, `${LINE_PAY_API_PATH}/${encodeURIComponent(transactionId)}/confirm`, { amount, currency: "TWD" });
+        if (String(result.returnCode || "") !== "0000") {
+          console.error("LINE Pay confirmation failed", { returnCode: result.returnCode, message: result.returnMessage || result.statusMessage });
+          await env.DB.prepare("UPDATE orders SET payment_status = 'failed', updated_at = CURRENT_TIMESTAMP WHERE id = ?1").bind(row.id).run();
+          return paymentRedirect(env, String(row.order_number), "failed");
+        }
+        await env.DB.prepare(`
+          UPDATE orders
+          SET status = 'processing', payment_status = 'paid', paid_at = CURRENT_TIMESTAMP, updated_at = CURRENT_TIMESTAMP
+          WHERE id = ?1
+        `).bind(row.id).run();
+        const items = await env.DB.prepare(`
+          SELECT oi.product_name AS title, oi.price AS priceValue, oi.quantity AS qty
+          FROM order_items oi
+          WHERE oi.order_id = ?1 ORDER BY oi.id ASC
+        `).bind(row.id).all<Record<string, unknown>>();
+        await sendOrderCreatedEmail({ ...row, status: "processing", payment_status: "paid" }, items.results);
+        return paymentRedirect(env, String(row.order_number), "success");
+      }
+
+      if (url.pathname === "/api/line-pay/cancel" && request.method === "GET") {
+        const paymentRequestId = String(url.searchParams.get("orderId") || "").trim();
+        const row = paymentRequestId
+          ? await env.DB.prepare("SELECT id, order_number FROM orders WHERE payment_request_id = ?1 LIMIT 1").bind(paymentRequestId).first<{ id: number; order_number: string }>()
+          : null;
+        if (row) await env.DB.prepare("UPDATE orders SET payment_status = 'cancelled', updated_at = CURRENT_TIMESTAMP WHERE id = ?1 AND payment_status != 'paid'").bind(row.id).run();
+        return paymentRedirect(env, String(row?.order_number || ""), "cancelled");
+      }
+
+      if (url.pathname.startsWith("/images/") && request.method === "GET") {
+        return imageResponse(request, env);
+      }
+
+      if (url.pathname.startsWith("/api/") || url.pathname === "/health") {
+        return json(request, { error: "找不到 API 路徑。" }, 404);
+      }
+      return json(request, { error: "找不到 API 路徑。" }, 404);
+    } catch (error) {
+      const requestId = crypto.randomUUID();
+      const detail = error instanceof Error ? error.message : String(error);
+      if (error instanceof PayloadTooLargeError) {
+        return json(request, { error: "請求內容過大。" }, 413);
+      }
+      const message = /no such table|no such column/i.test(detail)
+        ? "會員資料庫尚未完成初始化，請先執行 D1 migration。"
+        : "服務暫時無法處理請求。";
+      console.error(JSON.stringify({ event: "worker_request_failed", requestId, method: request.method, path: url.pathname, detail }));
+      return json(request, { error: message, requestId }, 500);
+    }
+  },
+  async scheduled(controller, env): Promise<void> {
+    try {
+      await cleanupExpiredSessions(env, controller.scheduledTime);
+    } catch (error) {
+      console.error(JSON.stringify({
+        event: "expired_sessions_cleanup_failed",
+        detail: error instanceof Error ? error.message : String(error),
+      }));
+      throw error;
+    }
+  },
+} satisfies ExportedHandler<Env>;
