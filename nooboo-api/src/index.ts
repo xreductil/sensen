@@ -1,14 +1,12 @@
 const JSON_CONTENT_TYPE = "application/json; charset=utf-8";
-const GUEST_COOKIE = "nooboo_guest";
-const SESSION_COOKIE = "nooboo_session";
+const GUEST_COOKIE = "guest";
+const SESSION_COOKIE = "session";
 type StorefrontChannel = "b2c" | "b2b";
-const channelCookie = (prefix: string, channel: StorefrontChannel) => `${prefix}_${channel}`;
 const getStorefrontChannel = (request: Request): StorefrontChannel =>
   request.headers.get("X-Storefront-Channel")?.trim().toLowerCase() === "b2b" ? "b2b" : "b2c";
 const getConfiguredStorefrontChannel = (env: Env): StorefrontChannel =>
   String(env.STOREFRONT_CHANNEL || "").trim().toLowerCase() === "b2b" ? "b2b" : "b2c";
 const VERCEL_EMAIL_ENDPOINT = "https://nooboo.vercel.app/api/send-email";
-const SESSION_TTL_SECONDS = 30 * 24 * 60 * 60;
 const MFA_SETUP_TTL_SECONDS = 10 * 60;
 const TOTP_STEP_SECONDS = 30;
 const MAX_JSON_BODY_BYTES = 512 * 1024;
@@ -16,15 +14,99 @@ const MAX_UPLOAD_BYTES = 8 * 1024 * 1024;
 const MAX_UPLOAD_FILES = 10;
 const MAX_UPLOAD_TOTAL_BYTES = 20 * 1024 * 1024;
 const MAX_UPLOAD_REQUEST_BYTES = 22 * 1024 * 1024;
-const RATE_LIMIT_RETRY_AFTER_SECONDS = 60;
-const ALLOWED_ORIGINS = new Set([
+const SECURITY_CONTEXT_HEADER = "X-Nooboo-Worker-Security";
+const DEFAULT_ALLOWED_ORIGINS = [
   "https://nooboo.vercel.app",
   "http://localhost:3000",
   "http://localhost:5173",
   "http://127.0.0.1:3000",
   "http://127.0.0.1:5173",
-]);
-const SECURITY_HEADERS: Record<string, string> = {
+];
+
+type SecurityRuntimeConfig = {
+  allowedOrigins: Set<string>;
+  sessionTtlSeconds: number;
+  rateLimitRetryAfterSeconds: number;
+  cookieNamespace: string;
+  mfaIssuer: string;
+  cspConnectSrc: string;
+};
+
+const DEFAULT_SECURITY_CONFIG: SecurityRuntimeConfig = {
+  allowedOrigins: new Set(DEFAULT_ALLOWED_ORIGINS),
+  sessionTtlSeconds: 30 * 24 * 60 * 60,
+  rateLimitRetryAfterSeconds: 60,
+  cookieNamespace: "nooboo",
+  mfaIssuer: "nooboo Admin",
+  cspConnectSrc: "'self' https://nooboo-api.jinfeng8605.workers.dev https://api.line.me",
+};
+
+const parseBoundedInteger = (value: unknown, fallback: number, minimum: number, maximum: number) => {
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isInteger(parsed) && parsed >= minimum && parsed <= maximum ? parsed : fallback;
+};
+
+const getSecurityConfig = (env: Env): SecurityRuntimeConfig => {
+  const bindings = env as unknown as Record<string, unknown>;
+  const origins = String(bindings.SECURITY_CORS_ALLOWED_ORIGINS || "")
+    .split(",")
+    .map(value => value.trim())
+    .filter(Boolean);
+  const cookieNamespace = String(bindings.SECURITY_COOKIE_NAMESPACE || "").trim();
+  return {
+    allowedOrigins: new Set(origins.length ? origins : DEFAULT_ALLOWED_ORIGINS),
+    sessionTtlSeconds: parseBoundedInteger(bindings.SECURITY_SESSION_TTL_SECONDS, DEFAULT_SECURITY_CONFIG.sessionTtlSeconds, 300, 365 * 24 * 60 * 60),
+    rateLimitRetryAfterSeconds: parseBoundedInteger(bindings.SECURITY_RATE_LIMIT_RETRY_AFTER_SECONDS, DEFAULT_SECURITY_CONFIG.rateLimitRetryAfterSeconds, 1, 3600),
+    cookieNamespace: /^[A-Za-z0-9_-]{3,32}$/.test(cookieNamespace) ? cookieNamespace : DEFAULT_SECURITY_CONFIG.cookieNamespace,
+    mfaIssuer: String(bindings.SECURITY_MFA_ISSUER || DEFAULT_SECURITY_CONFIG.mfaIssuer).trim().slice(0, 64) || DEFAULT_SECURITY_CONFIG.mfaIssuer,
+    cspConnectSrc: String(bindings.SECURITY_CSP_CONNECT_SRC || DEFAULT_SECURITY_CONFIG.cspConnectSrc).trim() || DEFAULT_SECURITY_CONFIG.cspConnectSrc,
+  };
+};
+
+const securityContext = (config: SecurityRuntimeConfig) => JSON.stringify({
+  allowedOrigins: Array.from(config.allowedOrigins),
+  sessionTtlSeconds: config.sessionTtlSeconds,
+  rateLimitRetryAfterSeconds: config.rateLimitRetryAfterSeconds,
+  cookieNamespace: config.cookieNamespace,
+  mfaIssuer: config.mfaIssuer,
+  cspConnectSrc: config.cspConnectSrc,
+});
+
+const getSecurityConfigFromRequest = (request: Request): SecurityRuntimeConfig => {
+  try {
+    const parsed = JSON.parse(request.headers.get(SECURITY_CONTEXT_HEADER) || "") as Partial<{
+      allowedOrigins: string[];
+      sessionTtlSeconds: number;
+      rateLimitRetryAfterSeconds: number;
+      cookieNamespace: string;
+      mfaIssuer: string;
+      cspConnectSrc: string;
+    }>;
+    const allowedOrigins = Array.isArray(parsed.allowedOrigins) && parsed.allowedOrigins.length
+      ? new Set(parsed.allowedOrigins.filter(value => typeof value === "string" && value.trim()).map(value => value.trim()))
+      : DEFAULT_SECURITY_CONFIG.allowedOrigins;
+    return {
+      allowedOrigins,
+      sessionTtlSeconds: parseBoundedInteger(parsed.sessionTtlSeconds, DEFAULT_SECURITY_CONFIG.sessionTtlSeconds, 300, 365 * 24 * 60 * 60),
+      rateLimitRetryAfterSeconds: parseBoundedInteger(parsed.rateLimitRetryAfterSeconds, DEFAULT_SECURITY_CONFIG.rateLimitRetryAfterSeconds, 1, 3600),
+      cookieNamespace: typeof parsed.cookieNamespace === "string" && /^[A-Za-z0-9_-]{3,32}$/.test(parsed.cookieNamespace)
+        ? parsed.cookieNamespace
+        : DEFAULT_SECURITY_CONFIG.cookieNamespace,
+      mfaIssuer: typeof parsed.mfaIssuer === "string" && parsed.mfaIssuer.trim()
+        ? parsed.mfaIssuer.trim().slice(0, 64)
+        : DEFAULT_SECURITY_CONFIG.mfaIssuer,
+      cspConnectSrc: typeof parsed.cspConnectSrc === "string" && parsed.cspConnectSrc.trim()
+        ? parsed.cspConnectSrc.trim()
+        : DEFAULT_SECURITY_CONFIG.cspConnectSrc,
+    };
+  } catch {
+    return DEFAULT_SECURITY_CONFIG;
+  }
+};
+
+const securityCookie = (request: Request, base: string) => `${getSecurityConfigFromRequest(request).cookieNamespace}_${base}`;
+
+const securityHeaders = (config: SecurityRuntimeConfig): Record<string, string> => ({
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
@@ -40,13 +122,13 @@ const SECURITY_HEADERS: Record<string, string> = {
     "font-src 'self' data: https://fonts.gstatic.com",
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "script-src 'self' https://static.line-scdn.net",
-    "connect-src 'self' https://nooboo-api.jinfeng8605.workers.dev https://api.line.me",
+    `connect-src ${config.cspConnectSrc}`,
   ].join("; "),
-};
+});
 
 class PayloadTooLargeError extends Error {}
 
-const isAllowedOrigin = (origin: string | null) => !origin || ALLOWED_ORIGINS.has(origin);
+const isAllowedOrigin = (origin: string | null, config: SecurityRuntimeConfig) => !origin || config.allowedOrigins.has(origin);
 
 const isUnsafeRequest = (request: Request) => !["GET", "HEAD", "OPTIONS"].includes(request.method);
 
@@ -57,13 +139,13 @@ const clientRateLimitKey = (request: Request, scope: string) => {
 
 const rateLimitedResponse = (request: Request) => {
   const response = json(request, { error: "請求過於頻繁，請稍後再試。" }, 429);
-  response.headers.set("Retry-After", String(RATE_LIMIT_RETRY_AFTER_SECONDS));
+  response.headers.set("Retry-After", String(getSecurityConfigFromRequest(request).rateLimitRetryAfterSeconds));
   return response;
 };
 
 const rateLimitUnavailableResponse = (request: Request) => {
   const response = json(request, { error: "流量防護暫時無法使用，請稍後再試。" }, 503);
-  response.headers.set("Retry-After", String(RATE_LIMIT_RETRY_AFTER_SECONDS));
+  response.headers.set("Retry-After", String(getSecurityConfigFromRequest(request).rateLimitRetryAfterSeconds));
   return response;
 };
 
@@ -380,20 +462,20 @@ const awardCompletedOrderPoints = async (env: Env, order: Record<string, unknown
 };
 
 const getGuestId = (request: Request, channel: StorefrontChannel = getStorefrontChannel(request)) => {
-  const scoped = getCookie(request, channelCookie(GUEST_COOKIE, channel));
+  const scoped = getCookie(request, securityCookie(request, GUEST_COOKIE));
   if (scoped) return scoped;
-  // Preserve carts created before channel partitioning for the B2C channel.
-  return channel === "b2c" ? (getCookie(request, GUEST_COOKIE) || crypto.randomUUID()) : crypto.randomUUID();
+  return crypto.randomUUID();
 };
 
 const responseHeaders = (request: Request, extra: Record<string, string> = {}) => {
   const origin = request.headers.get("Origin");
+  const config = getSecurityConfigFromRequest(request);
   const headers: Record<string, string> = {
     "Content-Type": JSON_CONTENT_TYPE,
-    ...SECURITY_HEADERS,
+    ...securityHeaders(config),
     ...extra,
   };
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
+  if (origin && config.allowedOrigins.has(origin)) {
     headers["Access-Control-Allow-Origin"] = origin;
     headers["Access-Control-Allow-Credentials"] = "true";
     headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, PATCH, DELETE, OPTIONS";
@@ -408,19 +490,17 @@ const responseHeaders = (request: Request, extra: Record<string, string> = {}) =
 const json = (request: Request, body: unknown, status = 200, guestId?: string, sessionToken?: string) => {
   const headers = new Headers(responseHeaders(request));
   const channel = getStorefrontChannel(request);
+  const config = getSecurityConfigFromRequest(request);
   const secureCookie = new URL(request.url).protocol === "https:" ? "; Secure" : "";
   if (guestId) {
-    headers.append("Set-Cookie", `${channelCookie(GUEST_COOKIE, channel)}=${encodeURIComponent(guestId)}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secureCookie}`);
+    headers.append("Set-Cookie", `${securityCookie(request, GUEST_COOKIE)}=${encodeURIComponent(guestId)}; Path=/; Max-Age=31536000; HttpOnly; SameSite=Lax${secureCookie}`);
   }
   if (sessionToken !== undefined) {
-    const sessionCookieName = channelCookie(SESSION_COOKIE, channel);
+    const sessionCookieName = securityCookie(request, SESSION_COOKIE);
     const cookie = sessionToken
-      ? `${sessionCookieName}=${encodeURIComponent(sessionToken)}; Path=/; Max-Age=${SESSION_TTL_SECONDS}; HttpOnly; SameSite=Lax${secureCookie}`
+      ? `${sessionCookieName}=${encodeURIComponent(sessionToken)}; Path=/; Max-Age=${config.sessionTtlSeconds}; HttpOnly; SameSite=Lax${secureCookie}`
       : `${sessionCookieName}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureCookie}`;
     headers.append("Set-Cookie", cookie);
-    if (!sessionToken && channel === "b2c") {
-      headers.append("Set-Cookie", `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureCookie}`);
-    }
   }
   return new Response(JSON.stringify(body), { status, headers });
 };
@@ -656,9 +736,9 @@ const verifyTotp = async (secret: string, code: unknown) => {
   return null;
 };
 
-const totpUri = (email: string, secret: string) => {
-  const label = encodeURIComponent(`nooboo Admin:${email}`);
-  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent("nooboo")}&algorithm=SHA1&digits=6&period=${TOTP_STEP_SECONDS}`;
+const totpUri = (email: string, secret: string, issuer: string) => {
+  const label = encodeURIComponent(`${issuer}:${email}`);
+  return `otpauth://totp/${label}?secret=${secret}&issuer=${encodeURIComponent(issuer)}&algorithm=SHA1&digits=6&period=${TOTP_STEP_SECONDS}`;
 };
 
 const linePayAuthorization = async (channelSecret: string, message: string) => {
@@ -757,8 +837,7 @@ const verifyPassword = async (password: string, user: UserRow) => {
 };
 
 const getSessionUser = async (env: Env, request: Request, channel: StorefrontChannel = getStorefrontChannel(request)) => {
-  const token = getCookie(request, channelCookie(SESSION_COOKIE, channel))
-    || (channel === "b2c" ? getCookie(request, SESSION_COOKIE) : "");
+  const token = getCookie(request, securityCookie(request, SESSION_COOKIE));
   if (!token) return null;
   return env.DB.prepare(`
     SELECT u.id, u.name, u.email, u.phone, u.role, u.password_salt, u.password_hash,
@@ -1664,7 +1743,7 @@ const imageResponse = async (request: Request, env: Env) => {
   const object = await env.BUCKET.get("images/" + requestedKey);
   if (!object) return json(request, { error: "找不到圖片。" }, 404);
 
-  const headers = new Headers(SECURITY_HEADERS);
+  const headers = new Headers(securityHeaders(getSecurityConfigFromRequest(request)));
   object.writeHttpMetadata(headers);
   headers.set("etag", object.httpEtag);
   headers.set("cache-control", headers.get("cache-control") || "public, max-age=31536000, immutable");
@@ -1677,21 +1756,23 @@ export default {
     // overwrite the client-provided channel with the channel configured on
     // this Worker so a caller cannot select another backend's data set.
     const configuredChannel = getConfiguredStorefrontChannel(env);
+    const configuredSecurity = getSecurityConfig(env);
     const channelHeaders = new Headers(request.headers);
     channelHeaders.set("X-Storefront-Channel", configuredChannel);
+    channelHeaders.set(SECURITY_CONTEXT_HEADER, securityContext(configuredSecurity));
     request = new Request(request, { headers: channelHeaders });
     const url = new URL(request.url);
     const origin = request.headers.get("Origin");
     const storefrontChannel = getStorefrontChannel(request);
 
     if (request.method === "OPTIONS") {
-      if (!isAllowedOrigin(origin)) {
-        return new Response(null, { status: 403, headers: SECURITY_HEADERS });
+      if (!isAllowedOrigin(origin, configuredSecurity)) {
+        return new Response(null, { status: 403, headers: securityHeaders(configuredSecurity) });
       }
       return new Response(null, { status: 204, headers: responseHeaders(request) });
     }
 
-    if (isUnsafeRequest(request) && !isAllowedOrigin(origin)) {
+    if (isUnsafeRequest(request) && !isAllowedOrigin(origin, configuredSecurity)) {
       return json(request, { error: "不允許的請求來源。" }, 403);
     }
 
@@ -1935,7 +2016,7 @@ export default {
           return json(request, {
             enabled: false,
             secret,
-            otpAuthUrl: totpUri(String(admin.email || "admin"), secret),
+            otpAuthUrl: totpUri(String(admin.email || "admin"), secret, getSecurityConfig(env).mfaIssuer),
             expiresAt: now + MFA_SETUP_TTL_SECONDS,
           });
         }
@@ -2806,7 +2887,7 @@ export default {
         const userId = Number(inserted.meta.last_row_id);
         const sessionToken = randomToken();
         await env.DB.prepare("INSERT INTO sessions (token, user_id, expires_at, storefront_channel) VALUES (?1, ?2, ?3, ?4)")
-          .bind(sessionToken, userId, Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS, storefrontChannel).run();
+          .bind(sessionToken, userId, Math.floor(Date.now() / 1000) + getSecurityConfig(env).sessionTtlSeconds, storefrontChannel).run();
         const user = await env.DB.prepare("SELECT id, name, email, phone, role, password_salt, password_hash FROM users WHERE id = ?1").bind(userId).first<UserRow>();
         return json(request, { user: user ? publicUser(user) : null }, 201, undefined, sessionToken);
       }
@@ -2852,13 +2933,12 @@ export default {
         }
         const sessionToken = randomToken();
         await env.DB.prepare("INSERT INTO sessions (token, user_id, expires_at, storefront_channel) VALUES (?1, ?2, ?3, ?4)")
-          .bind(sessionToken, user.id, Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS, storefrontChannel).run();
+          .bind(sessionToken, user.id, Math.floor(Date.now() / 1000) + getSecurityConfig(env).sessionTtlSeconds, storefrontChannel).run();
         return json(request, { user: publicUser(user) }, 200, undefined, sessionToken);
       }
 
       if (url.pathname === "/api/logout" && request.method === "POST") {
-        const token = getCookie(request, channelCookie(SESSION_COOKIE, storefrontChannel))
-          || (storefrontChannel === "b2c" ? getCookie(request, SESSION_COOKIE) : "");
+        const token = getCookie(request, securityCookie(request, SESSION_COOKIE));
         if (token) await env.DB.prepare("DELETE FROM sessions WHERE token = ?1 AND storefront_channel = ?2").bind(token, storefrontChannel).run();
         return json(request, { ok: true }, 200, undefined, "");
       }

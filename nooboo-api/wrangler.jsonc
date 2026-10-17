@@ -20,7 +20,13 @@
   "vars": {
     "STOREFRONT_CHANNEL": "b2c",
     "LINE_PAY_ENV": "production",
-    "LINE_PAY_SITE_ORIGIN": "https://nooboo.vercel.app"
+    "LINE_PAY_SITE_ORIGIN": "https://nooboo.vercel.app",
+    "SECURITY_CORS_ALLOWED_ORIGINS": "https://nooboo.vercel.app,http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173",
+    "SECURITY_SESSION_TTL_SECONDS": "2592000",
+    "SECURITY_RATE_LIMIT_RETRY_AFTER_SECONDS": "60",
+    "SECURITY_COOKIE_NAMESPACE": "nooboo_b2c",
+    "SECURITY_MFA_ISSUER": "nooboo B2C Admin",
+    "SECURITY_CSP_CONNECT_SRC": "'self' https://nooboo-api-b2c.jinfeng8605.workers.dev https://api.line.me"
   },
   "d1_databases": [
     {
