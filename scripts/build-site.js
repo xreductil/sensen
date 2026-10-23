@@ -20,7 +20,7 @@ const WORDPRESS_EXPORT_FILES = [
 const MISSING_URLS_FILE = path.join(ROOT, ".firecrawl", "missing-urls.txt");
 const SITE_CSS_URL = "/assets/site.css?v=20261010-announcement-2";
 const STOREFRONT_PRODUCTS_SCRIPT_URL = "/assets/storefront-products.js?v=20261009-thumbnail-responsive-1";
-const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261009-thumbnail-responsive-1";
+const PRODUCT_DETAIL_SCRIPT_URL = "/assets/product-detail-purchase.js?v=20261023-top-house-product-details-1";
 const CART_DRAWER_SCRIPT_URL = "/assets/cart-drawer.js?v=20261009-cart-remove-icon-1";
 const CHECKOUT_SCRIPT_URL = "/assets/checkout-page.js?v=20261009-tiered-price-1";
 const HOME_NEWS_SCRIPT_URL = "/assets/home-news.js?v=20260912-home-news-thumbnails-2";
@@ -446,12 +446,12 @@ function topHouseProductCardMarkup([title, image, price, id], className = "", de
   const displayTitle = details.title || title;
   const displayDescription = details.description || description;
   const originalPrice = Number(details.originalPrice || price);
-  const priceMarkup = `<span class="cake-product-price">${escapeHtml(formatProductPrice(originalPrice))}</span>`;
-  const descriptionMarkup = displayDescription ? `<span class="cake-product-description">${escapeHtml(displayDescription)}</span>` : "";
+  const priceMarkup = `<span class="cake-product-price top-house-product-price">${escapeHtml(formatProductPrice(originalPrice))}</span>`;
+  const descriptionMarkup = displayDescription ? `<span class="cake-product-description top-house-product-description">${escapeHtml(displayDescription)}</span>` : "";
   const purchaseMarkup = withPurchase ? topHousePurchaseMarkup(id) : "";
   return `<article class="cake-product-card top-house-product-card${className ? ` ${className}` : ""}">
-    <a class="cake-product-card-link" href="${escapeAttr(href)}"><span class="cake-product-image"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span></a>
-    <div class="cake-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title">${escapeHtml(displayTitle)}</span>${priceMarkup}${descriptionMarkup}</a>${purchaseMarkup}</div>
+    <a class="cake-product-card-link top-house-product-card-link" href="${escapeAttr(href)}"><span class="cake-product-image top-house-product-image"><img src="/images/${escapeAttr(image)}" alt="${escapeAttr(title)}" loading="lazy"></span></a>
+    <div class="cake-product-meta top-house-product-meta"><a class="cake-product-title-link" href="${escapeAttr(href)}"><span class="cake-product-title top-house-product-title">${escapeHtml(displayTitle)}</span>${priceMarkup}${descriptionMarkup}</a>${purchaseMarkup}</div>
   </article>`;
 }
 
@@ -631,6 +631,18 @@ const TEA_PARTY_MENU_URL = "https://drive.google.com/file/d/1jnpC9z_6F_sbyKZ2E7f
 const TEA_PARTY_MENU_ASSETS = [
   ["S__298065927.jpg", "tea-party-menu-bread.jpg"],
   ["S__298065928.jpg", "tea-party-menu-desserts-drinks.jpg"],
+];
+const TEA_PARTY_RECOMMENDATION_ASSETS = [
+  ["S__299147277.jpg", "tea-party-recommend-70.jpg"],
+  ["S__299147278_0.jpg", "tea-party-recommend-80.jpg"],
+  ["S__299147279_0.jpg", "tea-party-recommend-100.jpg"],
+  ["S__299147280_0.jpg", "tea-party-recommend-120.jpg"],
+];
+const TEA_PARTY_RECOMMENDATION_CARDS = [
+  ["tea-party-recommend-70.jpg", "70 元點心餐盒"],
+  ["tea-party-recommend-80.jpg", "80 元點心餐盒"],
+  ["tea-party-recommend-100.jpg", "100 元點心餐盒"],
+  ["tea-party-recommend-120.jpg", "120 元點心餐盒"],
 ];
 const STORE_INFO_HERO_SOURCE = "/images/headtitle-bg6.jpg";
 const BIRTHDAY_CAKE_PAGE_TITLE = "蛋糕 (下方有DM供下載)";
@@ -1759,7 +1771,7 @@ function layout({ title, pathLabel, content, isHome = false, isAbout = false, is
     isProduct: isStructuredProductPage,
     content,
   });
-  const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct
+  const productPurchaseScript = isEmeraldLysk || isCakeProduct || isBeanTartProduct || isSouvenirProduct || isTopHouseProduct
     ? `<script src="${PRODUCT_DETAIL_SCRIPT_URL}"></script>`
     : '';
   const topHousePurchaseScript = TOP_HOUSE_PAGE_PATHS.has(pathLabel)
@@ -2620,14 +2632,48 @@ function productDetailTitleForPath(localPath) {
 }
 
 function productFallbackForPath(localPath) {
-  // Product data is never embedded in the static page shell.
-  return null;
+  const productId = productIdForDetailPath(localPath);
+  const record = productId ? TOP_HOUSE_PRODUCT_BY_ID.get(productId) : null;
+  if (!record) return null;
+  const [recordTitle, image, price] = record;
+  const details = TOP_HOUSE_CARD_DETAILS.get(productId) || {};
+  const variant = topHouseHeroVariantForPath(localPath);
+  const categorySuffix = variant === "boston"
+    ? "波士頓派系列"
+    : variant === "bear"
+    ? productId.includes("little-bear") ? "小熊禮盒" : productId.includes("big-bear") ? "大熊禮盒" : "大熊／小熊禮盒"
+    : variant === "country" ? "鄉村乳酪禮盒"
+    : variant === "round-pie" ? "圓圓派"
+    : variant === "long-cake" ? "彌月長條蛋糕"
+    : variant === "pairing" ? "搭配單品"
+    : "頂家彌月專區";
+  return {
+    id: productId,
+    title: details.title || recordTitle,
+    url: `${TOP_HOUSE_PRODUCT_PATH_PREFIX}/${productId}/`,
+    cat: `頂家彌月｜${categorySuffix}`,
+    price: `$${Number(price || 0).toFixed(2)}`,
+    priceValue: Number(price || 0),
+    originalPrice: Number(details.originalPrice || price || 0),
+    quantity: 25,
+    img: `/images/${image}`,
+    images: [`/images/${image}`],
+    desc: details.description || `彌月${categorySuffix}。`,
+    spec: "",
+    size: "",
+    storage: "",
+    other: "",
+    variants: { sizes: {} },
+    published: true,
+  };
 }
 
 function productDetailDataAttributes(localPath) {
   const includeTopHouseProducts = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
   const productId = productIdForDetailPath(localPath);
-  return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"`;
+  const fallback = productFallbackForPath(localPath);
+  const fallbackAttribute = fallback ? ` data-product-fallback="${escapeAttr(JSON.stringify(fallback))}"` : "";
+  return `data-product-id="${escapeAttr(productId)}" data-product-paths="${escapeAttr(JSON.stringify(storefrontProductPathMap({ includeTopHouseProducts })))}"${fallbackAttribute}`;
 }
 
 function topHouseHeroVariantForPath(localPath) {
@@ -2655,7 +2701,7 @@ function topHouseHeroTitleForPath(localPath) {
 
 function productDetailShell({ localPath, kind = "cake" }) {
   const souvenir = kind === "souvenir";
-  const longCake = localPath.includes("long-cake") || localPath.includes("長條蛋糕");
+  const longCake = localPath.includes("long-cake") || localPath.includes("長條蛋糕") || (kind === "top-house" && topHouseHeroVariantForPath(localPath) === "long-cake");
   const birthdayCake = kind === "cake" && (
     CAKE_PRODUCT_CATEGORY_LABELS.get(localPath) === "所有蛋糕, 生日蛋糕"
     || localPath.includes("生日蛋糕")
@@ -2664,10 +2710,13 @@ function productDetailShell({ localPath, kind = "cake" }) {
   const topHouseHeroClass = topHouse ? ` top-house-hero-${topHouseHeroVariantForPath(localPath)}` : "";
   const pageClass = souvenir
     ? "product-detail-template bean-tart-product-page souvenir-product-page"
+    : topHouse
+    ? `product-detail-template top-house-product-page${topHouseHeroClass}`
     : `product-detail-template cake-product-page${birthdayCake ? " birthday-cake-product-page" : ""}${longCake ? " long-cake-product-page" : ""}${topHouse ? ` top-house-product-page${topHouseHeroClass}` : ""}`;
-  const initialTitle = "商品資料載入中…";
-  const initialImages = [];
-  const initialDescription = "商品資料載入中…";
+  const fallback = productFallbackForPath(localPath);
+  const initialTitle = fallback?.title || "商品資料載入中…";
+  const initialImages = fallback?.images || [];
+  const initialDescription = fallback?.desc || "商品資料載入中…";
   const initialSize = "—";
   const initialStorage = "—";
   const initialDietary = "—";
@@ -2694,7 +2743,7 @@ function productDetailShell({ localPath, kind = "cake" }) {
       </div>
     </section>
     <div class="emerald-share" data-product-share><div><span>Share</span><b aria-hidden="true">f</b><b aria-hidden="true">𝕏</b><b aria-hidden="true">in</b><b aria-hidden="true">p</b></div><div class="emerald-likes" aria-label="0 個喜歡">♡ <span data-product-likes>0</span></div></div>
-    <section class="emerald-related" data-product-related aria-labelledby="product-related-title"><h2 id="product-related-title">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track><p class="product-detail-loading">相關商品載入中…</p></div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
+    <section class="emerald-related" data-product-related aria-labelledby="product-related-title"><h2 id="product-related-title">相關</h2><div class="emerald-related-carousel" data-related-carousel><button class="emerald-related-control emerald-related-control-previous" type="button" data-related-previous aria-label="相關商品向左滑動">‹</button><div class="emerald-related-grid" data-related-track><p class="product-detail-loading">更多彌月商品</p></div><button class="emerald-related-control emerald-related-control-next" type="button" data-related-next aria-label="相關商品向右滑動">›</button></div></section>
   </section>`;
 }
 
@@ -3044,6 +3093,11 @@ function teaPartyMenuGallery() {
   return `<section class="tea-party-menu-gallery" aria-labelledby="tea-party-menu-gallery-title"><div class="tea-party-menu-gallery-heading"><p>TEA PARTY BOX MENU</p><h2 id="tea-party-menu-gallery-title">點心餐盒一覽表</h2><span>2026 年 5 月起</span></div><div class="tea-party-menu-gallery-grid"><figure class="tea-party-menu-card"><a href="/tea-party-menu-bread.jpg" target="_blank" rel="noreferrer"><img src="/tea-party-menu-bread.jpg" alt="點心餐盒一覽表：麵包類" loading="lazy"></a><figcaption>麵包類</figcaption></figure><figure class="tea-party-menu-card"><a href="/tea-party-menu-desserts-drinks.jpg" target="_blank" rel="noreferrer"><img src="/tea-party-menu-desserts-drinks.jpg" alt="點心餐盒一覽表：西點類與飲料類" loading="lazy"></a><figcaption>西點類與飲料類</figcaption></figure></div></section>`;
 }
 
+function teaPartyRecommendationGallery() {
+  const cards = TEA_PARTY_RECOMMENDATION_CARDS.map(([image, title]) => `<figure class="tea-party-recommendation-card"><a href="/${escapeAttr(image)}" target="_blank" rel="noreferrer"><img src="/${escapeAttr(image)}" alt="${escapeAttr(title)}內容與搭配" loading="lazy"></a><figcaption>${escapeHtml(title)}</figcaption></figure>`).join("");
+  return `<section class="tea-party-recommendation-gallery" aria-labelledby="tea-party-recommendation-title"><div class="tea-party-recommendation-heading"><p>RECOMMENDED PAIRINGS</p><h2 id="tea-party-recommendation-title">推薦搭配</h2><span>依照預算選擇適合聚會與活動的餐盒組合</span></div><div class="tea-party-recommendation-grid">${cards}</div></section>`;
+}
+
 function teaPartyOrderInfo() {
   return `<section class="tea-party-order-info" aria-labelledby="tea-party-order-info-title">${teaPartyOrderCopy()}</section>`;
 }
@@ -3077,11 +3131,12 @@ function teaPartyArticleMarkup() {
         ${teaPartyOrderCopy()}
       </section>
     </div>
+    ${teaPartyRecommendationGallery()}
   </section>`;
 }
 
 function syncTeaPartyMenuAssets() {
-  for (const [sourceName, outputName] of TEA_PARTY_MENU_ASSETS) {
+  for (const [sourceName, outputName] of [...TEA_PARTY_MENU_ASSETS, ...TEA_PARTY_RECOMMENDATION_ASSETS]) {
     const source = path.join(ROOT, sourceName);
     if (fs.existsSync(source)) fs.copyFileSync(source, path.join(OUT_DIR, outputName));
   }
@@ -3855,8 +3910,10 @@ function syncTopHouseProductDetailSnapshot() {
       title: `${displayTitle}｜頂家彌月專區 – 森森點心坊`,
       pathLabel: localPath,
       content,
-      isCakeProduct: true,
+      isCakeProduct: false,
+      isLongCakeProduct: topHouseHeroVariantForPath(localPath) === "long-cake",
       isTopHouseProduct: true,
+      heroCategoryLabel: topHouseHeroTitleForPath(localPath),
       showHero: true,
     });
     fs.writeFileSync(filePath, html);
@@ -4306,15 +4363,16 @@ function syncProductDetailSnapshot() {
     const relative = path.relative(OUT_DIR, filePath).split(path.sep);
     const localPath = relative.length > 1 ? `/${relative.slice(0, -1).join("/")}` : "/";
     const productId = productIdForDetailPath(localPath);
+    const isTopHousePage = localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`);
     const isSouvenirPage = html.includes("souvenir-product-page");
-    const isProductPage = localPath.startsWith("/product-item/") && (productId || isSouvenirPage);
+    const isProductPage = (localPath.startsWith("/product-item/") || isTopHousePage) && (productId || isSouvenirPage || isTopHousePage);
     let updated = html.replace(/<footer class="footer">[\s\S]*?<\/footer>/, footerMarkup);
     if (localPath === "/") {
       updated = updated.replace(/<section class="catering-stores">[\s\S]*?<\/section>/, `<section class="catering-stores"><div class="catering-stores-panel">${storeDirectoryMarkup("catering")}</div></section>`);
     }
     if (isProductPage) {
-      const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`) ? "top-house" : "cake";
-      const isLongCakePage = html.includes("long-cake-product-page") || localPath.includes("long-cake") || localPath.includes("長條蛋糕");
+      const kind = html.includes("bean-tart-product-page") ? "souvenir" : localPath === EMERALD_LYSK_PATH ? "emerald" : isTopHousePage ? "top-house" : "cake";
+      const isLongCakePage = html.includes("long-cake-product-page") || localPath.includes("long-cake") || localPath.includes("長條蛋糕") || (kind === "top-house" && topHouseHeroVariantForPath(localPath) === "long-cake");
       const isBirthdayCakePage = kind === "cake" && (
         CAKE_PRODUCT_CATEGORY_LABELS.get(localPath) === "所有蛋糕, 生日蛋糕"
         || html.includes("birthday-cake-product-page")
@@ -4329,6 +4387,10 @@ function syncProductDetailSnapshot() {
           updated = updated.replace(/(<section class="emerald-product-page[^>]*>)/, `$1\n    <div class="souvenir-detail-icon" aria-hidden="true"><img src="/images/icon-cupcake.webp" alt=""></div>`);
         }
       } else {
+        if (kind === "top-house") {
+          const heroVariantClass = isLongCakePage ? " long-cake-product-hero" : "";
+          updated = updated.replace(/<section class="page-hero product-detail-hero[^"]*"/, `<section class="page-hero product-detail-hero${heroVariantClass} top-house-product-hero"`);
+        }
         if (isBirthdayCakePage && !updated.includes("birthday-cake-product-hero")) {
           updated = updated.replace('<section class="page-hero product-detail-hero"', '<section class="page-hero product-detail-hero birthday-cake-product-hero"');
         }
@@ -4345,6 +4407,22 @@ function syncProductDetailSnapshot() {
       .replace(/\/assets\/product-detail-purchase\.js(?:\?[^"']*)?/g, PRODUCT_DETAIL_SCRIPT_URL)
       .replace(/\/assets\/home-news\.js(?:\?[^"']*)?/g, HOME_NEWS_SCRIPT_URL)
       .replace(/<dt>蛋糕吋數<\/dt>/g, "<dt>商品尺寸</dt>");
+    if (updated !== html) fs.writeFileSync(filePath, updated);
+  }
+  // Some older static snapshots carried a birthday-cake hero on top-house
+  // pages. Normalize those heroes after the product section is rebuilt.
+  for (const filePath of htmlFiles) {
+    const relative = path.relative(OUT_DIR, filePath).split(path.sep);
+    const localPath = relative.length > 1 ? `/${relative.slice(0, -1).join("/")}` : "/";
+    if (!localPath.startsWith(`${TOP_HOUSE_PRODUCT_PATH_PREFIX}/`)) continue;
+    const heroVariant = topHouseHeroVariantForPath(localPath);
+    const isLongCakePage = heroVariant === "long-cake";
+    const html = fs.readFileSync(filePath, "utf8");
+    const heroClass = isLongCakePage ? " long-cake-product-hero" : "";
+    const title = isLongCakePage ? "彌月長條蛋糕" : topHouseHeroTitleForPath(localPath);
+    const updated = html
+      .replace(/<section class="page-hero product-detail-hero[^"]*"/, `<section class="page-hero product-detail-hero${heroClass} top-house-product-hero"`)
+      .replace(/(<div class="hero-banner-title"><h1)[^>]*>[\s\S]*?<\/h1>(?:<p[^>]*>[\s\S]*?<\/p>)?/, (_, prefix) => `${prefix} data-product-hero-title data-top-house-hero-title="${escapeAttr(title)}">${title}</h1>`);
     if (updated !== html) fs.writeFileSync(filePath, updated);
   }
   syncTopHouseProductDetailSnapshot();

@@ -5,7 +5,8 @@
   const copy = productPage.querySelector('.emerald-product-copy');
   const titleElement = copy?.querySelector('[data-product-title]');
   if (!copy || !titleElement) return;
-  let isCakeDetail = ['cake', 'emerald'].includes(productPage.dataset.productKind);
+  const isTopHousePage = () => productPage.dataset.productId?.startsWith('top-house-') || productPage.classList.contains('top-house-product-page');
+  let isCakeDetail = ['cake', 'emerald'].includes(productPage.dataset.productKind) && !isTopHousePage();
   const cakeCategories = new Set(['生日蛋糕', '造型蛋糕', '冰淇淋蛋糕', '長條蛋糕', '長條蛋糕(冷凍)']);
 
   const normalize = value => String(value || '')
@@ -129,6 +130,9 @@
   };
   const pagePath = decodeURI(window.location.pathname).replace(/\/$/, '');
   const productId = productPage.dataset.productId || '';
+  const fallbackProduct = (() => {
+    try { return JSON.parse(productPage.dataset.productFallback || 'null'); } catch { return null; }
+  })();
   const pathMap = (() => {
     try { return JSON.parse(productPage.dataset.productPaths || '{}'); } catch { return {}; }
   })();
@@ -288,22 +292,20 @@
 
   const syncProductDetails = product => {
     const apiTitle = String(product.title || '商品');
-    isCakeDetail = cakeCategories.has(String(product.cat || '').trim());
-    productPage.dataset.productKind = isCakeDetail ? 'cake' : 'souvenir';
+    const isTopHouseDetail = isTopHousePage();
+    isCakeDetail = !isTopHouseDetail && cakeCategories.has(String(product.cat || '').trim());
+    productPage.dataset.productKind = isTopHouseDetail ? 'top-house' : isCakeDetail ? 'cake' : 'souvenir';
     productPage.classList.toggle('cake-product-page', isCakeDetail);
-    productPage.classList.toggle('bean-tart-product-page', !isCakeDetail);
-    productPage.classList.toggle('souvenir-product-page', !isCakeDetail);
-    const title = productPage.dataset.productId?.startsWith('top-house-')
-      ? (titleElement.textContent.trim() || apiTitle)
-      : apiTitle;
+    productPage.classList.toggle('bean-tart-product-page', !isTopHouseDetail && !isCakeDetail);
+    productPage.classList.toggle('souvenir-product-page', !isTopHouseDetail && !isCakeDetail);
+    const title = apiTitle;
     titleElement.textContent = title;
     // The banner is always the product's current name from the product data.
     // Keep the legacy top-house body heading fallback, but do not let it leave
     // the banner showing a stale route title.
     const heroTitleElement = productPage.querySelector('[data-product-hero-title]');
-    const isTopHouseDetail = productPage.dataset.productId?.startsWith('top-house-') || productPage.classList.contains('top-house-product-page');
-    const isBirthdayCakeDetail = productPage.classList.contains('birthday-cake-product-page') || String(product.cat || '').trim() === '生日蛋糕';
-    const isLongCakeDetail = productPage.classList.contains('long-cake-product-page');
+    const isLongCakeDetail = productPage.classList.contains('long-cake-product-page') || productPage.classList.contains('top-house-hero-long-cake');
+    const isBirthdayCakeDetail = !isTopHouseDetail && (productPage.classList.contains('birthday-cake-product-page') || String(product.cat || '').trim() === '生日蛋糕');
     const topHouseHeroTitle = heroTitleElement?.dataset.topHouseHeroTitle || heroTitleElement?.textContent.trim();
     productPage.classList.toggle('birthday-cake-product-page', isCakeDetail && isBirthdayCakeDetail);
     setText(heroTitleElement, productPage.classList.contains('souvenir-product-page') ? '伴手禮' : isBirthdayCakeDetail ? '生日蛋糕' : isLongCakeDetail ? '長條蛋糕' : isTopHouseDetail ? topHouseHeroTitle : apiTitle, '商品');
@@ -552,10 +554,18 @@
     productPage.prepend(status);
   };
 
-  fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } })
+  const productRequest = productId
+    ? fetch(`/api/products/${encodeURIComponent(productId)}`, { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } })
+    : fetch('/api/products', { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } });
+  if (fallbackProduct) {
+    syncProductDetails(fallbackProduct);
+    renderPurchase(fallbackProduct);
+    productPage.dataset.productLoaded = 'true';
+  }
+  productRequest
     .then(response => response.ok ? response.json() : Promise.reject(new Error('無法載入商品資料。')))
     .then(data => {
-      const products = Array.isArray(data.products) ? data.products : [];
+      const products = Array.isArray(data.products) ? data.products : data.product ? [data.product] : [];
       const product = products.find(item => productId && item.id === productId)
         || products.find(item => {
           const itemPath = productPath(item);
@@ -564,12 +574,17 @@
       if (!product) throw new Error('找不到此商品，可能已下架。');
       syncProductDetails(product);
       renderPurchase(product);
-      renderRelated(product, products);
-      bindRelatedControls();
-      productPage.dataset.productLoaded = 'true';
+      return fetch(`/api/products?category=${encodeURIComponent(product.cat || '')}`, { cache: 'no-store', credentials: 'include', headers: { Accept: 'application/json' } })
+        .then(response => response.ok ? response.json() : { products: [] })
+        .then(relatedData => {
+          const relatedProducts = Array.isArray(relatedData.products) ? relatedData.products : products;
+          renderRelated(product, relatedProducts);
+          bindRelatedControls();
+          productPage.dataset.productLoaded = 'true';
+        });
     })
     .catch(error => {
       console.warn(error);
-      showError(error.message || '商品資料載入失敗。');
+      if (!fallbackProduct) showError(error.message || '商品資料載入失敗。');
     });
 })();

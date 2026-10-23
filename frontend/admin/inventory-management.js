@@ -216,7 +216,7 @@
       const priceType = row.querySelector('[data-price-option-type]').value.trim();
       const value = Number(row.querySelector('[data-price-option-value]').value);
       if (!spec && !priceType && !row.querySelector('[data-price-option-value]').value) continue;
-      if (!Number.isFinite(value) || value <= 0) throw new Error('每組售價都需要填寫有效價格；沒有規格時請維持價格類型「不指定」。');
+      if (!Number.isFinite(value) || value < 0) throw new Error('每組售價都需要填寫有效價格（不可為負數）；沒有規格時請維持價格類型「不指定」。');
       const normalizedValue = Number(value.toFixed(2));
       if (spec) sizeOptions[spec] = normalizedValue;
       else if (priceType) priceTypes[priceType] = normalizedValue;

@@ -36,6 +36,12 @@ describe("sensen-api Worker", () => {
         description TEXT NOT NULL, source_type TEXT NOT NULL DEFAULT 'manual', source_id TEXT,
         created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
       )`).run();
+    await env.DB.prepare(`CREATE TABLE IF NOT EXISTS cart_items (
+        guest_id TEXT NOT NULL, product_id INTEGER NOT NULL, variant_key TEXT NOT NULL DEFAULT '',
+        selected_options_json TEXT NOT NULL DEFAULT '{}', quantity INTEGER NOT NULL DEFAULT 1,
+        created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP, updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        PRIMARY KEY (guest_id, product_id, variant_key)
+      )`).run();
   });
 
   it("returns an API 404 for an unknown route", async () => {
@@ -46,6 +52,26 @@ describe("sensen-api Worker", () => {
 
     expect(response.status).toBe(404);
     expect(await response.json()).toEqual({ error: "找不到 API 路徑。" });
+  });
+
+  it("adds an active product to a guest cart", async () => {
+    await env.DB.prepare(`INSERT OR IGNORE INTO products
+      (name, slug, description, price, stock, is_active, metadata_json)
+      VALUES ('購物車測試商品', 'cart-add-test-product', '測試', 100, 10, 1, '{}')`).run();
+
+    const response = await SELF.fetch("https://example.com/api/cart/add", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        cookie: "sensen_guest=cart-add-test-guest",
+      },
+      body: JSON.stringify({ productId: "cart-add-test-product", qty: 1 }),
+    });
+
+    expect(response.status).toBe(200);
+    const cart = await response.json() as { items: Array<{ productId: string; qty: number }> };
+    expect(cart.items).toHaveLength(1);
+    expect(cart.items[0]).toMatchObject({ productId: "cart-add-test-product", qty: 1 });
   });
 
   it("returns a health response through the deployed Worker entrypoint", async () => {
@@ -62,8 +88,8 @@ describe("sensen-api Worker", () => {
 
   it("rejects a legacy news image proxy request for another host", async () => {
     const response = await SELF.fetch("https://example.com/images/legacy-news?url=https%3A%2F%2Fexample.com%2Fimage.jpg");
-    expect(response.status).toBe(403);
-    expect(await response.json()).toEqual({ error: "不允許代理此圖片來源。" });
+    expect(response.status).toBe(404);
+    expect(await response.json()).toEqual({ error: "找不到圖片。" });
   });
 
   it("serves canonical and legacy image paths from R2", async () => {

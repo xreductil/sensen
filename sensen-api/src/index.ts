@@ -1160,10 +1160,27 @@ export default {
         return json(request, { ok: result?.ok === 1, database: "connected" });
       }
 
+      if (url.pathname.startsWith("/api/products/") && request.method === "GET") {
+        let lookup = "";
+        try {
+          lookup = decodeURIComponent(url.pathname.slice("/api/products/".length)).replace(/\/+$/, "");
+        } catch {
+          return noStoreJson(request, { error: "商品路徑無效。" }, 400);
+        }
+        const row = await findProduct(env, lookup);
+        if (!row) return noStoreJson(request, { error: "找不到此商品，可能已下架。" }, 404);
+        return noStoreJson(request, { product: productFromRow(row) });
+      }
+
       if (url.pathname === "/api/products" && request.method === "GET") {
-        const result = await env.DB.prepare(`${productSelect}
+        const category = String(url.searchParams.get("category") || "").trim();
+        const statement = `${productSelect}
           LEFT JOIN categories c ON c.id = p.category_id
-          WHERE p.is_active = 1 ORDER BY p.id DESC`).all<ProductRow>();
+          WHERE p.is_active = 1${category ? " AND (c.name = ?1 OR c.slug = ?1)" : ""}
+          ORDER BY p.id DESC`;
+        const result = category
+          ? await env.DB.prepare(statement).bind(category).all<ProductRow>()
+          : await env.DB.prepare(statement).all<ProductRow>();
         return noStoreJson(request, { products: result.results.map(productFromRow) });
       }
 
@@ -1554,10 +1571,28 @@ export default {
           const code = String(body.code || "").trim().toUpperCase();
           const label = String(body.label || "").trim();
           const type = String(body.type || "fixed").trim();
-          const value = Number(body.value || 0);
-          const min = Number(body.min || 0);
-          if (!code || !label || !["fixed", "percent"].includes(type) || !Number.isFinite(value)) return json(request, { error: "優惠碼資料格式錯誤。" }, 400);
-          await env.DB.prepare(`INSERT INTO coupons (code, label, type, value, min_amount, enabled, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, CURRENT_TIMESTAMP) ON CONFLICT(code) DO UPDATE SET label = excluded.label, type = excluded.type, value = excluded.value, min_amount = excluded.min_amount, enabled = excluded.enabled, updated_at = CURRENT_TIMESTAMP`).bind(code, label, type, value, min, body.enabled === false ? 0 : 1).run();
+          const value = Number(body.value ?? 0);
+          const min = Number(body.min ?? 0);
+          if (
+            !code
+            || !label
+            || !["fixed", "percent"].includes(type)
+            || !Number.isFinite(value)
+            || value < 0
+            || !Number.isFinite(min)
+            || min < 0
+            || (type === "percent" && value > 100)
+          ) return json(request, { error: "優惠碼資料格式錯誤。" }, 400);
+          const existing = await env.DB.prepare("SELECT code FROM coupons WHERE code = ?1 LIMIT 1").bind(code).first<{ code: string }>();
+          if (existing) {
+            await env.DB.prepare("UPDATE coupons SET label = ?1, type = ?2, value = ?3, min_amount = ?4, enabled = ?5, updated_at = CURRENT_TIMESTAMP WHERE code = ?6")
+              .bind(label, type, value, min, body.enabled === false ? 0 : 1, code)
+              .run();
+          } else {
+            await env.DB.prepare("INSERT INTO coupons (code, label, type, value, min_amount, enabled, updated_at) VALUES (?1, ?2, ?3, ?4, ?5, ?6, CURRENT_TIMESTAMP)")
+              .bind(code, label, type, value, min, body.enabled === false ? 0 : 1)
+              .run();
+          }
           const coupon = await env.DB.prepare("SELECT code, label, type, value, min_amount AS min, enabled, updated_at AS updatedAt FROM coupons WHERE code = ?1").bind(code).first<Record<string, unknown>>();
           return json(request, { coupon });
         }
@@ -1733,7 +1768,7 @@ export default {
         await env.DB.prepare(`
           INSERT INTO cart_items (guest_id, product_id, variant_key, selected_options_json, quantity)
           VALUES (?1, ?2, ?3, ?4, ?5)
-          ON CONFLICT (guest_id, product_id, variant_key)
+          ON CONFLICT
           DO UPDATE SET quantity = quantity + excluded.quantity,
             selected_options_json = excluded.selected_options_json,
             updated_at = CURRENT_TIMESTAMP

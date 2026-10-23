@@ -5091,6 +5091,17 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
 .tea-party-menu-card img { display: block; width: 100%; height: auto; transition: transform .25s ease; }
 .tea-party-menu-card a:hover img, .tea-party-menu-card a:focus-visible img { transform: scale(1.02); }
 .tea-party-menu-card figcaption { margin-top: 12px; color: #6d6560; font-size: 15px; text-align: center; }
+.tea-party-recommendation-gallery { width: 100%; margin: 56px 0 0; padding: clamp(26px, 4vw, 52px); box-sizing: border-box; border: 1px solid #eadfce; background: linear-gradient(135deg, #fffaf4, #fff); }
+.tea-party-recommendation-heading { margin-bottom: 28px; text-align: center; }
+.tea-party-recommendation-heading p { margin: 0 0 8px; color: #b88949; font-size: 13px; font-weight: 700; letter-spacing: .16em; }
+.tea-party-recommendation-heading h2 { margin: 0; color: #17321f; font-size: clamp(26px, 2.6vw, 40px); letter-spacing: .12em; }
+.tea-party-recommendation-heading span { display: block; margin-top: 8px; color: #8c8178; font-size: 14px; }
+.tea-party-recommendation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: clamp(20px, 2.8vw, 36px); }
+.tea-party-recommendation-card { margin: 0; }
+.tea-party-recommendation-card a { display: block; overflow: hidden; border: 1px solid #eadfce; background: #fff; box-shadow: 0 12px 24px rgba(81, 54, 36, .08); }
+.tea-party-recommendation-card img { display: block; width: 100%; height: auto; transition: transform .25s ease; }
+.tea-party-recommendation-card a:hover img, .tea-party-recommendation-card a:focus-visible img { transform: scale(1.02); }
+.tea-party-recommendation-card figcaption { margin-top: 12px; color: #6d6560; font-size: 16px; font-weight: 700; text-align: center; }
 @media (max-width: 700px) {
   .storefront-category-nav { width: calc(100% - 28px); align-items: flex-start; flex-direction: column; gap: 10px; margin-top: 20px; padding: 14px; }
   .storefront-category-nav-list { width: 100%; }
@@ -5115,6 +5126,9 @@ body:has(.product-intro-page) .menu-item:nth-child(3) > a { color: var(--brown-2
   .tea-party-menu-gallery { width: calc(100% - 28px); margin-top: 32px; padding: 22px 14px; }
   .tea-party-menu-gallery-grid { grid-template-columns: 1fr; gap: 24px; }
   .tea-party-menu-gallery-heading h2 { font-size: 27px; letter-spacing: .08em; }
+  .tea-party-recommendation-gallery { margin-top: 36px; padding: 22px 14px; }
+  .tea-party-recommendation-grid { grid-template-columns: 1fr; gap: 24px; }
+  .tea-party-recommendation-heading h2 { font-size: 27px; letter-spacing: .08em; }
 }
 
 .drink-menu-grid {
