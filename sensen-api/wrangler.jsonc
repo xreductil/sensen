@@ -5,7 +5,10 @@
   "compatibility_date": "2026-08-21",
   "vars": {
     "LINE_PAY_ENV": "production",
-    "LINE_PAY_SITE_ORIGIN": "https://sensen-three.vercel.app"
+    "LINE_PAY_SITE_ORIGIN": "https://sensen-three.vercel.app",
+    "LINE_LOGIN_SITE_ORIGIN": "https://sensen-three.vercel.app",
+    "LINE_LOGIN_CALLBACK_URL": "https://sensen-three.vercel.app/api/auth/line/callback",
+    "LINE_LOGIN_SCOPE": "profile openid"
   },
   "d1_databases": [
     {

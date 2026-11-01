@@ -35,6 +35,12 @@
   let quoteTimer;
   if (applyCouponButton) applyCouponButton.hidden = true;
   const save = () => {
+    localStorage.setItem('sensen-cart-recipient', fields.name.value.trim());
+    localStorage.setItem('sensen-cart-email', fields.email.value.trim());
+    localStorage.setItem('sensen-cart-phone', fields.phone.value.trim());
+    localStorage.setItem('sensen-cart-address', fields.address.value.trim());
+    localStorage.setItem('sensen-cart-city', fields.city.value.trim());
+    localStorage.setItem('sensen-cart-zip', fields.zip.value.trim());
     localStorage.setItem('sensen-cart-shipping', fields.shipping.value);
     localStorage.setItem('sensen-cart-coupon', fields.coupon.value.trim().toUpperCase());
     localStorage.setItem('sensen-cart-pickup', fields.pickup.value);
@@ -66,22 +72,49 @@
     fields.pickupTime.required = isPickup;
     save();
   };
+  let saveProfileTimer;
+  const saveProfileToAccount = async () => {
+    save();
+    const name = fields.name.value.trim();
+    const email = fields.email.value.trim().toLowerCase();
+    const phone = fields.phone.value.trim();
+    const hasValidEmail = /^\S+@\S+\.\S+$/.test(email);
+    if (hasValidEmail && name) {
+      await api('/api/me', { method: 'PUT', body: JSON.stringify({ name, email, phone }) }).catch(() => {});
+    }
+    const address = fields.address.value.trim();
+    const city = fields.city.value.trim();
+    const zip = fields.zip.value.trim();
+    if (name || phone || address || city || zip) {
+      await api('/api/address', { method: 'PUT', body: JSON.stringify({ fullName: name, phone, address, city, zip }) }).catch(() => {});
+    }
+  };
+  const queueProfileSave = () => {
+    save();
+    clearTimeout(saveProfileTimer);
+    saveProfileTimer = setTimeout(() => { saveProfileToAccount().catch(() => {}); }, 700);
+  };
   const fillProfile = async () => {
-    if (!fields.name.value) fields.name.value = saved('sensen-cart-recipient');
-    if (!fields.phone.value) fields.phone.value = saved('sensen-cart-phone');
-    if (!fields.address.value) fields.address.value = saved('sensen-cart-address');
-    if (!fields.note.value) fields.note.value = saved('sensen-cart-note');
     try {
       const data = await api('/api/me');
       const user = data.user || {};
       const address = data.address || {};
-      if (!fields.name.value) fields.name.value = user.name || address.fullName || '';
-      if (!fields.email.value) fields.email.value = user.email || '';
-      if (!fields.phone.value) fields.phone.value = user.phone || address.phone || '';
-      if (fields.address && !fields.address.value) fields.address.value = address.address || '';
-      if (fields.city && !fields.city.value) fields.city.value = address.city || '';
-      if (fields.zip && !fields.zip.value) fields.zip.value = address.zip || '';
-    } catch (_) { /* 登入狀態由送出訂單時檢查 */ }
+      fields.name.value = user.name || address.fullName || saved('sensen-cart-recipient');
+      fields.email.value = user.email || saved('sensen-cart-email');
+      fields.phone.value = user.phone || address.phone || saved('sensen-cart-phone');
+      fields.address.value = address.address || saved('sensen-cart-address');
+      fields.city.value = address.city || saved('sensen-cart-city');
+      fields.zip.value = address.zip || saved('sensen-cart-zip');
+    } catch (_) {
+      fields.name.value = saved('sensen-cart-recipient');
+      fields.email.value = saved('sensen-cart-email');
+      fields.phone.value = saved('sensen-cart-phone');
+      fields.address.value = saved('sensen-cart-address');
+      fields.city.value = saved('sensen-cart-city');
+      fields.zip.value = saved('sensen-cart-zip');
+    }
+    if (!fields.note.value) fields.note.value = saved('sensen-cart-note');
+    save();
   };
   const quote = async () => {
     setMessage('[data-checkout-quote-message]', '');
@@ -97,12 +130,13 @@
     if (!fields.pickup.value) { setMessage('[data-checkout-submit-message]', '請選擇取貨／配送日期。', true); return; }
     if (fields.shipping.value === 'pickup' && (!fields.pickupStore.value || !fields.pickupTime.value)) { setMessage('[data-checkout-submit-message]', '請選擇取貨門市與取貨時間。', true); return; }
     if (fields.shipping.value !== 'pickup' && (!fields.address.value.trim() || !fields.phone.value.trim())) { setMessage('[data-checkout-submit-message]', '宅配訂單請先填寫收件地址與電話。', true); return; }
+    await saveProfileToAccount().catch(() => {});
     root.querySelectorAll('[data-checkout-submit]').forEach(item => { item.disabled = true; item.textContent = '送出中…'; });
     try {
       const customerNote = [fields.shipping.value === 'pickup' ? '取貨門市：' + fields.pickupStore.value : '', fields.shipping.value === 'pickup' ? '取貨時間：' + fields.pickupTime.value : '', fields.note.value.trim()].filter(Boolean).join('\n');
       const data = await api('/api/checkout', { method: 'POST', body: JSON.stringify({ name: fields.name.value.trim(), email: fields.email.value.trim(), phone: fields.phone.value.trim(), fulfillmentDate: fields.pickup.value, couponCode: fields.coupon.value.trim(), shippingMethod: fields.shipping.value, shippingAddress: { fullName: fields.name.value.trim(), phone: fields.phone.value.trim(), address: fields.address?.value.trim() || '', city: fields.city?.value.trim() || '', zip: fields.zip?.value.trim() || '' }, customerNote }) });
       const payment = await api('/api/line-pay/request', { method: 'POST', body: JSON.stringify({ orderId: data.order?.id || '' }) });
-      localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping'); localStorage.removeItem('sensen-cart-recipient'); localStorage.removeItem('sensen-cart-phone'); localStorage.removeItem('sensen-cart-address'); localStorage.removeItem('sensen-cart-note');
+      localStorage.removeItem('sensen-cart-coupon'); localStorage.removeItem('sensen-cart-pickup'); localStorage.removeItem('sensen-cart-shipping'); localStorage.removeItem('sensen-cart-recipient'); localStorage.removeItem('sensen-cart-email'); localStorage.removeItem('sensen-cart-phone'); localStorage.removeItem('sensen-cart-address'); localStorage.removeItem('sensen-cart-city'); localStorage.removeItem('sensen-cart-zip'); localStorage.removeItem('sensen-cart-note');
       window.location.assign(payment.paymentUrl);
     } catch (error) {
       setMessage('[data-checkout-submit-message]', readableError(error, '訂單送出失敗，請確認資料後再試。'), true);
@@ -137,6 +171,10 @@
     syncDateLabel(); syncDeliveryFields(); await fillProfile(); await quote();
   };
   fields.shipping.addEventListener('change', () => { syncDeliveryFields(); quote(); });
+  [fields.name, fields.email, fields.phone, fields.address, fields.city, fields.zip].forEach(field => {
+    field.addEventListener('input', queueProfileSave);
+    field.addEventListener('blur', () => { saveProfileToAccount().catch(() => {}); });
+  });
   fields.coupon.addEventListener('input', () => {
     setMessage('[data-checkout-quote-message]', '');
     clearTimeout(quoteTimer);

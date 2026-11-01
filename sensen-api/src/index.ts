@@ -214,6 +214,10 @@ type UserRow = {
   name: string | null;
   email: string | null;
   phone: string | null;
+  line_user_id?: string | null;
+  line_display_name?: string | null;
+  line_picture_url?: string | null;
+  line_status_message?: string | null;
   role: string | null;
   password_salt: string | null;
   password_hash: string | null;
@@ -297,7 +301,7 @@ const json = (request: Request, body: unknown, status = 200, guestId?: string, s
   }
   if (sessionToken !== undefined) {
     const cookie = sessionToken
-      ? `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax${secureCookie}`
+      ? sessionCookieHeader(request, sessionToken)
       : `${SESSION_COOKIE}=; Path=/; Max-Age=0; HttpOnly; SameSite=Lax${secureCookie}`;
     headers.append("Set-Cookie", cookie);
   }
@@ -342,6 +346,50 @@ const linePayConfig = (env: Env) => {
     apiOrigin: environment === "sandbox" ? LINE_PAY_SANDBOX_ORIGIN : LINE_PAY_PRODUCTION_ORIGIN,
     siteOrigin,
   };
+};
+
+const LINE_LOGIN_AUTHORIZE_ORIGIN = "https://access.line.me";
+const LINE_LOGIN_API_ORIGIN = "https://api.line.me";
+
+const lineLoginConfig = (env: Env) => {
+  const bindings = env as unknown as Record<string, unknown>;
+  const siteOrigin = String(bindings.LINE_LOGIN_SITE_ORIGIN || PAYMENT_SITE_ORIGIN).trim().replace(/\/+$/, "");
+  return {
+    channelId: String(bindings.LINE_LOGIN_CHANNEL_ID || bindings.LINE_CHANNEL_ID || "").trim(),
+    channelSecret: String(bindings.LINE_LOGIN_CHANNEL_SECRET || bindings.LINE_CHANNEL_SECRET || "").trim(),
+    callbackUrl: String(bindings.LINE_LOGIN_CALLBACK_URL || bindings.LINE_CALLBACK_URL || `${siteOrigin}/api/auth/line/callback`).trim(),
+    scope: String(bindings.LINE_LOGIN_SCOPE || "profile openid").trim(),
+    siteOrigin,
+  };
+};
+
+const safeAccountReturnPath = (value: unknown, fallback = "/customer/admin/backup/") => {
+  const candidate = String(value || "").trim();
+  if (!candidate || !candidate.startsWith("/") || candidate.startsWith("//")) return fallback;
+  try {
+    const url = new URL(candidate, PAYMENT_SITE_ORIGIN);
+    return url.origin === PAYMENT_SITE_ORIGIN ? candidate : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const lineLoginPageUrl = (siteOrigin: string, returnTo: string, errorCode: string) => {
+  const url = new URL("/customer/admin/", siteOrigin);
+  if (returnTo && returnTo !== "/customer/admin/backup/") url.searchParams.set("return", returnTo);
+  url.searchParams.set("line_error", errorCode);
+  return url.toString();
+};
+
+const lineLoginResultUrl = (siteOrigin: string, returnTo: string, name: string, value: string) => {
+  const url = new URL(returnTo, siteOrigin);
+  url.searchParams.set(name, value);
+  return url.toString();
+};
+
+const sessionCookieHeader = (request: Request, sessionToken: string) => {
+  const secureCookie = new URL(request.url).protocol === "https:" ? "; Secure" : "";
+  return `${SESSION_COOKIE}=${encodeURIComponent(sessionToken)}; Path=/; Max-Age=2592000; HttpOnly; SameSite=Lax${secureCookie}`;
 };
 
 const base64FromBytes = (bytes: ArrayBuffer) => btoa(String.fromCharCode(...new Uint8Array(bytes)));
@@ -437,7 +485,7 @@ const getSessionUser = async (env: Env, request: Request) => {
   const token = getCookie(request, SESSION_COOKIE);
   if (!token) return null;
   return env.DB.prepare(`
-    SELECT u.id, u.name, u.email, u.phone, u.role, u.password_salt, u.password_hash
+    SELECT u.id, u.name, u.email, u.phone, u.line_user_id, u.line_display_name, u.line_picture_url, u.line_status_message, u.role, u.password_salt, u.password_hash
     FROM sessions s
     INNER JOIN users u ON u.id = s.user_id
     WHERE s.token = ?1
@@ -451,6 +499,11 @@ const publicUser = (user: UserRow) => ({
   phone: user.phone || "",
   role: user.role || "customer",
   isAdmin: user.role === "admin",
+  lineProfile: {
+    displayName: user.line_display_name || "",
+    pictureUrl: user.line_picture_url || "",
+    statusMessage: user.line_status_message || "",
+  },
 });
 
 const parseJson = <T>(value: string | null | undefined, fallback: T): T => {
@@ -1158,6 +1211,194 @@ export default {
       if (url.pathname === "/health" && request.method === "GET") {
         const result = await env.DB.prepare("SELECT 1 AS ok").first<{ ok: number }>();
         return json(request, { ok: result?.ok === 1, database: "connected" });
+      }
+
+      if (url.pathname === "/api/auth/line/start" && request.method === "GET") {
+        const config = lineLoginConfig(env);
+        const returnTo = safeAccountReturnPath(url.searchParams.get("return"));
+        if (!config.channelId || !config.channelSecret || !config.callbackUrl) {
+          return Response.redirect(lineLoginPageUrl(config.siteOrigin, returnTo, "LINE_LOGIN_NOT_CONFIGURED"), 302);
+        }
+
+        const state = randomToken();
+        const nonce = randomToken();
+        await env.DB.prepare("DELETE FROM line_login_states WHERE created_at < datetime('now', '-10 minutes')").run();
+        await env.DB.prepare(`
+          INSERT INTO line_login_states (state, nonce, return_to)
+          VALUES (?1, ?2, ?3)
+        `).bind(state, nonce, returnTo).run();
+
+        const authorizationUrl = new URL("/oauth2/v2.1/authorize", LINE_LOGIN_AUTHORIZE_ORIGIN);
+        authorizationUrl.search = new URLSearchParams({
+          response_type: "code",
+          client_id: config.channelId,
+          redirect_uri: config.callbackUrl,
+          state,
+          scope: config.scope,
+          nonce,
+        }).toString();
+        return Response.redirect(authorizationUrl.toString(), 302);
+      }
+
+      if (url.pathname === "/api/auth/line/callback" && request.method === "GET") {
+        const config = lineLoginConfig(env);
+        const state = String(url.searchParams.get("state") || "").trim();
+        const stateRow = state
+          ? await env.DB.prepare(`
+              SELECT state, nonce, return_to
+              FROM line_login_states
+              WHERE state = ?1 AND created_at >= datetime('now', '-10 minutes')
+              LIMIT 1
+            `).bind(state).first<{ state: string; nonce: string; return_to: string }>()
+          : null;
+        if (!stateRow) return Response.redirect(lineLoginPageUrl(config.siteOrigin, "/customer/admin/backup/", "LINE_LOGIN_STATE_INVALID"), 302);
+        await env.DB.prepare("DELETE FROM line_login_states WHERE state = ?1").bind(state).run();
+
+        if (url.searchParams.get("error")) {
+          return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_CANCELLED"), 302);
+        }
+        if (!config.channelId || !config.channelSecret || !config.callbackUrl) {
+          return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_NOT_CONFIGURED"), 302);
+        }
+
+        const code = String(url.searchParams.get("code") || "").trim();
+        if (!code) return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_CODE_INVALID"), 302);
+
+        const tokenResponse = await fetch(`${LINE_LOGIN_API_ORIGIN}/oauth2/v2.1/token`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({
+            grant_type: "authorization_code",
+            code,
+            redirect_uri: config.callbackUrl,
+            client_id: config.channelId,
+            client_secret: config.channelSecret,
+          }),
+        });
+        const tokenPayload = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
+        const idToken = String(tokenPayload.id_token || "").trim();
+        if (!tokenResponse.ok || !idToken) {
+          console.error("LINE Login token exchange failed", tokenResponse.status);
+          return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_TOKEN_INVALID"), 302);
+        }
+
+        const verifyResponse = await fetch(`${LINE_LOGIN_API_ORIGIN}/oauth2/v2.1/verify`, {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          body: new URLSearchParams({ id_token: idToken, client_id: config.channelId, nonce: stateRow.nonce }),
+        });
+        const claims = await verifyResponse.json().catch(() => ({})) as Record<string, unknown>;
+        const lineUserId = String(claims.sub || "").trim();
+        const expiresAt = Number(claims.exp || 0);
+        const validClaims = verifyResponse.ok
+          && claims.iss === "https://access.line.me"
+          && claims.aud === config.channelId
+          && lineUserId
+          && expiresAt > Math.floor(Date.now() / 1000)
+          && claims.nonce === stateRow.nonce;
+        if (!validClaims) {
+          console.error("LINE Login ID token verification failed", verifyResponse.status);
+          return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_ID_TOKEN_INVALID"), 302);
+        }
+
+        // The access token carries the LINE profile permission. Sync the
+        // current display name, avatar and status message on every login.
+        const profileResponse = await fetch(`${LINE_LOGIN_API_ORIGIN}/v2/profile`, {
+          headers: { Authorization: `Bearer ${String(tokenPayload.access_token || "")}` },
+        });
+        const profile = await profileResponse.json().catch(() => ({})) as Record<string, unknown>;
+        const profileUserId = String(profile.userId || "").trim();
+        const profileMatchesToken = !profileUserId || profileUserId === lineUserId;
+        const lineDisplayName = profileMatchesToken
+          ? String(profile.displayName || claims.name || "").trim().slice(0, 100)
+          : String(claims.name || "").trim().slice(0, 100);
+        const rawPictureUrl = profileMatchesToken ? String(profile.pictureUrl || claims.picture || "").trim() : String(claims.picture || "").trim();
+        const linePictureUrl = /^https:\/\//i.test(rawPictureUrl) ? rawPictureUrl.slice(0, 2000) : "";
+        const lineStatusMessage = profileMatchesToken ? String(profile.statusMessage || "").trim().slice(0, 500) : "";
+        const profilePlusAddress = claims.address && typeof claims.address === "object" && !Array.isArray(claims.address)
+          ? claims.address as Record<string, unknown>
+          : {};
+        const profilePlusName = [claims.family_name, claims.given_name]
+          .map(value => String(value || "").trim())
+          .filter(Boolean)
+          .join("")
+          .slice(0, 100);
+        const lineMemberName = profilePlusName || lineDisplayName || "LINE 會員";
+        const linePhone = String(claims.phone_number || "").trim().slice(0, 50);
+        const lineZip = String(profilePlusAddress.postal_code || "").trim().slice(0, 20);
+        const lineCity = [profilePlusAddress.region, profilePlusAddress.locality]
+          .map(value => String(value || "").trim())
+          .filter(Boolean)
+          .join("，")
+          .slice(0, 100);
+        const lineAddress = String(profilePlusAddress.street_address || "").trim().replace(/\n/g, " ").slice(0, 500);
+        const hasProfilePlusAddress = Boolean(linePhone || lineZip || lineCity || lineAddress);
+
+        let user = await env.DB.prepare(`
+          SELECT id, name, email, phone, line_user_id, line_display_name, line_picture_url, line_status_message, role, password_salt, password_hash
+          FROM users WHERE line_user_id = ?1 LIMIT 1
+        `).bind(lineUserId).first<UserRow>();
+        if (!user) {
+          const lineEmail = String(claims.email || "").trim().toLowerCase();
+          const syntheticEmail = `line_${lineUserId}@line.local`;
+          const email = /^\S+@\S+\.\S+$/.test(lineEmail)
+            && !(await env.DB.prepare("SELECT id FROM users WHERE lower(email) = ?1 LIMIT 1").bind(lineEmail).first<{ id: number }>())
+            ? lineEmail
+            : syntheticEmail;
+          const name = lineMemberName;
+          const inserted = await env.DB.prepare(`
+            INSERT INTO users (name, email, phone, password_salt, password_hash, line_user_id, line_display_name, line_picture_url, line_status_message)
+            VALUES (?1, ?2, ?3, NULL, NULL, ?4, ?5, ?6, ?7)
+          `).bind(name, email, linePhone, lineUserId, lineDisplayName || name, linePictureUrl, lineStatusMessage).run();
+          user = await env.DB.prepare(`
+            SELECT id, name, email, phone, line_user_id, line_display_name, line_picture_url, line_status_message, role, password_salt, password_hash
+            FROM users WHERE id = ?1 LIMIT 1
+          `).bind(inserted.meta.last_row_id).first<UserRow>();
+        } else {
+          await env.DB.prepare(`
+            UPDATE users
+            SET name = CASE WHEN ?1 != '' THEN ?1 ELSE name END,
+                phone = CASE WHEN ?2 != '' THEN ?2 ELSE phone END,
+                line_display_name = ?3,
+                line_picture_url = ?4,
+                line_status_message = ?5,
+                updated_at = CURRENT_TIMESTAMP
+            WHERE id = ?6
+          `).bind(lineMemberName, linePhone, lineDisplayName || lineMemberName, linePictureUrl, lineStatusMessage, user.id).run();
+          user = await env.DB.prepare(`
+            SELECT id, name, email, phone, line_user_id, line_display_name, line_picture_url, line_status_message, role, password_salt, password_hash
+            FROM users WHERE id = ?1 LIMIT 1
+          `).bind(user.id).first<UserRow>();
+        }
+        if (!user) return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_ACCOUNT_FAILED"), 302);
+
+        if (hasProfilePlusAddress) {
+          const existingAddress = await env.DB.prepare("SELECT id FROM user_addresses WHERE user_id = ?1 ORDER BY is_default DESC, id ASC LIMIT 1").bind(user.id).first<{ id: number }>();
+          if (existingAddress) {
+            await env.DB.prepare(`
+              UPDATE user_addresses
+              SET full_name = CASE WHEN ?1 != '' THEN ?1 ELSE full_name END,
+                  phone = CASE WHEN ?2 != '' THEN ?2 ELSE phone END,
+                  address = CASE WHEN ?3 != '' THEN ?3 ELSE address END,
+                  city = CASE WHEN ?4 != '' THEN ?4 ELSE city END,
+                  zip = CASE WHEN ?5 != '' THEN ?5 ELSE zip END,
+                  updated_at = CURRENT_TIMESTAMP
+              WHERE id = ?6
+            `).bind(lineMemberName, linePhone, lineAddress, lineCity, lineZip, existingAddress.id).run();
+          } else {
+            await env.DB.prepare(`
+              INSERT INTO user_addresses (user_id, label, full_name, phone, address, city, zip)
+              VALUES (?1, 'default', ?2, ?3, ?4, ?5, ?6)
+            `).bind(user.id, lineMemberName, linePhone, lineAddress, lineCity, lineZip).run();
+          }
+        }
+
+        const sessionToken = randomToken();
+        await env.DB.prepare("INSERT INTO sessions (token, user_id) VALUES (?1, ?2)").bind(sessionToken, user.id).run();
+        const redirectUrl = lineLoginResultUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "line_success", "1");
+        const headers = new Headers({ Location: redirectUrl, "Cache-Control": "no-store, max-age=0" });
+        headers.append("Set-Cookie", sessionCookieHeader(request, sessionToken));
+        return new Response(null, { status: 302, headers });
       }
 
       if (url.pathname.startsWith("/api/products/") && request.method === "GET") {

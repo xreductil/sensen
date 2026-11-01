@@ -520,7 +520,12 @@
       data.priceValue = Number(hasTieredPriceTypes
         ? priceTypes['特價']
         : selectedDefaultPrice ?? priceTypes['特價'] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0]);
-      data.originalPrice = Number(priceTypes['原價'] ?? data.originalPrice ?? data.priceValue);
+      // A product with only named size/spec prices is a single-price product.
+      // Do not carry an old legacy originalPrice into the next save, or the
+      // inventory table will incorrectly turn it into an 原價／特價 pair.
+      data.originalPrice = Number(hasTieredPriceTypes
+        ? priceTypes['原價']
+        : selectedDefaultPrice ?? priceTypes['特價'] ?? priceTypes['原價'] ?? Object.values(sizeOptions)[0] ?? Object.values(priceTypes)[0] ?? data.priceValue);
       data.spec = Object.keys(sizeOptions).join('、');
       data.size = data.spec;
       let images = [...new Set((form._editingImages || []).map(normalizeImagePath).filter(Boolean))];

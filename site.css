@@ -290,6 +290,13 @@ body:has([data-account-route="register"]) .account-topbar { margin-bottom: 34px;
 .account-auth-actions .save-btn { background: #e8281a; box-shadow: 0 12px 25px rgba(232, 40, 26, .16); }
 .account-auth-actions .save-btn:hover { background: #c51f14; }
 .account-auth-actions .save-btn:disabled { opacity: .65; cursor: wait; }
+.account-auth-divider { display: flex; align-items: center; gap: 14px; margin: 2px 0; color: #b3927b; font-size: .85rem; font-weight: 800; }
+.account-auth-divider::before,
+.account-auth-divider::after { content: ""; flex: 1; height: 1px; background: #efd7bb; }
+.line-login-button { display: flex; align-items: center; justify-content: center; gap: 11px; width: 100%; min-height: 58px; border: 1px solid #06c755; border-radius: 9px; color: #fff; background: #06c755; box-shadow: 0 10px 20px rgba(6, 199, 85, .18); font-size: 1rem; font-weight: 900; text-decoration: none; transition: background .2s ease, transform .2s ease; }
+.line-login-button:hover { color: #fff; background: #05a947; transform: translateY(-1px); }
+.line-login-button span { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 24px; padding: 0 5px; border: 2px solid currentColor; border-radius: 999px; font-size: .7rem; letter-spacing: -.03em; line-height: 1; }
+.account-avatar img { display: block; width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
 .account-auth-switch { margin: 26px 0 0; color: #7b5b4b; text-align: center; }
 .account-auth-switch a { color: #8d563d; font-weight: 800; text-decoration: underline; text-underline-offset: 3px; }
 
