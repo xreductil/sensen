@@ -174,7 +174,7 @@
     const readableError = (error, fallback) => { const text = String(error?.message || ""); return !text || text === "Failed to fetch" || text === "Load failed" || text === "操作失敗。" ? fallback : text; };
     const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, char => char === "&" ? "&amp;" : char === "<" ? "&lt;" : char === ">" ? "&gt;" : char === String.fromCharCode(34) ? "&quot;" : "&#39;");
     const statusLabels = { pending: "待付款", pending_payment: "待付款", processing: "處理中", shipped: "已出貨", ready_for_pickup: "待取貨", picked_up: "已取貨", completed: "已完成", cancelled: "已取消", created: "已建立" };
-    const shippingLabels = { pickup: "門市自取", home: "宅配", frozen: "冷凍宅配" };
+    const shippingLabels = { pickup: "門市自取", home: "宅配", frozen: "冷藏宅配" };
     const parseOrderDate = value => { const text = String(value || "").trim(); if (!text) return null; const normalized = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}(?:\.\d+)?$/.test(text) ? text.replace(" ", "T") + "Z" : text; const date = new Date(normalized); return Number.isNaN(date.getTime()) ? null : date; };
     const formatOrderDate = value => { const date = parseOrderDate(value); return date ? new Intl.DateTimeFormat("zh-TW", { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date) : ""; };
     const formatFulfillmentDate = value => value ? String(value).slice(0, 10) : "";

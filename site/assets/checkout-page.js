@@ -159,7 +159,7 @@
     if (!cart.items?.length) { root.querySelector('[data-checkout-items]').innerHTML = '<p>目前購物車是空的，請先返回購物車選購商品。</p>'; root.querySelectorAll('[data-checkout-submit]').forEach(button => { button.disabled = true; }); return; }
     renderItems(cart.items);
     const method = saved('sensen-cart-shipping');
-    fields.shipping.value = ['pickup', 'home', 'frozen'].includes(method) ? method : 'pickup';
+    fields.shipping.value = ['pickup', 'frozen'].includes(method) ? method : 'pickup';
     fields.coupon.value = saved('sensen-cart-coupon');
     fields.pickupStore.value = ['文龍店', '新富店', '澄和店', '博愛店'].includes(saved('sensen-cart-pickup-store')) ? saved('sensen-cart-pickup-store') : '';
     fields.pickupTime.value = saved('sensen-cart-pickup-time');
