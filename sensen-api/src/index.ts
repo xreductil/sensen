@@ -547,19 +547,26 @@ const shippingLabel = (method: string | null | undefined) => ({
   frozen: "冷藏宅配",
 }[String(method || "pickup")] || "門市自取");
 
-type FrozenShippingGroup = "long-cake" | "little-bear-boston" | "big-bear" | "country";
+type ShippingGroup = "long-cake" | "little-bear-boston" | "big-bear" | "country" | "souvenir" | "cold-souvenir";
 
-const frozenShippingGroup = (item: Record<string, unknown>): FrozenShippingGroup | null => {
+const shippingGroup = (item: Record<string, unknown>): ShippingGroup | null => {
   const productId = String(item.productId || item.id || "").split("::", 1)[0].toLowerCase();
   if (/^top-house-a\d+/.test(productId)) return "long-cake";
   if (/^top-house-(?:boston|pa\d+|b\d+)/.test(productId)) return "little-bear-boston";
   if (/^top-house-c\d+/.test(productId)) return "big-bear";
   if (/^top-house-l\d+/.test(productId)) return "country";
+  if (["souvenir-daifuku", "souvenir-dacquoise"].includes(productId)) return "cold-souvenir";
+  if (/^(?:souvenir-|new-souvenir-)/.test(productId)) return "souvenir";
   return null;
 };
 
-const frozenFeeForGroup = (group: FrozenShippingGroup, quantity: number) => {
+const frozenFeeForGroup = (group: Exclude<ShippingGroup, "souvenir">, quantity: number) => {
   const qty = Math.max(1, Math.ceil(Number(quantity || 1)));
+  if (group === "cold-souvenir") {
+    if (qty === 1) return 180;
+    if (qty <= 3) return 250;
+    return Math.ceil(qty / 18) * 300;
+  }
   if (group === "long-cake") {
     if (qty === 1) return 180;
     if (qty <= 3) return 250;
@@ -574,19 +581,28 @@ const frozenFeeForGroup = (group: FrozenShippingGroup, quantity: number) => {
   return Math.ceil(qty / 6) * 300;
 };
 
+const souvenirFee = (quantity: number) => {
+  const qty = Math.max(1, Math.ceil(Number(quantity || 1)));
+  if (qty === 1) return 140;
+  if (qty <= 3) return 180;
+  return Math.ceil(qty / 10) * 220;
+};
+
 const frozenShippingFee = (items: Record<string, unknown>[]) => {
   if (!items.length) return 0;
-  const quantities = new Map<FrozenShippingGroup, number>();
+  const quantities = new Map<ShippingGroup, number>();
   let hasLegacyItem = false;
   items.forEach((item) => {
-    const group = frozenShippingGroup(item);
+    const group = shippingGroup(item);
     if (!group) {
       hasLegacyItem = true;
       return;
     }
     quantities.set(group, (quantities.get(group) || 0) + Math.max(1, Number(item.qty || 1)));
   });
-  const groupFees = [...quantities.entries()].map(([group, quantity]) => frozenFeeForGroup(group, quantity));
+  const groupFees = [...quantities.entries()].map(([group, quantity]) => (
+    group === "souvenir" ? souvenirFee(quantity) : frozenFeeForGroup(group, quantity)
+  ));
   // Products not covered by the supplied table keep the previous cold-shipping
   // price until their own packaging rule is provided.
   if (hasLegacyItem) groupFees.push(240);
