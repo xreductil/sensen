@@ -544,8 +544,54 @@ const slugify = (value: string) => {
 const shippingLabel = (method: string | null | undefined) => ({
   pickup: "門市自取",
   home: "宅配",
-  frozen: "冷凍宅配",
+  frozen: "冷藏宅配",
 }[String(method || "pickup")] || "門市自取");
+
+type FrozenShippingGroup = "long-cake" | "little-bear-boston" | "big-bear" | "country";
+
+const frozenShippingGroup = (item: Record<string, unknown>): FrozenShippingGroup | null => {
+  const productId = String(item.productId || item.id || "").split("::", 1)[0].toLowerCase();
+  if (/^top-house-a\d+/.test(productId)) return "long-cake";
+  if (/^top-house-(?:boston|pa\d+|b\d+)/.test(productId)) return "little-bear-boston";
+  if (/^top-house-c\d+/.test(productId)) return "big-bear";
+  if (/^top-house-l\d+/.test(productId)) return "country";
+  return null;
+};
+
+const frozenFeeForGroup = (group: FrozenShippingGroup, quantity: number) => {
+  const qty = Math.max(1, Math.ceil(Number(quantity || 1)));
+  if (group === "long-cake") {
+    if (qty === 1) return 180;
+    if (qty <= 3) return 250;
+    return Math.ceil(qty / 18) * 300;
+  }
+  if (group === "little-bear-boston") {
+    if (qty === 1) return 180;
+    if (qty === 2) return 250;
+    return Math.ceil(qty / 8) * 300;
+  }
+  if (qty === 1) return 250;
+  return Math.ceil(qty / 6) * 300;
+};
+
+const frozenShippingFee = (items: Record<string, unknown>[]) => {
+  if (!items.length) return 0;
+  const quantities = new Map<FrozenShippingGroup, number>();
+  let hasLegacyItem = false;
+  items.forEach((item) => {
+    const group = frozenShippingGroup(item);
+    if (!group) {
+      hasLegacyItem = true;
+      return;
+    }
+    quantities.set(group, (quantities.get(group) || 0) + Math.max(1, Number(item.qty || 1)));
+  });
+  const groupFees = [...quantities.entries()].map(([group, quantity]) => frozenFeeForGroup(group, quantity));
+  // Products not covered by the supplied table keep the previous cold-shipping
+  // price until their own packaging rule is provided.
+  if (hasLegacyItem) groupFees.push(240);
+  return Math.max(...groupFees, 0);
+};
 
 const archivedNewsImages: Record<string, string> = {
   "/wp-content/uploads/2025/07/1-scaled.jpg": "/images/photo-1-8.jpg",
@@ -1236,6 +1282,7 @@ export default {
           state,
           scope: config.scope,
           nonce,
+          prompt: "login",
         }).toString();
         return Response.redirect(authorizationUrl.toString(), 302);
       }
@@ -1266,19 +1313,24 @@ export default {
 
         const tokenResponse = await fetch(`${LINE_LOGIN_API_ORIGIN}/oauth2/v2.1/token`, {
           method: "POST",
-          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          headers: {
+            "Content-Type": "application/x-www-form-urlencoded",
+            Authorization: `Basic ${btoa(`${config.channelId}:${config.channelSecret}`)}`,
+          },
           body: new URLSearchParams({
             grant_type: "authorization_code",
             code,
             redirect_uri: config.callbackUrl,
-            client_id: config.channelId,
-            client_secret: config.channelSecret,
           }),
         });
         const tokenPayload = await tokenResponse.json().catch(() => ({})) as Record<string, unknown>;
         const idToken = String(tokenPayload.id_token || "").trim();
         if (!tokenResponse.ok || !idToken) {
-          console.error("LINE Login token exchange failed", tokenResponse.status);
+          console.error("LINE Login token exchange failed", {
+            status: tokenResponse.status,
+            error: String(tokenPayload.error || "unknown"),
+            description: String(tokenPayload.error_description || "unknown"),
+          });
           return Response.redirect(lineLoginPageUrl(config.siteOrigin, safeAccountReturnPath(stateRow.return_to), "LINE_LOGIN_TOKEN_INVALID"), 302);
         }
 
@@ -2039,7 +2091,10 @@ export default {
         const guestId = getGuestId(request);
         const cart = await cartSummary(env, guestId);
         const shippingMethod = String(body.shippingMethod || "pickup");
-        const shippingFee = shippingMethod === "frozen" ? 240 : shippingMethod === "home" ? 120 : 0;
+        if (!["pickup", "frozen"].includes(shippingMethod)) {
+          return json(request, { error: "目前僅提供門市自取或冷藏宅配。" }, 400, guestId);
+        }
+        const shippingFee = shippingMethod === "frozen" ? frozenShippingFee(cart.items) : 0;
         const coupon = await couponDiscount(env, body.couponCode, cart.subtotal);
         if (coupon.error) return json(request, { error: coupon.error }, 400, guestId);
         return json(request, {
@@ -2215,7 +2270,7 @@ export default {
         if (coupon.error) return json(request, { error: coupon.error }, 400);
 
         const shippingMethod = String(body.shippingMethod || "pickup");
-        if (!["pickup", "home", "frozen"].includes(shippingMethod)) {
+        if (!["pickup", "frozen"].includes(shippingMethod)) {
           return json(request, { error: "物流方式無效。" }, 400);
         }
         const fulfillmentDate = String(body.fulfillmentDate || "").trim();
@@ -2237,7 +2292,7 @@ export default {
           return json(request, { error: "宅配訂單請填寫地址、縣市與郵遞區號。" }, 400);
         }
 
-        const shippingFee = shippingMethod === "frozen" ? 240 : shippingMethod === "home" ? 120 : 0;
+        const shippingFee = shippingMethod === "frozen" ? frozenShippingFee(cart.items) : 0;
         const discount = coupon.discount;
         const total = Number((cart.subtotal + shippingFee - discount).toFixed(2));
         const orderNumber = `S${Date.now().toString(36).toUpperCase()}`;
