@@ -1299,6 +1299,7 @@ export default {
           scope: config.scope,
           nonce,
           prompt: "login",
+          bot_prompt: "aggressive",
         }).toString();
         return Response.redirect(authorizationUrl.toString(), 302);
       }
