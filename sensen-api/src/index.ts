@@ -1298,7 +1298,7 @@ export default {
           state,
           scope: config.scope,
           nonce,
-          prompt: "login",
+          prompt: "consent",
           bot_prompt: "aggressive",
         }).toString();
         return Response.redirect(authorizationUrl.toString(), 302);
