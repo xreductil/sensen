@@ -7684,3 +7684,46 @@ body:has([data-account-route="register"]) [data-account-register] .account-auth-
   color: #fff;
   background: #1a1a1a;
 }
+
+body:has([data-account-route="login"]) .password-field,
+body:has([data-account-route="register"]) .password-field {
+  position: relative;
+  width: 100%;
+}
+body:has([data-account-route="login"]) .password-field input,
+body:has([data-account-route="register"]) .password-field input {
+  width: 100%;
+  padding-right: 58px;
+}
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  display: inline-flex;
+  width: 34px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  color: #8d563d;
+  background: transparent;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+.password-toggle:hover { color: #4e342e; }
+.password-toggle:focus-visible {
+  border-radius: 6px;
+  outline: 3px solid rgba(141, 86, 61, .25);
+  outline-offset: 2px;
+}
+.password-toggle svg {
+  width: 22px;
+  height: 22px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 2;
+}
