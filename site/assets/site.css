@@ -461,232 +461,6 @@ body:has(.account-shell) .account-link-btn { color: #e8281a; font-weight: 800; }
   body:has(.account-shell) .account-login-card { padding: 28px 20px; }
 }
 
-/* Screenshot-inspired customer authentication layout. */
-body:has([data-account-route="login"]),
-body:has([data-account-route="register"]) {
-  background: #f6eee5;
-  color: #332d29;
-}
-body:has([data-account-route="login"]) .site-header,
-body:has([data-account-route="register"]) .site-header,
-body:has([data-account-route="login"]) .footer,
-body:has([data-account-route="register"]) .footer { display: none; }
-body:has([data-account-route="login"]) .page-main,
-body:has([data-account-route="register"]) .page-main { max-width: none; padding: 0; }
-body:has([data-account-route="login"]) .account-shell,
-body:has([data-account-route="register"]) .account-shell {
-  width: min(860px, calc(100% - 48px));
-  min-height: 100svh;
-  padding: 8px 0 34px;
-  display: flex;
-  align-items: flex-start;
-}
-body:has([data-account-route="login"]) .account-layout,
-body:has([data-account-route="register"]) .account-layout {
-  width: 100%;
-  min-height: 0;
-  display: block;
-  overflow: hidden;
-  border: 1px solid #e6dcd2;
-  border-radius: 34px;
-  background: #fff;
-  box-shadow: 0 10px 28px rgba(94, 72, 57, .08);
-}
-body:has([data-account-route="login"]) .account-content,
-body:has([data-account-route="register"]) .account-content {
-  padding: 0;
-  background: transparent;
-}
-body:has([data-account-route="login"]) .account-topbar,
-body:has([data-account-route="register"]) .account-topbar { display: none; }
-body:has([data-account-route="login"]) .account-auth-grid,
-body:has([data-account-route="register"]) .account-auth-grid { display: block; }
-body:has([data-account-route="login"]) .account-login-card,
-body:has([data-account-route="register"]) .account-login-card {
-  width: 100%;
-  min-height: 0;
-  margin: 0;
-  padding: 76px 80px 82px;
-  border: 0;
-  border-radius: 0;
-  background: #fff;
-  box-shadow: none;
-}
-.account-auth-brand {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 58px;
-}
-.account-auth-brand-mark {
-  display: grid;
-  width: 84px;
-  height: 84px;
-  place-items: center;
-  border-radius: 50%;
-  color: #fff;
-  background: #c65235;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 3.25rem;
-  font-weight: 700;
-  line-height: 1;
-}
-.account-auth-brand b,
-.account-auth-brand small { display: block; }
-.account-auth-brand b {
-  color: #302925;
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 2.8rem;
-  font-weight: 700;
-  letter-spacing: -.04em;
-  line-height: 1;
-}
-.account-auth-brand small {
-  margin-top: 7px;
-  color: #857a73;
-  font-size: 1.05rem;
-  letter-spacing: .08em;
-}
-body:has([data-account-route="login"]) .account-login-card h1,
-body:has([data-account-route="register"]) .account-login-card h1 {
-  margin: 0 0 22px;
-  color: #302925;
-  font-family: "Noto Serif TC", "Songti TC", "PMingLiU", serif;
-  font-size: clamp(2.7rem, 5vw, 4.1rem);
-  font-weight: 700;
-  letter-spacing: -.04em;
-  line-height: 1.15;
-}
-.account-auth-lead {
-  margin: 0 0 52px;
-  color: #827871;
-  font-size: clamp(1.15rem, 2.1vw, 1.55rem);
-  font-weight: 600;
-  line-height: 1.6;
-}
-body:has([data-account-route="login"]) .account-auth-grid .account-form,
-body:has([data-account-route="register"]) .account-auth-grid .account-form {
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-}
-body:has([data-account-route="login"]) .account-auth-grid .account-form label,
-body:has([data-account-route="register"]) .account-auth-grid .account-form label {
-  gap: 10px;
-  color: #302925;
-  font-size: 1.3rem;
-  font-weight: 800;
-}
-body:has([data-account-route="login"]) .account-auth-grid .account-form input,
-body:has([data-account-route="register"]) .account-auth-grid .account-form input {
-  height: 70px;
-  margin-bottom: 20px;
-  padding: 0 24px;
-  border: 1px solid #d8cec5;
-  border-radius: 16px;
-  color: #302925;
-  background: #fff;
-  font-size: 1.35rem;
-}
-body:has([data-account-route="login"]) .account-auth-grid .account-form input:focus,
-body:has([data-account-route="register"]) .account-auth-grid .account-form input:focus {
-  border-color: #302925;
-  box-shadow: 0 0 0 5px rgba(198, 82, 53, .13);
-}
-body:has([data-account-route="login"]) .account-auth-actions,
-body:has([data-account-route="register"]) .account-auth-actions {
-  gap: 30px;
-  margin-top: 18px;
-  padding-top: 0;
-}
-body:has([data-account-route="login"]) .account-auth-actions .save-btn,
-body:has([data-account-route="register"]) .account-auth-actions .save-btn {
-  min-height: 70px;
-  border-radius: 16px;
-  color: #fff;
-  background: #332f2b;
-  box-shadow: none;
-  font-size: 1.35rem;
-}
-body:has([data-account-route="login"]) .account-auth-actions .save-btn:hover,
-body:has([data-account-route="register"]) .account-auth-actions .save-btn:hover { background: #1f1d1b; }
-body:has([data-account-route="login"]) .account-auth-divider,
-body:has([data-account-route="register"]) .account-auth-divider {
-  gap: 18px;
-  margin: 4px 0 0;
-  color: #9a8d84;
-  font-size: 1.1rem;
-  font-weight: 600;
-}
-body:has([data-account-route="login"]) .account-auth-divider::before,
-body:has([data-account-route="login"]) .account-auth-divider::after,
-body:has([data-account-route="register"]) .account-auth-divider::before,
-body:has([data-account-route="register"]) .account-auth-divider::after { background: #e3d4c8; }
-body:has([data-account-route="login"]) .line-login-button,
-body:has([data-account-route="register"]) .line-login-button {
-  display: grid;
-  width: 112px;
-  height: 112px;
-  min-height: 0;
-  margin: 0 auto;
-  place-content: center;
-  gap: 4px;
-  border: 0;
-  border-radius: 50%;
-  color: #fff;
-  background: #06c755;
-  box-shadow: none;
-  font-size: .96rem;
-  text-align: center;
-}
-body:has([data-account-route="login"]) .line-login-button:hover,
-body:has([data-account-route="register"]) .line-login-button:hover { background: #05a947; transform: translateY(-2px); }
-body:has([data-account-route="login"]) .line-login-button span,
-body:has([data-account-route="register"]) .line-login-button span {
-  display: block;
-  min-width: 0;
-  height: auto;
-  padding: 0;
-  border: 0;
-  font-size: 1.12rem;
-  letter-spacing: 0;
-}
-.line-login-button small { display: block; font-size: .68rem; font-weight: 700; }
-body:has([data-account-route="login"]) .account-auth-switch,
-body:has([data-account-route="register"]) .account-auth-switch {
-  margin: 32px 0 0;
-  color: #877a72;
-  font-size: 1rem;
-}
-body:has([data-account-route="login"]) .account-auth-switch a,
-body:has([data-account-route="register"]) .account-auth-switch a { color: #3f3935; }
-
-@media (max-width: 760px) {
-  body:has([data-account-route="login"]) .account-shell,
-  body:has([data-account-route="register"]) .account-shell { width: calc(100% - 24px); padding: 8px 0 20px; }
-  body:has([data-account-route="login"]) .account-layout,
-  body:has([data-account-route="register"]) .account-layout { border-radius: 24px; }
-  body:has([data-account-route="login"]) .account-login-card,
-  body:has([data-account-route="register"]) .account-login-card { padding: 44px 24px 52px; }
-  .account-auth-brand { gap: 12px; margin-bottom: 42px; }
-  .account-auth-brand-mark { width: 62px; height: 62px; font-size: 2.4rem; }
-  .account-auth-brand b { font-size: 2rem; }
-  .account-auth-brand small { margin-top: 4px; font-size: .82rem; }
-  body:has([data-account-route="login"]) .account-login-card h1,
-  body:has([data-account-route="register"]) .account-login-card h1 { font-size: 2.45rem; }
-  .account-auth-lead { margin-bottom: 36px; font-size: 1rem; }
-  body:has([data-account-route="login"]) .account-auth-grid .account-form label,
-  body:has([data-account-route="register"]) .account-auth-grid .account-form label { font-size: 1.05rem; }
-  body:has([data-account-route="login"]) .account-auth-grid .account-form input,
-  body:has([data-account-route="register"]) .account-auth-grid .account-form input { height: 60px; padding: 0 16px; font-size: 1rem; }
-  body:has([data-account-route="login"]) .account-auth-actions .save-btn,
-  body:has([data-account-route="register"]) .account-auth-actions .save-btn { min-height: 60px; font-size: 1.15rem; }
-  body:has([data-account-route="login"]) .line-login-button,
-  body:has([data-account-route="register"]) .line-login-button { width: 92px; height: 92px; }
-}
-
 /* Patria-style member workspace */
 body:has(.account-shell) { background: #eef2f6; }
 body:has(.account-shell) .site-header { background: #fff; }
@@ -7875,4 +7649,240 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .top-house-product-card .cake-product-title { font-size: 17px; }
   .top-house-product-card .cake-product-description { font-size: 13px; }
   .top-house-product-card .cake-product-price { font-size: 18px; }
+}
+
+/* Customer authentication aligned with the employee admin sign-in page. */
+body:has([data-account-route="login"]),
+body:has([data-account-route="register"]) {
+  background: #f8f9fa;
+  color: #212529;
+}
+body:has([data-account-route="login"]) .site-header,
+body:has([data-account-route="register"]) .site-header,
+body:has([data-account-route="login"]) .site-footer,
+body:has([data-account-route="register"]) .site-footer {
+  display: none;
+}
+body:has([data-account-route="login"]) .page-main,
+body:has([data-account-route="register"]) .page-main {
+  max-width: none;
+  padding: 0;
+}
+body:has([data-account-route="login"]) .account-shell,
+body:has([data-account-route="register"]) .account-shell {
+  width: 100%;
+  min-height: 100svh;
+  padding: 24px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+body:has([data-account-route="login"]) .account-layout,
+body:has([data-account-route="register"]) .account-layout {
+  width: min(420px, 100%);
+  min-height: 0;
+  display: block;
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, .175);
+  border-radius: .375rem;
+  background: #fff;
+  box-shadow: 0 .5rem 1rem rgba(0, 0, 0, .15);
+}
+body:has([data-account-route="login"]) .account-sidebar,
+body:has([data-account-route="register"]) .account-sidebar,
+body:has([data-account-route="login"]) .account-topbar,
+body:has([data-account-route="register"]) .account-topbar {
+  display: none;
+}
+body:has([data-account-route="login"]) .account-content,
+body:has([data-account-route="register"]) .account-content,
+body:has([data-account-route="login"]) .account-auth-grid,
+body:has([data-account-route="register"]) .account-auth-grid {
+  display: block;
+  width: 100%;
+  min-height: 0;
+}
+body:has([data-account-route="login"]) .account-login-card,
+body:has([data-account-route="register"]) .account-login-card {
+  width: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 3rem;
+  box-sizing: border-box;
+  border: 0;
+  border-radius: 0;
+  background: #fff;
+  box-shadow: none;
+}
+.patria-auth-brand {
+  display: flex;
+  width: 100%;
+  margin: 0 0 1.5rem;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  color: #171717;
+  text-align: center;
+  line-height: 1.05;
+}
+.patria-admin-icon {
+  width: 78px;
+  height: 78px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #fff;
+  background: linear-gradient(135deg, #ff3b1f, #ff9518);
+  box-shadow: 0 14px 30px rgba(255, 95, 22, .22);
+  font: 900 36px Georgia, "Times New Roman", serif;
+}
+.patria-admin-copy {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  text-align: center;
+}
+.patria-admin-copy strong {
+  color: #171717;
+  font: 900 42px/1 Georgia, "Times New Roman", serif;
+}
+.patria-admin-copy em {
+  display: block;
+  color: #a7a7a7;
+  font-size: 11px;
+  font-style: normal;
+  font-weight: 800;
+  letter-spacing: .16em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+body:has([data-account-route="login"]) .account-login-card h1,
+body:has([data-account-route="register"]) .account-login-card h1,
+body:has([data-account-route="login"]) .account-login-card h2,
+body:has([data-account-route="register"]) .account-login-card h2 {
+  margin: 0 0 3rem;
+  color: #212529;
+  font-size: 1.25rem;
+  font-weight: 500;
+  line-height: 1.2;
+  text-align: center;
+}
+body:has([data-account-route="login"]) .account-form,
+body:has([data-account-route="register"]) .account-form {
+  gap: 1rem;
+  max-width: none;
+}
+body:has([data-account-route="login"]) .account-form label,
+body:has([data-account-route="register"]) .account-form label {
+  gap: .375rem;
+  color: #212529;
+  font-size: .875rem;
+  font-weight: 400;
+}
+body:has([data-account-route="login"]) .account-form input,
+body:has([data-account-route="register"]) .account-form input {
+  height: 40px;
+  margin: 0;
+  padding: .5rem .875rem;
+  border: 1px solid #dee2e6;
+  border-radius: .375rem;
+  background: #fff;
+  color: #212529;
+  font-size: .875rem;
+  box-sizing: border-box;
+}
+body:has([data-account-route="login"]) .account-form input:focus,
+body:has([data-account-route="register"]) .account-form input:focus {
+  border-color: #f3b19c;
+  box-shadow: 0 0 0 .25rem rgba(230, 98, 57, .25);
+  outline: 0;
+}
+body:has([data-account-route="login"]) .account-consent,
+body:has([data-account-route="register"]) .account-consent {
+  font-size: .875rem !important;
+}
+body:has([data-account-route="login"]) .account-auth-actions,
+body:has([data-account-route="register"]) .account-auth-actions {
+  gap: 1rem;
+  margin-top: .5rem;
+  padding-top: 0;
+}
+body:has([data-account-route="login"]) .account-auth-actions .save-btn,
+body:has([data-account-route="register"]) .account-auth-actions .save-btn {
+  min-height: 38px;
+  border: 1px solid #e66239;
+  border-radius: .375rem;
+  background: #e66239;
+  box-shadow: none;
+  font-size: .875rem;
+  font-weight: 400;
+}
+body:has([data-account-route="login"]) .account-auth-actions .save-btn:hover,
+body:has([data-account-route="register"]) .account-auth-actions .save-btn:hover {
+  border-color: #c45330;
+  background: #c45330;
+}
+.account-auth-divider {
+  gap: .75rem;
+  margin: 0;
+  color: #6c757d;
+  font-size: .75rem;
+  font-weight: 400;
+}
+.account-auth-divider::before,
+.account-auth-divider::after {
+  background: #dee2e6;
+}
+.line-login-button {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  border: 1px solid #06c755;
+  border-radius: .375rem;
+  color: #06c755;
+  background: #fff;
+  box-shadow: none;
+  font-size: .875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.line-login-button:hover {
+  color: #fff;
+  background: #06c755;
+  transform: none;
+}
+.line-login-button span {
+  display: inline;
+  min-width: 0;
+  height: auto;
+  padding: 0;
+  border: 0;
+  font-size: .75rem;
+  letter-spacing: 0;
+}
+.line-login-button small {
+  display: inline;
+  margin-left: .35rem;
+  font-size: inherit;
+  font-weight: 600;
+}
+.account-auth-switch {
+  margin: 1rem 0 0;
+  color: #6c757d;
+  text-align: center;
+  font-size: .75rem;
+}
+.account-auth-switch a { color: #0d6efd; }
+@media (max-width: 576px) {
+  body:has([data-account-route="login"]) .account-login-card,
+  body:has([data-account-route="register"]) .account-login-card {
+    padding: 2rem 1.5rem;
+  }
 }
