@@ -7650,3 +7650,35 @@ body:has(.seasonal-catalog-page) .menu-item:nth-child(3) > a {
   .top-house-product-card .cake-product-description { font-size: 13px; }
   .top-house-product-card .cake-product-price { font-size: 18px; }
 }
+
+/* Customer auth refinements: larger field labels, inline required marks, and a black login button. */
+body:has([data-account-route="login"]) .account-form label:not(.account-consent),
+body:has([data-account-route="register"]) .account-form label:not(.account-consent) {
+  font-size: 1.15rem;
+}
+body:has([data-account-route="login"]) .account-form label:not(.account-consent) > span,
+body:has([data-account-route="register"]) .account-form label:not(.account-consent) > span {
+  display: inline;
+  line-height: 1.4;
+}
+body:has([data-account-route="login"]) .account-form label:not(.account-consent) > span > b,
+body:has([data-account-route="register"]) .account-form label:not(.account-consent) > span > b {
+  margin-left: .15em;
+  color: #d92525;
+  font-weight: 800;
+}
+body:has([data-account-route="login"]) .account-form label:not(.account-consent) input,
+body:has([data-account-route="register"]) .account-form label:not(.account-consent) input {
+  font-size: 1.1rem;
+}
+body:has([data-account-route="login"]) [data-account-login] .account-auth-actions .save-btn {
+  min-height: 58px;
+  border-radius: 9px;
+  color: #fff;
+  background: #000;
+  font-size: 1rem;
+}
+body:has([data-account-route="login"]) [data-account-login] .account-auth-actions .save-btn:hover {
+  color: #fff;
+  background: #1a1a1a;
+}
